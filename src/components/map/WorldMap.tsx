@@ -41,6 +41,24 @@ const INSET_PACIFIC_CODES = new Set([
   'FJI', 'TUV', 'WLF', 'WSM', 'ASM', 'TON', 'NIU', 'COK', 'PYF'
 ]);
 
+// Coordenadas calibradas con separación para microestados contiguos (Hong Kong, Macao, etc.)
+const MICROSTATE_OFFSETS: Record<string, [number, number]> = {
+  HKG: [114.32, 22.38], // Hong Kong (Este del Delta del Río Perla)
+  MAC: [113.35, 22.02], // Macao (Oeste del Delta del Río Perla)
+  GIB: [-5.35, 36.14],
+  MCO: [7.42, 43.73],
+  SMR: [12.45, 43.94],
+  VAT: [12.45, 41.90],
+  AND: [1.52, 42.50],
+  LIE: [9.55, 47.16],
+  LUX: [6.13, 49.81],
+  MLT: [14.37, 35.93],
+  BHR: [50.55, 26.06],
+  SGP: [103.82, 1.35],
+  BRN: [114.94, 4.53],
+  MDV: [73.50, 4.17]
+};
+
 interface WorldMapProps {
   countryStatuses?: Record<string, CountryMapStatus>;
   selectedCountryCode?: string | null;
@@ -506,11 +524,11 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             const haloFill = isPulsing ? '#EF4444' : isResolved ? styles.fill : isHovered ? '#38BDF8' : '#FFFFFF';
             const dotStroke = isPulsing ? '#FEE2E2' : isResolved ? styles.stroke : isHovered ? '#0284C7' : '#64748B';
             
-            const coords: [number, number] = [country.latlng[1], country.latlng[0]];
+            const coords: [number, number] = MICROSTATE_OFFSETS[cca3] || [country.latlng[1], country.latlng[0]];
             
-            const baseR = Math.max(0.9, 1.8 / Math.sqrt(position.zoom));
-            const haloR = baseR * 1.6;
-            const hitR = Math.max(3.0, 5.5 / Math.sqrt(position.zoom));
+            const baseR = Math.max(0.65, 1.3 / Math.sqrt(position.zoom));
+            const haloR = baseR * 1.3;
+            const hitR = Math.max(2.2, 4.0 / Math.sqrt(position.zoom));
 
             return (
               <Marker
