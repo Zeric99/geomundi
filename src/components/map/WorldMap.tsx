@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   ComposableMap,
   Geographies,
@@ -42,6 +42,11 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
   const [hoveredCountry, setHoveredCountry] = useState<Country | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+
+  // Detección de arrastre vs. clic para evitar selecciones accidentales al mover el mapa
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  const isDraggingRef = useRef<boolean>(false);
+  const dragThreshold = 6; // píxeles
 
   // Estado persistido de visualización de nombres/capitales en hover
   const [tooltipsEnabled, setTooltipsEnabled] = useState<boolean>(() => {
@@ -107,6 +112,42 @@ export const WorldMap: React.FC<WorldMapProps> = ({
 
   const handleMoveEnd = (pos: { coordinates: [number, number]; zoom: number }) => {
     setPosition(pos);
+    isDraggingRef.current = true;
+    setTimeout(() => {
+      isDraggingRef.current = false;
+      dragStartPos.current = null;
+    }, 120);
+  };
+
+  // Manejadores para discernir entre clic y arrastre (pan)
+  const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = 'touches' in e ? e.touches[0]?.clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0]?.clientY : (e as React.MouseEvent).clientY;
+    if (clientX !== undefined && clientY !== undefined) {
+      dragStartPos.current = { x: clientX, y: clientY };
+      isDraggingRef.current = false;
+    }
+  };
+
+  const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = 'touches' in e ? e.touches[0]?.clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0]?.clientY : (e as React.MouseEvent).clientY;
+    if (dragStartPos.current && clientX !== undefined && clientY !== undefined) {
+      const dist = Math.hypot(clientX - dragStartPos.current.x, clientY - dragStartPos.current.y);
+      if (dist > dragThreshold) {
+        isDraggingRef.current = true;
+      }
+    }
+    if ('clientX' in e) {
+      handleMouseMove(e as React.MouseEvent);
+    }
+  };
+
+  const handlePointerUp = () => {
+    setTimeout(() => {
+      isDraggingRef.current = false;
+      dragStartPos.current = null;
+    }, 80);
   };
 
   // Obtiene el color de relleno y borde según el estado del país
@@ -175,7 +216,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   }, [countryStatuses, selectedCountryCode, targetCountryCode, interactive]);
 
   const handleGeographyClick = (geo: any) => {
-    if (!interactive || !onCountryClick) return;
+    // Si el usuario estaba arrastrando para moverse por el mapa, ignorar el clic
+    if (!interactive || !onCountryClick || isDraggingRef.current) return;
     const cca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
     if (cca3) {
       const country = countriesService.getCountryByCode(cca3);
@@ -186,12 +228,13 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   };
 
   const handleDirectCountryClick = (country: Country) => {
-    if (!interactive || !onCountryClick) return;
+    // Si el usuario estaba arrastrando, ignorar el clic
+    if (!interactive || !onCountryClick || isDraggingRef.current) return;
     onCountryClick(country, country.cca3);
   };
 
   const handleMouseEnter = (geo: any, e: React.MouseEvent) => {
-    if (!enableTooltip || !tooltipsEnabled) return;
+    if (!enableTooltip || !tooltipsEnabled || isDraggingRef.current) return;
     const cca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
     if (cca3) {
       const country = countriesService.getCountryByCode(cca3);
@@ -203,7 +246,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!enableTooltip || !tooltipsEnabled || !hoveredCountry) return;
+    if (!enableTooltip || !tooltipsEnabled || !hoveredCountry || isDraggingRef.current) return;
     setHoverPosition({ x: e.clientX, y: e.clientY });
   };
 
@@ -226,7 +269,12 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   return (
     <div
       className={`relative w-full h-full min-h-[420px] bg-gradient-to-b from-[#090D16] via-[#0D1524] to-[#0A101C] rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl select-none ${className}`}
-      onMouseMove={handleMouseMove}
+      onMouseDown={handlePointerDown}
+      onMouseMove={handlePointerMove}
+      onMouseUp={handlePointerUp}
+      onTouchStart={handlePointerDown}
+      onTouchMove={handlePointerMove}
+      onTouchEnd={handlePointerUp}
     >
       {/* Rejilla de Fondo / Efecto de Coordenadas de Radar */}
       <div
@@ -389,8 +437,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             // Coordenadas [longitud, latitud] requeridas por react-simple-maps
             const coords: [number, number] = [country.latlng[1], country.latlng[0]];
             
-            // Escala inversa con el zoom: al hacer zoom, el radio en coordenadas SVG se reduce
-            // para que no tape países vecinos y mantenga una hitbox perfecta y milimétrica
+            // Escala inversa con el zoom
             const baseR = Math.max(0.65, 2.0 / position.zoom);
             const haloR = baseR * 1.5;
             const hitR = Math.max(1.2, 3.0 / position.zoom);
@@ -406,7 +453,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     handleDirectCountryClick(country);
                   }}
                   onMouseEnter={(e: any) => {
-                    if (enableTooltip && tooltipsEnabled) {
+                    if (enableTooltip && tooltipsEnabled && !isDraggingRef.current) {
                       setHoveredCountry(country);
                       setHoverPosition({ x: e.clientX, y: e.clientY });
                     }
@@ -446,7 +493,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       </ComposableMap>
 
       {/* Tooltip con información del país (respetando la preferencia de activación) */}
-      {enableTooltip && tooltipsEnabled && (
+      {enableTooltip && tooltipsEnabled && !isDraggingRef.current && (
         <MapTooltip
           country={hoveredCountry}
           position={hoverPosition}
