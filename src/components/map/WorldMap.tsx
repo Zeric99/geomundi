@@ -45,10 +45,9 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const [hoveredCountry, setHoveredCountry] = useState<Country | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
 
-  // Detección de arrastre vs. clic para evitar selecciones accidentales al mover el mapa
-  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  // Detección de arrastre vs. clic para evitar selecciones accidentales sin bloquear clics reales
+  const pointerDownPos = useRef<{ x: number; y: number; time: number } | null>(null);
   const isDraggingRef = useRef<boolean>(false);
-  const dragThreshold = 6; // píxeles
 
   // Estado persistido de visualización de nombres/capitales en hover
   const [tooltipsEnabled, setTooltipsEnabled] = useState<boolean>(() => {
@@ -127,11 +126,6 @@ export const WorldMap: React.FC<WorldMapProps> = ({
 
   const handleMoveEnd = (pos: { coordinates: [number, number]; zoom: number }) => {
     setPosition(pos);
-    isDraggingRef.current = true;
-    setTimeout(() => {
-      isDraggingRef.current = false;
-      dragStartPos.current = null;
-    }, 120);
   };
 
   // Manejadores para discernir entre clic y arrastre (pan)
@@ -139,7 +133,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     const clientX = 'touches' in e ? e.touches[0]?.clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0]?.clientY : (e as React.MouseEvent).clientY;
     if (clientX !== undefined && clientY !== undefined) {
-      dragStartPos.current = { x: clientX, y: clientY };
+      pointerDownPos.current = { x: clientX, y: clientY, time: Date.now() };
       isDraggingRef.current = false;
     }
   };
@@ -147,9 +141,9 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
     const clientX = 'touches' in e ? e.touches[0]?.clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0]?.clientY : (e as React.MouseEvent).clientY;
-    if (dragStartPos.current && clientX !== undefined && clientY !== undefined) {
-      const dist = Math.hypot(clientX - dragStartPos.current.x, clientY - dragStartPos.current.y);
-      if (dist > dragThreshold) {
+    if (pointerDownPos.current && clientX !== undefined && clientY !== undefined) {
+      const dist = Math.hypot(clientX - pointerDownPos.current.x, clientY - pointerDownPos.current.y);
+      if (dist > 18) {
         isDraggingRef.current = true;
       }
     }
@@ -159,10 +153,14 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   };
 
   const handlePointerUp = () => {
+    // Si fue un clic o tap rápido (< 300ms y < 18px), se garantiza que NO se bloquee
+    if (pointerDownPos.current && Date.now() - pointerDownPos.current.time < 300) {
+      isDraggingRef.current = false;
+    }
     setTimeout(() => {
       isDraggingRef.current = false;
-      dragStartPos.current = null;
-    }, 80);
+      pointerDownPos.current = null;
+    }, 50);
   };
 
   // Obtiene el color de relleno y borde según el estado del país
@@ -242,19 +240,30 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   }, [countryStatuses, selectedCountryCode, targetCountryCode, pulsingCountryCode, interactive]);
 
   const handleGeographyClick = (geo: any) => {
-    // Si el usuario estaba arrastrando para moverse por el mapa, ignorar el clic
     if (!interactive || !onCountryClick || isDraggingRef.current) return;
     const cca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
     if (cca3) {
-      const country = countriesService.getCountryByCode(cca3);
-      if (country) {
-        onCountryClick(country, cca3);
-      }
+      const country = countriesService.getCountryByCode(cca3) || ({
+        cca2: '',
+        cca3,
+        ccn3: '',
+        nameEs: geo.properties?.name || cca3,
+        nameEn: geo.properties?.name || cca3,
+        officialNameEs: geo.properties?.name || cca3,
+        capital: 'N/A',
+        continent: 'World',
+        continentEs: 'Mundo',
+        population: 0,
+        flagSvg: '',
+        flagEmoji: '🏳️',
+        latlng: [0, 0],
+        altSpellings: []
+      } as Country);
+      onCountryClick(country, cca3);
     }
   };
 
   const handleDirectCountryClick = (country: Country) => {
-    // Si el usuario estaba arrastrando, ignorar el clic
     if (!interactive || !onCountryClick || isDraggingRef.current) return;
     onCountryClick(country, country.cca3);
   };
