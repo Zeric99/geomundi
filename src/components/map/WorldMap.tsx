@@ -1,16 +1,17 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   ComposableMap,
   Geographies,
   Geography,
-  ZoomableGroup
+  ZoomableGroup,
+  Marker
 } from 'react-simple-maps';
 import { Continent, Country, CountryMapStatus } from '../../types/country';
-import { CONTINENT_VIEWPORTS } from '../../data/geoAliases';
+import { CONTINENT_VIEWPORTS, MICROSTATE_CODES } from '../../data/geoAliases';
 import { MapTooltip } from './MapTooltip';
 import { MapControls } from './MapControls';
 import { countriesService } from '../../services/countriesService';
-import { FALLBACK_MAP_URL } from '../../data/fallbackCountries';
+import { FALLBACK_MAP_URL, FALLBACK_COUNTRIES } from '../../data/fallbackCountries';
 
 // Ruta local relativa compatible con GitHub Pages y fallback CDN
 const LOCAL_GEO_URL = `${import.meta.env.BASE_URL}data/world-110m.json`;
@@ -160,6 +161,11 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     }
   };
 
+  const handleDirectCountryClick = (country: Country) => {
+    if (!interactive || !onCountryClick) return;
+    onCountryClick(country, country.cca3);
+  };
+
   const handleMouseEnter = (geo: any, e: React.MouseEvent) => {
     if (!enableTooltip) return;
     const cca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
@@ -181,6 +187,17 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     setHoveredCountry(null);
     setHoverPosition(null);
   };
+
+  // Microestados a renderizar con marcadores interactivos
+  const microstateCountries = useMemo(() => {
+    const all = FALLBACK_COUNTRIES;
+    return all.filter(c => {
+      const isMicro = MICROSTATE_CODES.has(c.cca3.toUpperCase());
+      if (!isMicro) return false;
+      if (continent === 'World') return true;
+      return c.continent === continent;
+    });
+  }, [continent]);
 
   return (
     <div
@@ -228,6 +245,10 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-glow-purple" />
           <span>Selección</span>
         </div>
+        <div className="flex items-center gap-1.5 pl-1 border-l border-slate-700">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+          <span className="text-cyan-300">📍 Microestados/Islas</span>
+        </div>
       </div>
 
       {/* Mapa Vectorial SVG */}
@@ -245,6 +266,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           minZoom={0.8}
           maxZoom={12}
         >
+          {/* Polígonos de Países Principales */}
           <Geographies
             geography={geoUrl}
             onError={() => {
@@ -296,6 +318,65 @@ export const WorldMap: React.FC<WorldMapProps> = ({
               })
             }
           </Geographies>
+
+          {/* Marcadores Interactivos para Microestados e Islas Pequeñas */}
+          {microstateCountries.map((country) => {
+            const cca3 = country.cca3.toUpperCase();
+            const styles = getCountryStyles(cca3);
+            const isHovered = hoveredCountry?.cca3?.toUpperCase() === cca3;
+            const isTarget = targetCountryCode?.toUpperCase() === cca3;
+            
+            // Coordenadas [longitud, latitud] requeridas por react-simple-maps
+            const coords: [number, number] = [country.latlng[1], country.latlng[0]];
+            
+            // Radio adaptativo que se mantiene cómodo y nítido con el zoom
+            const baseR = Math.max(2.5, 4.5 / Math.sqrt(position.zoom));
+            const haloR = baseR * 1.8;
+
+            return (
+              <Marker
+                key={`microstate_${cca3}`}
+                coordinates={coords}
+              >
+                <g
+                  onClick={() => handleDirectCountryClick(country)}
+                  onMouseEnter={(e: any) => {
+                    if (enableTooltip) {
+                      setHoveredCountry(country);
+                      setHoverPosition({ x: e.clientX, y: e.clientY });
+                    }
+                  }}
+                  onMouseLeave={handleMouseLeave}
+                  className="cursor-pointer transition-transform duration-150 hover:scale-125"
+                >
+                  {/* Halo exterior pulsante para microestados / pistas */}
+                  <circle
+                    r={haloR}
+                    fill={isTarget ? '#F59E0B' : styles.fill !== '#24344D' ? styles.fill : '#06B6D4'}
+                    opacity={isHovered ? 0.6 : isTarget ? 0.7 : 0.25}
+                    className={isTarget ? 'animate-ping' : ''}
+                  />
+
+                  {/* Círculo central táctil */}
+                  <circle
+                    r={baseR}
+                    fill={styles.fill !== '#24344D' ? styles.fill : isHovered ? '#38BDF8' : '#06B6D4'}
+                    stroke={styles.stroke !== '#3B4F6E' ? styles.stroke : '#CFFAFE'}
+                    strokeWidth={Math.max(0.6, 1.2 / Math.sqrt(position.zoom))}
+                    style={{
+                      filter: isHovered || isTarget ? 'drop-shadow(0 0 4px #38BDF8)' : 'none'
+                    }}
+                  />
+
+                  {/* Zona de impacto táctil invisible más grande para facilitar el clic en móviles */}
+                  <circle
+                    r={Math.max(8, 12 / Math.sqrt(position.zoom))}
+                    fill="transparent"
+                  />
+                </g>
+              </Marker>
+            );
+          })}
         </ZoomableGroup>
       </ComposableMap>
 

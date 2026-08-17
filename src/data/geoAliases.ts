@@ -50,11 +50,27 @@ export const GEO_ALIASES: Record<string, string> = {
   "KOS": "XKX",     // Kosovo
   "PSX": "PSE",     // Palestina
   "SOL": "SLB",     // Solomon Islands
-  "SOM": "SOM",     // Somaliland mapeado a Somalia para simplificación de juego
+  "SOM": "SOM",     // Somaliland mapeado a Somalia
   "NCL": "NCL",     // New Caledonia
   "PRI": "PRI",     // Puerto Rico
   "GRL": "GRL",     // Groenlandia
 };
+
+/**
+ * Conjunto de microestados e islas pequeñas que requieren un marcador interactivo visible en el mapa
+ */
+export const MICROSTATE_CODES = new Set([
+  // Europa
+  'AND', 'VAT', 'SMR', 'MCO', 'LIE', 'MLT', 'LUX',
+  // América y Caribe
+  'ATG', 'BHS', 'BRB', 'DMA', 'GRD', 'KNA', 'LCA', 'VCT', 'TTO',
+  // África
+  'CPV', 'COM', 'MUS', 'STP', 'SYC', 'SWZ', 'LSO', 'DJI', 'GMB',
+  // Asia
+  'SGP', 'BHR', 'MDV', 'BRN', 'QAT', 'KWT', 'LBN', 'TLS', 'BTN',
+  // Oceanía
+  'FJI', 'KIR', 'MHL', 'FSM', 'NRU', 'PLW', 'WSM', 'SLB', 'TON', 'TUV', 'VUT'
+]);
 
 /**
  * Centros geográficos y niveles de zoom sugeridos por continente para enfocar el mapa
