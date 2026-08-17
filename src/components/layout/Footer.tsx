@@ -16,7 +16,7 @@ export const Footer: React.FC = () => {
           <span>•</span>
           <span>Mapas: <strong>Natural Earth / TopoJSON</strong></span>
           <span>•</span>
-          <span className="text-cyan-400 font-bold">100% Autocontenido para Vercel</span>
+          <span className="text-cyan-400 font-bold">Created by: halfo99</span>
         </div>
       </div>
     </footer>
