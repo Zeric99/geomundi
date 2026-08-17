@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Minus, RotateCcw, Globe2, Compass } from 'lucide-react';
+import { Plus, Minus, RotateCcw, Compass, Eye, EyeOff } from 'lucide-react';
 import { Continent } from '../../types/country';
 
 interface MapControlsProps {
@@ -9,6 +9,8 @@ interface MapControlsProps {
   currentContinent?: Continent;
   onSelectContinent?: (continent: Continent) => void;
   zoomLevel: number;
+  tooltipsEnabled?: boolean;
+  onToggleTooltips?: () => void;
 }
 
 export const MapControls: React.FC<MapControlsProps> = ({
@@ -17,7 +19,9 @@ export const MapControls: React.FC<MapControlsProps> = ({
   onReset,
   currentContinent = 'World',
   onSelectContinent,
-  zoomLevel
+  zoomLevel,
+  tooltipsEnabled = true,
+  onToggleTooltips
 }) => {
   const continents: { id: Continent; label: string }[] = [
     { id: 'World', label: 'Mundo' },
@@ -55,12 +59,37 @@ export const MapControls: React.FC<MapControlsProps> = ({
         </button>
       </div>
 
+      {/* Botón para Activar/Desactivar Nombres y Capitales al Pasar el Ratón (Tooltips) */}
+      {onToggleTooltips && (
+        <button
+          onClick={onToggleTooltips}
+          title={tooltipsEnabled ? 'Ocultar nombres y capitales al pasar el ratón (Modo Experto)' : 'Mostrar nombres y capitales al pasar el ratón'}
+          className={`p-2 sm:px-3 sm:py-1.5 rounded-xl border backdrop-blur-md transition-all flex items-center gap-1.5 text-xs font-bold shadow-lg active:scale-95 ${
+            tooltipsEnabled
+              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-glow-cyan'
+              : 'bg-slate-900/90 text-slate-400 border-slate-700 hover:text-slate-200 hover:border-slate-500'
+          }`}
+        >
+          {tooltipsEnabled ? (
+            <>
+              <Eye className="w-4 h-4 text-cyan-400" />
+              <span className="hidden sm:inline">Pistas Hover: ON</span>
+            </>
+          ) : (
+            <>
+              <EyeOff className="w-4 h-4 text-slate-500" />
+              <span className="hidden sm:inline">Pistas Hover: OFF</span>
+            </>
+          )}
+        </button>
+      )}
+
       {/* Indicador de nivel de Zoom */}
       <div className="bg-[#131C2E]/80 backdrop-blur-sm border border-slate-700/60 px-2.5 py-1 rounded-lg text-[11px] font-mono text-cyan-300 font-bold shadow">
         {zoomLevel.toFixed(1)}x
       </div>
 
-      {/* Píldoras de Acceso Rápido a Continentes (si se desea cambiar vista rápida) */}
+      {/* Píldoras de Acceso Rápido a Continentes */}
       {onSelectContinent && (
         <div className="hidden lg:flex flex-col gap-1 mt-2 bg-[#131C2E]/80 backdrop-blur-md border border-slate-700/60 p-1.5 rounded-xl shadow-lg">
           <div className="flex items-center gap-1 px-2 py-1 text-[10px] uppercase font-bold text-slate-400">

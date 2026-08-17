@@ -42,6 +42,30 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
   const [hoveredCountry, setHoveredCountry] = useState<Country | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+
+  // Estado persistido de visualización de nombres/capitales en hover
+  const [tooltipsEnabled, setTooltipsEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('geomundi_show_tooltips');
+      return saved !== null ? saved === 'true' : true;
+    } catch (e) {
+      return true;
+    }
+  });
+
+  const toggleTooltips = useCallback(() => {
+    setTooltipsEnabled(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('geomundi_show_tooltips', String(next));
+      } catch (e) {}
+      if (!next) {
+        setHoveredCountry(null);
+        setHoverPosition(null);
+      }
+      return next;
+    });
+  }, []);
   
   // Coordenadas y nivel de zoom
   const viewport = CONTINENT_VIEWPORTS[continent] || CONTINENT_VIEWPORTS.World;
@@ -167,7 +191,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   };
 
   const handleMouseEnter = (geo: any, e: React.MouseEvent) => {
-    if (!enableTooltip) return;
+    if (!enableTooltip || !tooltipsEnabled) return;
     const cca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
     if (cca3) {
       const country = countriesService.getCountryByCode(cca3);
@@ -179,7 +203,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!enableTooltip || !hoveredCountry) return;
+    if (!enableTooltip || !tooltipsEnabled || !hoveredCountry) return;
     setHoverPosition({ x: e.clientX, y: e.clientY });
   };
 
@@ -217,7 +241,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         }}
       />
 
-      {/* Controles de Zoom y Centrado */}
+      {/* Controles de Zoom, Centrado y Toggle de Tooltips */}
       <MapControls
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
@@ -225,6 +249,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         currentContinent={continent}
         onSelectContinent={onSelectContinent}
         zoomLevel={position.zoom}
+        tooltipsEnabled={tooltipsEnabled}
+        onToggleTooltips={toggleTooltips}
       />
 
       {/* Leyenda rápida interactiva */}
@@ -341,7 +367,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                 <g
                   onClick={() => handleDirectCountryClick(country)}
                   onMouseEnter={(e: any) => {
-                    if (enableTooltip) {
+                    if (enableTooltip && tooltipsEnabled) {
                       setHoveredCountry(country);
                       setHoverPosition({ x: e.clientX, y: e.clientY });
                     }
@@ -380,8 +406,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         </ZoomableGroup>
       </ComposableMap>
 
-      {/* Tooltip con información del país */}
-      {enableTooltip && (
+      {/* Tooltip con información del país (respetando la preferencia de activación) */}
+      {enableTooltip && tooltipsEnabled && (
         <MapTooltip
           country={hoveredCountry}
           position={hoverPosition}
