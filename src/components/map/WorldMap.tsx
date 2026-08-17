@@ -427,12 +427,18 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             }
           </Geographies>
 
-          {/* Marcadores Interactivos para Microestados e Islas Pequeñas con Hitbox y Radio Precisos */}
+          {/* Marcadores Interactivos para Microestados e Islas Pequeñas (Blancas hasta ser resueltas) */}
           {microstateCountries.map((country) => {
             const cca3 = country.cca3.toUpperCase();
             const styles = getCountryStyles(cca3);
             const isHovered = hoveredCountry?.cca3?.toUpperCase() === cca3;
             const isTarget = targetCountryCode?.toUpperCase() === cca3;
+            const isResolved = styles.fill !== '#24344D';
+            
+            // Color blanco puro por defecto para no confundir con verde o azul
+            const dotFill = isResolved ? styles.fill : isHovered ? '#38BDF8' : '#FFFFFF';
+            const haloFill = isTarget ? '#F59E0B' : isResolved ? styles.fill : isHovered ? '#38BDF8' : '#FFFFFF';
+            const dotStroke = isResolved ? styles.stroke : isHovered ? '#0284C7' : '#94A3B8';
             
             // Coordenadas [longitud, latitud] requeridas por react-simple-maps
             const coords: [number, number] = [country.latlng[1], country.latlng[0]];
@@ -462,22 +468,26 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                   onMouseLeave={handleMouseLeave}
                   className="cursor-pointer transition-transform duration-100 hover:scale-125"
                 >
-                  {/* Halo exterior para microestados / pistas */}
+                  {/* Halo exterior (blanco sutil si está pendiente, o del color del estado si está resuelto) */}
                   <circle
                     r={haloR}
-                    fill={isTarget ? '#F59E0B' : styles.fill !== '#24344D' ? styles.fill : '#06B6D4'}
-                    opacity={isHovered ? 0.6 : isTarget ? 0.7 : 0.3}
+                    fill={haloFill}
+                    opacity={isHovered ? 0.6 : isTarget ? 0.7 : isResolved ? 0.4 : 0.2}
                     className={isTarget ? 'animate-ping' : ''}
                   />
 
-                  {/* Círculo central visible con borde blanco de alto contraste */}
+                  {/* Círculo central: BLANCO PURO si está pendiente, VERDE/AMARILLO/ROJO si está resuelto */}
                   <circle
                     r={baseR}
-                    fill={styles.fill !== '#24344D' ? styles.fill : isHovered ? '#38BDF8' : '#06B6D4'}
-                    stroke={styles.stroke !== '#3B4F6E' ? styles.stroke : '#FFFFFF'}
+                    fill={dotFill}
+                    stroke={dotStroke}
                     strokeWidth={Math.max(0.3, 0.7 / Math.sqrt(position.zoom))}
                     style={{
-                      filter: isHovered || isTarget ? 'drop-shadow(0 0 5px #38BDF8)' : 'drop-shadow(0 0 2px rgba(6, 182, 212, 0.8))'
+                      filter: isHovered || isTarget 
+                        ? 'drop-shadow(0 0 5px #38BDF8)' 
+                        : isResolved 
+                        ? 'drop-shadow(0 0 3px ' + styles.fill + ')' 
+                        : 'drop-shadow(0 0 2px rgba(255, 255, 255, 0.8))'
                     }}
                   />
 

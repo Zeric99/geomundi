@@ -130,10 +130,23 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
   // Manejar clic en país del mapa
   const handleMapCountryClick = useCallback((clickedCountry: Country, clickedCca3: string) => {
     const upperClicked = clickedCca3.toUpperCase();
+    const clickedItem = itemsState[upperClicked];
 
-    // Si no hay país seleccionado, avisamos al usuario que elija uno de la lista
+    // Si el usuario hace clic en un país ya resuelto (verde, amarillo o rojo), le mostramos su nombre para orientarse
+    if (clickedItem && clickedItem.status !== 'pending') {
+      const statusLabel = 
+        clickedItem.status === 'correct' ? '✅ Acertado a la 1ª' :
+        clickedItem.status === 'second_try' ? '⚡ Acertado a la 2ª' : '❌ Fallado';
+      setBannerMessage({
+        text: `📍 ${clickedCountry.flagEmoji} ${clickedCountry.nameEs} (Capital: ${clickedCountry.capital}) · ${statusLabel}`,
+        type: 'info'
+      });
+      return;
+    }
+
+    // Si no hay país seleccionado de la lista, avisamos al usuario que elija uno
     if (!selectedCountryCode) {
-      if (itemsState[upperClicked]?.status === 'pending') {
+      if (clickedItem && clickedItem.status === 'pending') {
         setSelectedCountryCode(upperClicked);
         setBannerMessage({
           text: `Has seleccionado ${clickedCountry.nameEs}. ¡Busca y confírmalo en el mapa!`,
@@ -141,7 +154,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         });
       } else {
         setBannerMessage({
-          text: `Primero haz clic en un país de la lista superior para seleccionarlo.`,
+          text: `Haz clic en un país de la lista superior para seleccionarlo como objetivo.`,
           type: 'info'
         });
       }
@@ -207,7 +220,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
       setStreak(0);
 
       if (currentTarget.attempts === 0) {
-        // Primer fallo: mantener el mismo país seleccionado para que intente su 2º intento
+        // Primer fallo: mantener el mismo país seleccionado sin dar pistas de qué país se ha pulsado
         setItemsState(prev => ({
           ...prev,
           [selectedCountryCode]: {
@@ -216,7 +229,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
           }
         }));
         setBannerMessage({
-          text: `Has pulsado ${clickedCountry.nameEs}. Te queda 1 intento para ubicar ${currentTarget.country.nameEs}.`,
+          text: `❌ Ubicación incorrecta. Te queda 1 intento.`,
           type: 'warning'
         });
       } else {
@@ -231,7 +244,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         };
         setItemsState(updated);
         setBannerMessage({
-          text: `Agotaste los intentos para ${currentTarget.country.nameEs}. Se ha marcado en rojo. Selecciona otro país de la lista.`,
+          text: `❌ Agotaste los 2 intentos para ${currentTarget.country.nameEs}. Se ha marcado en rojo. Selecciona otro país de la lista.`,
           type: 'error'
         });
         setSelectedCountryCode(null); // DESPUÉS DE UN FALLO NO SE SELECCIONA NADA SOLO
