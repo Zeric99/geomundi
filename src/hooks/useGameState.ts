@@ -38,6 +38,7 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
 
   const startTimeRef = useRef<number>(Date.now());
   const questionStartTimeRef = useRef<number>(Date.now());
+  const advanceTimerRef = useRef<any>(null);
 
   const currentQuestion = questions[currentIndex] || null;
 
@@ -246,9 +247,10 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
       const updatedResults = [...roundResults, result];
       setRoundResults(updatedResults);
 
-      setTimeout(() => {
+      const delayMs = config.mode === 'trivia-curiosities' ? 4200 : 1000;
+      advanceTimerRef.current = setTimeout(() => {
         advanceToNextQuestion(updatedResults, newScore, newMaxStreak);
-      }, 1000);
+      }, delayMs);
     } else {
       // Fallo
       playWrongSound();
@@ -264,7 +266,7 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
       const newAttempts = currentQuestion.attempts + 1;
       currentQuestion.attempts = newAttempts;
 
-      if (newAttempts >= 2 || config.mode === 'match-cards') {
+      if (newAttempts >= 2 || config.mode === 'match-cards' || config.mode === 'trivia-curiosities') {
         // Fallo definitivo en esta pregunta: revelar el país correcto
         const newLives = Math.max(0, lives - 1);
         setLives(newLives);
@@ -286,12 +288,13 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
         const updatedResults = [...roundResults, result];
         setRoundResults(updatedResults);
 
-        setTimeout(() => {
+        const delayWrongMs = config.mode === 'trivia-curiosities' ? 5000 : 1800;
+        advanceTimerRef.current = setTimeout(() => {
           advanceToNextQuestion(updatedResults, score, maxStreak);
-        }, 1800);
+        }, delayWrongMs);
       } else {
         // Oportunidad de segundo intento con pista
-        setTimeout(() => {
+        advanceTimerRef.current = setTimeout(() => {
           setIsEvaluating(false);
         }, 800);
       }
@@ -342,9 +345,29 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
   }, []);
 
   const quitGame = useCallback(() => {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
     setIsPlaying(false);
     setIsGameOver(false);
   }, []);
+
+  const skipWaitAndAdvance = useCallback(() => {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+    const nextIdx = currentIndex + 1;
+    if (nextIdx >= questions.length || (lives <= 0 && config.mode !== 'explore')) {
+      finishGame(roundResults, score, maxStreak);
+    } else {
+      setCurrentIndex(nextIdx);
+      setIsEvaluating(false);
+      setActiveHint(null);
+      questionStartTimeRef.current = Date.now();
+    }
+  }, [currentIndex, questions.length, lives, config.mode, finishGame, roundResults, score, maxStreak]);
 
   return {
     isPlaying,
@@ -365,6 +388,7 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
     startGame,
     submitAnswer,
     useHint,
-    quitGame
+    quitGame,
+    skipWaitAndAdvance
   };
 }

@@ -32,6 +32,8 @@ interface TriviaCuriositiesModeProps {
   onCountrySelect: (country: Country) => void;
   onUseHint: () => void;
   onQuit: () => void;
+  onNextQuestion?: () => void;
+  isGeekMode?: boolean;
 }
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: any; color: string; bg: string }> = {
@@ -54,16 +56,25 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
   activeHint,
   onCountrySelect,
   onUseHint,
-  onQuit
+  onQuit,
+  onNextQuestion,
+  isGeekMode = false
 }) => {
   const [showFactModal, setShowFactModal] = useState<boolean>(false);
-  const [lastFactAnswer, setLastFactAnswer] = useState<{ isCorrect: boolean; fact: string; countryName: string; flag: string } | null>(null);
+  const [lastFactAnswer, setLastFactAnswer] = useState<{ 
+    isCorrect: boolean; 
+    fact: string; 
+    countryName: string; 
+    capital: string; 
+    flag: string;
+    flagEmoji: string;
+  } | null>(null);
 
   const trivia = currentQuestion?.triviaItem;
   const categoryInfo = trivia ? CATEGORY_CONFIG[trivia.category] || CATEGORY_CONFIG.records : CATEGORY_CONFIG.records;
   const CategoryIcon = categoryInfo.icon;
 
-  // Detectar respuesta para mostrar el dato curioso
+  // Detectar respuesta para mostrar el país y el dato curioso
   useEffect(() => {
     if (isEvaluating && currentQuestion) {
       const correctCca3 = currentQuestion.country.cca3.toUpperCase();
@@ -72,9 +83,11 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
       if (status === 'correct' || status === 'hint') {
         setLastFactAnswer({
           isCorrect: status === 'correct',
-          fact: trivia?.factExplanation || `Dato: ${currentQuestion.country.nameEs} es la respuesta correcta.`,
+          fact: trivia?.factExplanation || `Dato: ${currentQuestion.country.nameEs} es el país al que corresponde esta curiosidad.`,
           countryName: currentQuestion.country.nameEs,
-          flag: currentQuestion.country.flagSvg
+          capital: currentQuestion.country.capital,
+          flag: currentQuestion.country.flagSvg,
+          flagEmoji: currentQuestion.country.flagEmoji
         });
         setShowFactModal(true);
       }
@@ -209,41 +222,60 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
           onCountryClick={onCountrySelect}
           interactive={!isEvaluating}
           enableTooltip={true}
+          isGeekMode={isGeekMode}
         />
 
-        {/* Modal Flotante de Explicación de la Curiosidad */}
+        {/* Modal Flotante de Explicación de la Curiosidad y Revelación Clara del Nombre del País */}
         <AnimatePresence>
           {showFactModal && lastFactAnswer && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-lg bg-[#0F172A]/95 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-cyan-500/40 shadow-[0_0_30px_rgba(6,182,212,0.25)]"
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 w-[94%] max-w-xl bg-[#0F172A]/98 backdrop-blur-2xl p-5 sm:p-6 rounded-2xl border border-cyan-500/50 shadow-[0_0_40px_rgba(6,182,212,0.35)] space-y-3.5"
             >
-              <div className="flex items-start gap-3.5">
-                <div className={`p-2.5 rounded-xl border shrink-0 ${
-                  lastFactAnswer.isCorrect 
-                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' 
-                    : 'bg-amber-500/20 border-amber-500/40 text-amber-400'
-                }`}>
-                  {lastFactAnswer.isCorrect ? <CheckCircle2 className="w-6 h-6" /> : <BookOpen className="w-6 h-6" />}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl border shrink-0 ${
+                    lastFactAnswer.isCorrect 
+                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' 
+                      : 'bg-amber-500/20 border-amber-500/40 text-amber-400'
+                  }`}>
+                    {lastFactAnswer.isCorrect ? <CheckCircle2 className="w-7 h-7" /> : <BookOpen className="w-7 h-7" />}
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400">
+                      {lastFactAnswer.isCorrect ? '✅ ¡Acertaste!' : '📍 País Correcto'}
+                    </span>
+                    <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                      <span className="text-2xl">{lastFactAnswer.flagEmoji}</span>
+                      <h3 className="text-xl sm:text-2xl font-black text-white">
+                        {lastFactAnswer.countryName}
+                      </h3>
+                      <span className="text-xs text-slate-300 font-semibold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700">
+                        Capital: {lastFactAnswer.capital}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <img 
-                      src={lastFactAnswer.flag} 
-                      alt="" 
-                      className="w-5 h-3.5 object-cover rounded shadow-sm"
-                    />
-                    <h4 className="font-bold text-white text-sm">
-                      {lastFactAnswer.isCorrect ? '¡Correcto!' : 'Respuesta:'} <span className="text-cyan-400">{lastFactAnswer.countryName}</span>
-                    </h4>
-                  </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    {lastFactAnswer.fact}
-                  </p>
-                </div>
+                {/* Botón Siguiente Pregunta */}
+                {onNextQuestion && (
+                  <button
+                    onClick={onNextQuestion}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-bold text-xs shadow-glow-cyan transition-all flex items-center gap-1.5 shrink-0 active:scale-95"
+                  >
+                    <span>Siguiente</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Explicación de la Curiosidad */}
+              <div className="p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed">
+                <span className="font-bold text-cyan-300 block mb-1">📖 Curiosidad explicada:</span>
+                {lastFactAnswer.fact}
               </div>
             </motion.div>
           )}

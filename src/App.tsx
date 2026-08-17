@@ -61,7 +61,8 @@ export function App() {
     startGame,
     submitAnswer,
     useHint,
-    quitGame
+    quitGame,
+    skipWaitAndAdvance
   } = useGameState({
     countries,
     onGameComplete: handleGameComplete
@@ -219,6 +220,8 @@ export function App() {
                     onCountrySelect={submitAnswer}
                     onUseHint={useHint}
                     onQuit={quitGame}
+                    onNextQuestion={skipWaitAndAdvance}
+                    isGeekMode={config.isGeekMode}
                   />
                 )}
 

@@ -12,6 +12,7 @@ import { MapTooltip } from './MapTooltip';
 import { MapControls } from './MapControls';
 import { countriesService } from '../../services/countriesService';
 import { FALLBACK_MAP_URL, FALLBACK_COUNTRIES, GEEK_TERRITORIES } from '../../data/fallbackCountries';
+import { IslandSilhouette } from '../../data/islandShapes';
 
 // Ruta local relativa compatible con GitHub Pages y fallback CDN
 const LOCAL_GEO_URL = `${import.meta.env.BASE_URL}data/world-110m.json`;
@@ -495,7 +496,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             const baseR = Math.max(1.0, 2.4 / Math.sqrt(position.zoom));
             const haloR = baseR * 1.5;
             const hitR = Math.max(2.0, 4.0 / Math.sqrt(position.zoom));
-            const showLabel = (position.zoom >= 3.2 && enableTooltip && tooltipsEnabled) || isPulsing;
+            const isOceaniaOrIsland = country.continent === 'Oceania' || MICROSTATE_CODES.has(cca3);
+            const showLabel = (position.zoom >= 2.2 && enableTooltip && tooltipsEnabled) || (isOceaniaOrIsland && position.zoom >= 1.7) || isPulsing;
 
             return (
               <Marker
@@ -516,48 +518,46 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                   onMouseLeave={handleMouseLeave}
                   className="cursor-pointer transition-transform duration-100 hover:scale-125"
                 >
-                  {/* Halo exterior (blanco sutil si está pendiente, o del color del estado si está resuelto) */}
-                  <circle
-                    r={haloR}
-                    fill={haloFill}
-                    opacity={isPulsing ? 0.9 : isHovered ? 0.6 : isTarget ? 0.7 : isResolved ? 0.4 : 0.2}
-                    className={isPulsing || isTarget ? 'animate-ping' : ''}
-                  />
-
-                  {/* Círculo central: BLANCO PURO si está pendiente, VERDE/AMARILLO/ROJO si está resuelto */}
-                  <circle
-                    r={baseR}
+                  {/* Silueta de Isla / Archipiélago SVG detallada */}
+                  <IslandSilhouette
+                    cca3={cca3}
                     fill={dotFill}
                     stroke={dotStroke}
-                    strokeWidth={Math.max(0.3, 0.7 / Math.sqrt(position.zoom))}
-                    style={{
-                      filter: isPulsing 
-                        ? 'drop-shadow(0 0 8px #EF4444)' 
-                        : isHovered || isTarget 
-                        ? 'drop-shadow(0 0 5px #38BDF8)' 
-                        : isResolved 
-                        ? 'drop-shadow(0 0 3px ' + styles.fill + ')' 
-                        : 'drop-shadow(0 0 2px rgba(255, 255, 255, 0.8))'
-                    }}
+                    isHovered={isHovered}
+                    isTarget={isTarget}
+                    isPulsing={isPulsing}
+                    zoom={position.zoom}
                   />
 
-                  {/* Etiqueta textual visible al hacer zoom o cuando parpadea por fallo */}
+                  {/* Etiqueta textual flotante con fondo legible sobre el océano */}
                   {showLabel && (
-                    <text
-                      y={baseR + Math.max(2, 3.5 / Math.sqrt(position.zoom))}
-                      textAnchor="middle"
-                      fill={isPulsing ? "#FCA5A5" : "#E2E8F0"}
-                      fontSize={Math.max(1.8, 3.2 / Math.sqrt(position.zoom))}
-                      fontWeight="bold"
-                      className="pointer-events-none select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
-                    >
-                      {country.nameEs}
-                    </text>
+                    <g transform={`translate(0, ${Math.max(4.2, 6.8 / Math.sqrt(position.zoom))})`}>
+                      <rect
+                        x={-((country.nameEs.length * Math.max(1.1, 1.8 / Math.sqrt(position.zoom))) / 2) - 1.2}
+                        y={-Math.max(1.5, 2.5 / Math.sqrt(position.zoom))}
+                        width={country.nameEs.length * Math.max(1.1, 1.8 / Math.sqrt(position.zoom)) + 2.4}
+                        height={Math.max(2.8, 4.2 / Math.sqrt(position.zoom))}
+                        rx="1"
+                        fill="rgba(15, 23, 42, 0.88)"
+                        stroke={isPulsing ? "#EF4444" : isHovered ? "#38BDF8" : "rgba(148, 163, 184, 0.4)"}
+                        strokeWidth="0.3"
+                      />
+                      <text
+                        textAnchor="middle"
+                        y={Math.max(0.6, 0.9 / Math.sqrt(position.zoom))}
+                        fill={isPulsing ? "#FCA5A5" : isHovered ? "#38BDF8" : "#F8FAFC"}
+                        fontSize={Math.max(1.7, 2.8 / Math.sqrt(position.zoom))}
+                        fontWeight="bold"
+                        className="pointer-events-none select-none"
+                      >
+                        {country.nameEs}
+                      </text>
+                    </g>
                   )}
 
                   {/* Zona de impacto táctil ajustada al zoom */}
                   <circle
-                    r={hitR}
+                    r={Math.max(5.0, 8.0 / Math.sqrt(position.zoom))}
                     fill="transparent"
                   />
                 </g>
