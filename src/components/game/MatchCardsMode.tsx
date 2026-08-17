@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, CheckCircle2, XCircle, Sparkles, HelpCircle } from 'lucide-react';
+import { Layers, CheckCircle2, XCircle, Sparkles, HelpCircle, ZoomIn } from 'lucide-react';
 import { Country, CountryMapStatus } from '../../types/country';
 import { MatchPair, Question } from '../../types/game';
 import { WorldMap } from '../map/WorldMap';
@@ -10,6 +10,8 @@ interface MatchCardsModeProps {
   onSingleMatchSuccess: (country: Country) => void;
   onSingleMatchError: (selectedCardCountry: Country, clickedCountry: Country) => void;
   lives: number;
+  isGeekMode?: boolean;
+  onOpenFlagModal?: (country: Country) => void;
 }
 
 export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
@@ -17,12 +19,15 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
   onFinishRound,
   onSingleMatchSuccess,
   onSingleMatchError,
-  lives
+  lives,
+  isGeekMode = false,
+  onOpenFlagModal
 }) => {
   const [pairs, setPairs] = useState<MatchPair[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [mapStatuses, setMapStatuses] = useState<Record<string, CountryMapStatus>>({});
   const [errorFlashId, setErrorFlashId] = useState<string | null>(null);
+  const [orientationMsg, setOrientationMsg] = useState<string | null>(null);
 
   // Inicializar las 5 tarjetas de la ronda actual
   useEffect(() => {
@@ -37,6 +42,7 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
     setPairs(initialPairs);
     setSelectedCardId(initialPairs[0]?.id || null);
     setMapStatuses({});
+    setOrientationMsg(null);
   }, [questions]);
 
   // Selección de tarjeta
@@ -48,6 +54,13 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
 
   // Clic en país del mapa
   const handleCountryClick = (clickedCountry: Country, cca3: string) => {
+    // Si el país ya fue emparejado, mostrar su info para orientarse sin contar como fallo
+    const isAlreadyMatched = mapStatuses[clickedCountry.cca3.toUpperCase()] === 'correct';
+    if (isAlreadyMatched) {
+      setOrientationMsg(`📍 ${clickedCountry.flagEmoji} ${clickedCountry.nameEs} (Capital: ${clickedCountry.capital}) · Ya emparejado`);
+      return;
+    }
+
     if (!selectedCardId) return;
 
     const currentPair = pairs.find(p => p.id === selectedCardId);
@@ -57,6 +70,7 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
 
     if (isMatch) {
       // Éxito: Marcar tarjeta y polígono como acertados
+      setOrientationMsg(null);
       setPairs(prev =>
         prev.map(p => (p.id === selectedCardId ? { ...p, matched: true, selected: false } : p))
       );
@@ -111,13 +125,20 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
               Modo Emparejar (Match 5 Países)
             </h3>
             <p className="text-xs text-slate-300">
-              Selecciona una tarjeta y haz clic en su país correspondiente en el mapa.
+              Selecciona una tarjeta y haz clic en su país correspondiente en el mapa. Puedes pulsar las banderas para ampliarlas.
             </p>
           </div>
         </div>
 
-        <div className="text-xs font-mono text-cyan-300 bg-cyan-500/10 px-3 py-1.5 rounded-xl border border-cyan-500/30 font-bold">
-          {pairs.filter(p => p.matched).length} / {pairs.length} Emparejados
+        <div className="flex items-center gap-3">
+          {orientationMsg && (
+            <div className="text-xs px-3 py-1 bg-indigo-950/60 border border-indigo-500/40 text-indigo-200 rounded-xl font-semibold">
+              {orientationMsg}
+            </div>
+          )}
+          <div className="text-xs font-mono text-cyan-300 bg-cyan-500/10 px-3 py-1.5 rounded-xl border border-cyan-500/30 font-bold">
+            {pairs.filter(p => p.matched).length} / {pairs.length} Emparejados
+          </div>
         </div>
       </div>
 
@@ -129,11 +150,10 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
             const isFlashingError = errorFlashId === pair.id;
 
             return (
-              <button
+              <div
                 key={pair.id}
                 onClick={() => handleSelectCard(pair.id)}
-                disabled={pair.matched}
-                className={`w-full p-3 rounded-2xl border text-left transition-all relative flex items-center gap-3 ${
+                className={`w-full p-3 rounded-2xl border text-left transition-all relative flex items-center gap-3 cursor-pointer ${
                   pair.matched
                     ? 'bg-emerald-950/40 border-emerald-500/60 opacity-80 cursor-default'
                     : isFlashingError
@@ -143,11 +163,27 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
                     : 'bg-[#131C2E]/80 hover:bg-[#1A2740] border-slate-800 text-slate-300'
                 }`}
               >
-                <img
-                  src={pair.country.flagSvg}
-                  alt={pair.country.nameEs}
-                  className="w-10 h-7 object-cover rounded shadow border border-slate-700 flex-shrink-0"
-                />
+                {/* Bandera con soporte de ampliación */}
+                <div
+                  onClick={(e) => {
+                    if (onOpenFlagModal) {
+                      e.stopPropagation();
+                      onOpenFlagModal(pair.country);
+                    }
+                  }}
+                  title="🔍 Clic para ampliar bandera"
+                  className="relative cursor-zoom-in group/flag shrink-0 rounded overflow-hidden"
+                >
+                  <img
+                    src={pair.country.flagSvg}
+                    alt={pair.country.nameEs}
+                    className="w-10 h-7 object-cover rounded shadow border border-slate-700 group-hover/flag:scale-105 transition-transform"
+                  />
+                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/flag:opacity-100 flex items-center justify-center transition-opacity">
+                    <ZoomIn className="w-3.5 h-3.5 text-white" />
+                  </div>
+                </div>
+
                 <div className="overflow-hidden flex-1">
                   <div className="font-display font-bold text-white text-sm truncate">
                     {pair.country.nameEs}
@@ -163,7 +199,7 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
                 {isSelected && !pair.matched && (
                   <span className="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-glow-purple flex-shrink-0 animate-ping" />
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
@@ -175,6 +211,7 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
             onCountryClick={handleCountryClick}
             continent={pairs[0]?.country.continent || 'World'}
             interactive={!allMatched && lives > 0}
+            isGeekMode={isGeekMode}
           />
         </div>
       </div>

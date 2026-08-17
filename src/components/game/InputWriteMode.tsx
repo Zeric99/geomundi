@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Lightbulb, AlertCircle, CheckCircle2, HelpCircle } from 'lucide-react';
+import { Send, Lightbulb, AlertCircle, CheckCircle2, HelpCircle, ZoomIn } from 'lucide-react';
 import { Country, CountryMapStatus } from '../../types/country';
 import { Question } from '../../types/game';
 import { WorldMap } from '../map/WorldMap';
@@ -12,6 +12,8 @@ interface InputWriteModeProps {
   onUseHint: () => void;
   activeHint: string | null;
   isEvaluating: boolean;
+  isGeekMode?: boolean;
+  onOpenFlagModal?: (country: Country) => void;
 }
 
 export const InputWriteMode: React.FC<InputWriteModeProps> = ({
@@ -20,7 +22,9 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
   onSubmitAnswer,
   onUseHint,
   activeHint,
-  isEvaluating
+  isEvaluating,
+  isGeekMode = false,
+  onOpenFlagModal
 }) => {
   const [inputValue, setInputValue] = useState<string>('');
   const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; type: 'info' | 'warn' | 'error' } | null>(null);
@@ -50,7 +54,7 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
 
     if (matchResult.matched) {
       setFeedbackMsg({
-        text: `¡Correcto! Es ${country.nameEs}`,
+        text: `¡Correcto! Es ${country.flagEmoji} ${country.nameEs} (Capital: ${country.capital})`,
         type: 'info'
       });
       onSubmitAnswer(country);
@@ -76,11 +80,21 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
       <div className="bg-[#131C2E]/95 backdrop-blur-md border border-cyan-500/30 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <img
-              src={country.flagSvg}
-              alt="Bandera del país resaltado"
-              className="w-12 h-8 rounded-lg object-cover shadow border border-slate-700"
-            />
+            <div
+              onClick={() => onOpenFlagModal?.(country)}
+              title="🔍 Haz clic para ampliar la bandera en alta definición"
+              className="relative cursor-zoom-in rounded-xl overflow-hidden border border-slate-700 shadow-md hover:border-cyan-400 hover:ring-2 hover:ring-cyan-500/50 transition-all group shrink-0"
+            >
+              <img
+                src={country.flagSvg}
+                alt="Bandera del país resaltado"
+                className="w-14 h-9 sm:w-16 sm:h-10 object-cover group-hover:scale-105 transition-transform"
+              />
+              <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <ZoomIn className="w-4 h-4 text-white" />
+              </div>
+            </div>
+
             <div>
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                 Modo Escritura Ortográfica
@@ -167,6 +181,7 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
           targetCountryCode={country.cca3}
           continent={country.continent}
           interactive={false}
+          isGeekMode={isGeekMode}
         />
       </div>
     </div>

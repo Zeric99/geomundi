@@ -11,6 +11,7 @@ import { ListSelectMode } from './components/game/ListSelectMode';
 import { CountryExplorer } from './components/explore/CountryExplorer';
 import { TutorDashboard } from './components/tutor/TutorDashboard';
 import { GameOverModal } from './components/game/GameOverModal';
+import { FlagModal } from './components/common/FlagModal';
 import { useCountriesData } from './hooks/useCountriesData';
 import { useStatsManager } from './hooks/useStatsManager';
 import { useGameState } from './hooks/useGameState';
@@ -22,6 +23,7 @@ import { Loader2 } from 'lucide-react';
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('game');
   const [explorerContinent, setExplorerContinent] = useState<any>('World');
+  const [previewFlagCountry, setPreviewFlagCountry] = useState<Country | null>(null);
 
   // Carga de Países
   const { countries, isLoading } = useCountriesData();
@@ -246,6 +248,7 @@ export function App() {
                         activeHint={activeHint}
                         isEvaluating={isEvaluating}
                         isGeekMode={config.isGeekMode}
+                        onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
                       />
                     )}
 
@@ -257,6 +260,8 @@ export function App() {
                         onUseHint={useHint}
                         activeHint={activeHint}
                         isEvaluating={isEvaluating}
+                        isGeekMode={config.isGeekMode}
+                        onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
                       />
                     )}
 
@@ -267,6 +272,8 @@ export function App() {
                         onSingleMatchSuccess={handleSingleMatchSuccess}
                         onSingleMatchError={handleSingleMatchError}
                         lives={lives}
+                        isGeekMode={config.isGeekMode}
+                        onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
                       />
                     )}
                   </>
@@ -282,6 +289,7 @@ export function App() {
             continent={explorerContinent}
             onSelectContinent={(c) => setExplorerContinent(c)}
             onStartQuizWithCountry={handleStartQuizWithCountry}
+            onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
           />
         )}
 
@@ -298,6 +306,13 @@ export function App() {
           />
         )}
       </main>
+
+      {/* Modal de Ampliación de Bandera en Alta Definición */}
+      <FlagModal
+        country={previewFlagCountry}
+        isOpen={Boolean(previewFlagCountry)}
+        onClose={() => setPreviewFlagCountry(null)}
+      />
 
       {/* Modal de Fin de Partida */}
       {isGameOver && lastGameSummary && (

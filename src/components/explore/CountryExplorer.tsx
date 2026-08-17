@@ -8,12 +8,14 @@ interface CountryExplorerProps {
   onStartQuizWithCountry?: (country: Country) => void;
   continent?: Continent;
   onSelectContinent?: (continent: Continent) => void;
+  onOpenFlagModal?: (country: Country) => void;
 }
 
 export const CountryExplorer: React.FC<CountryExplorerProps> = ({
   onStartQuizWithCountry,
   continent = 'World',
-  onSelectContinent
+  onSelectContinent,
+  onOpenFlagModal
 }) => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
 
@@ -83,11 +85,17 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
 
               {/* Bandera y Título */}
               <div className="mt-4 flex items-center gap-3">
-                <img
-                  src={selectedCountry.flagSvg}
-                  alt={`Bandera de ${selectedCountry.nameEs}`}
-                  className="w-14 h-10 object-cover rounded-lg shadow border border-slate-700"
-                />
+                <div
+                  onClick={() => onOpenFlagModal?.(selectedCountry)}
+                  title="🔍 Clic para ampliar bandera en HD"
+                  className="cursor-zoom-in group/flag shrink-0 rounded-lg overflow-hidden border border-slate-700 shadow relative"
+                >
+                  <img
+                    src={selectedCountry.flagSvg}
+                    alt={`Bandera de ${selectedCountry.nameEs}`}
+                    className="w-14 h-10 object-cover group-hover/flag:scale-105 transition-transform"
+                  />
+                </div>
                 <div>
                   <h3 className="font-display font-black text-white text-xl leading-tight">
                     {selectedCountry.nameEs}

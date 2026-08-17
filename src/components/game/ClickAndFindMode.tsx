@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lightbulb, HelpCircle, MapPin, Flag, Landmark } from 'lucide-react';
+import { Lightbulb, HelpCircle, MapPin, Flag, Landmark, ZoomIn } from 'lucide-react';
 import { Country, CountryMapStatus } from '../../types/country';
 import { Question } from '../../types/game';
 import { WorldMap } from '../map/WorldMap';
@@ -12,6 +12,7 @@ interface ClickAndFindModeProps {
   activeHint: string | null;
   isEvaluating: boolean;
   isGeekMode?: boolean;
+  onOpenFlagModal?: (country: Country) => void;
 }
 
 export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
@@ -21,7 +22,8 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
   onUseHint,
   activeHint,
   isEvaluating,
-  isGeekMode = false
+  isGeekMode = false,
+  onOpenFlagModal
 }) => {
   const { country, questionType } = question;
 
@@ -33,14 +35,21 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
         <div className="absolute top-0 left-0 w-2 h-full bg-cyan-400 shadow-glow-cyan" />
 
         <div className="flex items-center gap-4">
-          {/* Visual según tipo de pregunta */}
+          {/* Visual según tipo de pregunta con soporte para ampliación de bandera */}
           {questionType === 'flag' && (
-            <div className="w-20 h-14 sm:w-24 sm:h-16 rounded-xl overflow-hidden shadow-lg border border-slate-700 bg-slate-900 flex-shrink-0">
+            <div 
+              onClick={() => onOpenFlagModal?.(country)}
+              title="🔍 Haz clic para ampliar la bandera en alta definición"
+              className="w-20 h-14 sm:w-24 sm:h-16 rounded-xl overflow-hidden shadow-lg border border-slate-700 bg-slate-900 flex-shrink-0 cursor-zoom-in hover:border-cyan-400 hover:ring-2 hover:ring-cyan-500/50 transition-all active:scale-95 group relative"
+            >
               <img
                 src={country.flagSvg}
                 alt="Bandera a adivinar"
-                className="w-full h-full object-cover animate-in fade-in zoom-in-95 duration-200"
+                className="w-full h-full object-cover animate-in fade-in zoom-in-95 duration-200 group-hover:scale-105 transition-transform"
               />
+              <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <ZoomIn className="w-5 h-5 text-white drop-shadow" />
+              </div>
             </div>
           )}
 
@@ -62,9 +71,20 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
             </div>
 
             {questionType === 'name' && (
-              <h2 className="text-2xl sm:text-3xl font-display font-black text-white tracking-wide">
-                {country.nameEs}
-              </h2>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-2xl sm:text-3xl font-display font-black text-white tracking-wide">
+                  {country.nameEs}
+                </h2>
+                {onOpenFlagModal && (
+                  <button
+                    onClick={() => onOpenFlagModal(country)}
+                    title="🔍 Ampliar bandera oficial"
+                    className="text-xl hover:scale-125 transition-transform p-1 rounded-lg hover:bg-slate-800"
+                  >
+                    {country.flagEmoji}
+                  </button>
+                )}
+              </div>
             )}
 
             {questionType === 'capital' && (
@@ -83,8 +103,9 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
                 <h2 className="text-lg sm:text-xl font-display font-bold text-slate-200">
                   ¿A qué país pertenece esta bandera?
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Localízalo en el mapa interactivo
+                <p className="text-xs text-cyan-400 mt-0.5 flex items-center gap-1">
+                  <ZoomIn className="w-3.5 h-3.5" />
+                  <span>Haz clic en la bandera para verla en pantalla completa</span>
                 </p>
               </div>
             )}
