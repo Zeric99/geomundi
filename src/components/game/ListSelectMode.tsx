@@ -62,9 +62,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
     return initial;
   });
 
-  const [selectedCountryCode, setSelectedCountryCode] = useState<string | null>(() => {
-    return baseCountries.length > 0 ? baseCountries[0].cca3.toUpperCase() : null;
-  });
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'correct' | 'wrong'>('all');
@@ -115,16 +113,6 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
     return itemsState[selectedCountryCode]?.country || null;
   }, [selectedCountryCode, itemsState]);
 
-  // Auto-seleccionar siguiente país pendiente
-  const selectNextPendingCountry = useCallback((currentState: Record<string, CountryItemState>) => {
-    const nextPending = baseCountries.find(c => currentState[c.cca3.toUpperCase()]?.status === 'pending');
-    if (nextPending) {
-      setSelectedCountryCode(nextPending.cca3.toUpperCase());
-    } else {
-      setSelectedCountryCode(null);
-    }
-  }, [baseCountries]);
-
   // Comprobar victoria/completado
   useEffect(() => {
     if (counts.total > 0 && counts.completed === counts.total) {
@@ -143,12 +131,17 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
   const handleMapCountryClick = useCallback((clickedCountry: Country, clickedCca3: string) => {
     const upperClicked = clickedCca3.toUpperCase();
 
-    // Si no hay país seleccionado, seleccionamos el clicado si está pendiente
+    // Si no hay país seleccionado, avisamos al usuario que elija uno de la lista
     if (!selectedCountryCode) {
       if (itemsState[upperClicked]?.status === 'pending') {
         setSelectedCountryCode(upperClicked);
         setBannerMessage({
           text: `Has seleccionado ${clickedCountry.nameEs}. ¡Busca y confírmalo en el mapa!`,
+          type: 'info'
+        });
+      } else {
+        setBannerMessage({
+          text: `Primero haz clic en un país de la lista superior para seleccionarlo.`,
           type: 'info'
         });
       }
@@ -184,10 +177,10 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         };
         setItemsState(updated);
         setBannerMessage({
-          text: `¡Excelente! Has ubicado ${currentTarget.country.nameEs} a la primera.`,
+          text: `¡Excelente! Has ubicado ${currentTarget.country.nameEs} a la primera. Elige el siguiente país de la lista.`,
           type: 'success'
         });
-        selectNextPendingCountry(updated);
+        setSelectedCountryCode(null); // Tras acertar, limpiar para que el usuario elija
       } else {
         // Acierto al 2º intento -> AMARILLO
         setScore(prev => prev + 50);
@@ -203,10 +196,10 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         };
         setItemsState(updated);
         setBannerMessage({
-          text: `¡Bien! Has ubicado ${currentTarget.country.nameEs} al segundo intento.`,
+          text: `¡Bien! Has ubicado ${currentTarget.country.nameEs} al segundo intento. Elige el siguiente país.`,
           type: 'warning'
         });
-        selectNextPendingCountry(updated);
+        setSelectedCountryCode(null); // Tras acertar, limpiar para que el usuario elija
       }
     } else {
       // --- FALLO ---
@@ -214,7 +207,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
       setStreak(0);
 
       if (currentTarget.attempts === 0) {
-        // Primer fallo: permitir segundo intento
+        // Primer fallo: mantener el mismo país seleccionado para que intente su 2º intento
         setItemsState(prev => ({
           ...prev,
           [selectedCountryCode]: {
@@ -238,10 +231,10 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         };
         setItemsState(updated);
         setBannerMessage({
-          text: `Agotaste los intentos para ${currentTarget.country.nameEs}. Se ha marcado en rojo.`,
+          text: `Agotaste los intentos para ${currentTarget.country.nameEs}. Se ha marcado en rojo. Selecciona otro país de la lista.`,
           type: 'error'
         });
-        selectNextPendingCountry(updated);
+        setSelectedCountryCode(null); // DESPUÉS DE UN FALLO NO SE SELECCIONA NADA SOLO
       }
     }
   }, [
@@ -250,8 +243,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
     streak, 
     maxStreak, 
     playCorrectSound, 
-    playWrongSound, 
-    selectNextPendingCountry
+    playWrongSound
   ]);
 
   // Lista filtrada para la visualización de los chips superiores

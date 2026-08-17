@@ -437,10 +437,11 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             // Coordenadas [longitud, latitud] requeridas por react-simple-maps
             const coords: [number, number] = [country.latlng[1], country.latlng[0]];
             
-            // Escala inversa con el zoom
-            const baseR = Math.max(0.65, 2.0 / position.zoom);
+            // Escala equilibrada con el nivel de zoom para máxima visibilidad y precisión
+            const baseR = Math.max(1.0, 2.4 / Math.sqrt(position.zoom));
             const haloR = baseR * 1.5;
-            const hitR = Math.max(1.2, 3.0 / position.zoom);
+            const hitR = Math.max(2.0, 4.0 / Math.sqrt(position.zoom));
+            const showLabel = position.zoom >= 3.2 && enableTooltip && tooltipsEnabled;
 
             return (
               <Marker
@@ -465,20 +466,34 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                   <circle
                     r={haloR}
                     fill={isTarget ? '#F59E0B' : styles.fill !== '#24344D' ? styles.fill : '#06B6D4'}
-                    opacity={isHovered ? 0.6 : isTarget ? 0.7 : 0.25}
+                    opacity={isHovered ? 0.6 : isTarget ? 0.7 : 0.3}
                     className={isTarget ? 'animate-ping' : ''}
                   />
 
-                  {/* Círculo central visible */}
+                  {/* Círculo central visible con borde blanco de alto contraste */}
                   <circle
                     r={baseR}
                     fill={styles.fill !== '#24344D' ? styles.fill : isHovered ? '#38BDF8' : '#06B6D4'}
-                    stroke={styles.stroke !== '#3B4F6E' ? styles.stroke : '#CFFAFE'}
-                    strokeWidth={Math.max(0.2, 0.6 / position.zoom)}
+                    stroke={styles.stroke !== '#3B4F6E' ? styles.stroke : '#FFFFFF'}
+                    strokeWidth={Math.max(0.3, 0.7 / Math.sqrt(position.zoom))}
                     style={{
-                      filter: isHovered || isTarget ? 'drop-shadow(0 0 4px #38BDF8)' : 'none'
+                      filter: isHovered || isTarget ? 'drop-shadow(0 0 5px #38BDF8)' : 'drop-shadow(0 0 2px rgba(6, 182, 212, 0.8))'
                     }}
                   />
+
+                  {/* Etiqueta textual visible al hacer zoom amplio (solo en modo exploración/aprendizaje) */}
+                  {showLabel && (
+                    <text
+                      y={baseR + Math.max(2, 3.5 / Math.sqrt(position.zoom))}
+                      textAnchor="middle"
+                      fill="#E2E8F0"
+                      fontSize={Math.max(1.8, 3.2 / Math.sqrt(position.zoom))}
+                      fontWeight="bold"
+                      className="pointer-events-none select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+                    >
+                      {country.nameEs}
+                    </text>
+                  )}
 
                   {/* Zona de impacto táctil ajustada al zoom */}
                   <circle

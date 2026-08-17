@@ -57,18 +57,18 @@ export const GEO_ALIASES: Record<string, string> = {
 };
 
 /**
- * Conjunto de microestados e islas pequeñas que requieren un marcador interactivo visible en el mapa
+ * Conjunto completo de microestados e islas pequeñas con marcadores interactivos visibles en el mapa
  */
 export const MICROSTATE_CODES = new Set([
   // Europa
   'AND', 'VAT', 'SMR', 'MCO', 'LIE', 'MLT', 'LUX',
-  // América y Caribe
-  'ATG', 'BHS', 'BRB', 'DMA', 'GRD', 'KNA', 'LCA', 'VCT', 'TTO',
+  // América y Caribe (Todas las islas y microestados)
+  'ATG', 'BHS', 'BRB', 'DMA', 'GRD', 'KNA', 'LCA', 'VCT', 'TTO', 'JAM', 'HTI', 'DOM', 'CUB',
   // África
-  'CPV', 'COM', 'MUS', 'STP', 'SYC', 'SWZ', 'LSO', 'DJI', 'GMB',
+  'CPV', 'COM', 'MUS', 'STP', 'SYC', 'SWZ', 'LSO', 'DJI', 'GMB', 'STP',
   // Asia
   'SGP', 'BHR', 'MDV', 'BRN', 'QAT', 'KWT', 'LBN', 'TLS', 'BTN', 'PSE',
-  // Oceanía
+  // Oceanía (Todas las islas)
   'FJI', 'KIR', 'MHL', 'FSM', 'NRU', 'PLW', 'WSM', 'SLB', 'TON', 'TUV', 'VUT'
 ]);
 
@@ -83,8 +83,8 @@ export const CONTINENT_VIEWPORTS: Record<string, { center: [number, number]; zoo
   Asia: { center: [95, 30], zoom: 1.9 },
   Oceania: { center: [140, -22], zoom: 2.4 },
   // Regiones especiales de microestados e islas
-  Caribbean: { center: [-68, 16], zoom: 5.0 },
-  PacificIslands: { center: [168, -5], zoom: 3.6 },
+  Caribbean: { center: [-68, 16], zoom: 4.8 },
+  PacificIslands: { center: [168, -4], zoom: 2.8 },
   EuropeMicro: { center: [12, 44], zoom: 5.5 },
 };
 
