@@ -1727,4 +1727,4 @@ export const GEEK_TERRITORIES: Country[] = [
   }
 ];
 
-export const FALLBACK_MAP_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+export const FALLBACK_MAP_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
