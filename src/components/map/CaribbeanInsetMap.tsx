@@ -1,6 +1,17 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import {
+  ComposableMap,
+  Geographies,
+  Geography,
+  ZoomableGroup,
+  Marker
+} from 'react-simple-maps';
 import { Country, CountryMapStatus } from '../../types/country';
 import { countriesService } from '../../services/countriesService';
+import { FALLBACK_MAP_URL, FALLBACK_COUNTRIES, GEEK_TERRITORIES } from '../../data/fallbackCountries';
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2 } from 'lucide-react';
+
+const LOCAL_GEO_URL = `${import.meta.env.BASE_URL}data/world-50m.json`;
 
 interface CaribbeanInsetMapProps {
   countryStatuses?: Record<string, CountryMapStatus>;
@@ -14,49 +25,46 @@ interface CaribbeanInsetMapProps {
 interface IslandMarkerDef {
   code: string;
   name: string;
-  x: number; // SVG coordinates (0-400, 0-250)
-  y: number;
-  labelPosition?: 'top' | 'bottom' | 'left' | 'right';
-  isMajorIsland?: boolean;
+  coords: [number, number]; // [longitude, latitude]
   isGeekOnly?: boolean;
 }
 
-// Coordenadas calibradas del Caribe para evitar CUALQUIER solapamiento
-const CARIBBEAN_ISLANDS: IslandMarkerDef[] = [
-  // Bahamas y Lucayas (Norte)
-  { code: 'BHS', name: 'Bahamas', x: 140, y: 55, labelPosition: 'top' },
-  { code: 'TCA', name: 'Turcas y Caicos', x: 210, y: 65, labelPosition: 'top', isGeekOnly: true },
+// Coordenadas geográficas reales calibradas para el Caribe
+const CARIBBEAN_MARKERS: IslandMarkerDef[] = [
+  // Lucayas
+  { code: 'BHS', name: 'Bahamas', coords: [-77.39, 25.03] },
+  { code: 'TCA', name: 'Turcas y Caicos', coords: [-71.79, 21.69], isGeekOnly: true },
 
   // Grandes Antillas
-  { code: 'CUB', name: 'Cuba', x: 110, y: 95, isMajorIsland: true },
-  { code: 'JAM', name: 'Jamaica', x: 125, y: 145, isMajorIsland: true },
-  { code: 'HTI', name: 'Haití', x: 190, y: 125, isMajorIsland: true },
-  { code: 'DOM', name: 'Rep. Dominicana', x: 220, y: 120, isMajorIsland: true },
-  { code: 'PRI', name: 'Puerto Rico', x: 260, y: 125, isMajorIsland: true },
-  { code: 'CYM', name: 'Islas Caimán', x: 75, y: 120, labelPosition: 'bottom', isGeekOnly: true },
+  { code: 'CUB', name: 'Cuba', coords: [-79.5, 21.8] },
+  { code: 'JAM', name: 'Jamaica', coords: [-77.29, 18.10] },
+  { code: 'HTI', name: 'Haití', coords: [-72.28, 18.97] },
+  { code: 'DOM', name: 'Rep. Dominicana', coords: [-70.16, 18.73] },
+  { code: 'PRI', name: 'Puerto Rico', coords: [-66.59, 18.22] },
+  { code: 'CYM', name: 'Islas Caimán', coords: [-81.25, 19.31], isGeekOnly: true },
 
-  // Arco de Pequeñas Antillas (Espaciado vertical y en curva)
-  { code: 'VGB', name: 'Islas Vírgenes Británicas', x: 282, y: 118, labelPosition: 'right', isGeekOnly: true },
-  { code: 'VIR', name: 'Islas Vírgenes de EE.UU.', x: 282, y: 128, labelPosition: 'right', isGeekOnly: true },
-  { code: 'AIA', name: 'Anguila', x: 295, y: 115, labelPosition: 'right', isGeekOnly: true },
-  { code: 'SXM', name: 'San Martín', x: 298, y: 125, labelPosition: 'right', isGeekOnly: true },
-  { code: 'BLM', name: 'San Bartolomé', x: 302, y: 133, labelPosition: 'right', isGeekOnly: true },
-  { code: 'KNA', name: 'San Cristóbal y Nieves', x: 295, y: 142, labelPosition: 'right' },
-  { code: 'ATG', name: 'Antigua y Barbuda', x: 312, y: 140, labelPosition: 'right' },
-  { code: 'MSR', name: 'Montserrat', x: 298, y: 152, labelPosition: 'right', isGeekOnly: true },
-  { code: 'GLP', name: 'Guadalupe', x: 312, y: 152, labelPosition: 'right', isGeekOnly: true },
-  { code: 'DMA', name: 'Dominica', x: 308, y: 164, labelPosition: 'right' },
-  { code: 'MTQ', name: 'Martinica', x: 312, y: 175, labelPosition: 'right', isGeekOnly: true },
-  { code: 'LCA', name: 'Santa Lucía', x: 310, y: 186, labelPosition: 'right' },
-  { code: 'BRB', name: 'Barbados', x: 332, y: 184, labelPosition: 'right' },
-  { code: 'VCT', name: 'San Vicente y las Granadinas', x: 310, y: 198, labelPosition: 'right' },
-  { code: 'GRD', name: 'Granada', x: 310, y: 210, labelPosition: 'right' },
-  { code: 'TTO', name: 'Trinidad y Tobago', x: 315, y: 226, labelPosition: 'right' },
+  // Pequeñas Antillas (Arco oriental)
+  { code: 'VGB', name: 'Islas Vírgenes Británicas', coords: [-64.63, 18.42], isGeekOnly: true },
+  { code: 'VIR', name: 'Islas Vírgenes de EE.UU.', coords: [-64.89, 18.33], isGeekOnly: true },
+  { code: 'AIA', name: 'Anguila', coords: [-63.06, 18.22], isGeekOnly: true },
+  { code: 'SXM', name: 'San Martín', coords: [-63.05, 18.04], isGeekOnly: true },
+  { code: 'BLM', name: 'San Bartolomé', coords: [-62.83, 17.90], isGeekOnly: true },
+  { code: 'KNA', name: 'San Cristóbal y Nieves', coords: [-62.78, 17.35] },
+  { code: 'ATG', name: 'Antigua y Barbuda', coords: [-61.79, 17.06] },
+  { code: 'MSR', name: 'Montserrat', coords: [-62.18, 16.74], isGeekOnly: true },
+  { code: 'GLP', name: 'Guadalupe', coords: [-61.55, 16.26], isGeekOnly: true },
+  { code: 'DMA', name: 'Dominica', coords: [-61.37, 15.41] },
+  { code: 'MTQ', name: 'Martinica', coords: [-61.02, 14.64], isGeekOnly: true },
+  { code: 'LCA', name: 'Santa Lucía', coords: [-60.97, 13.90] },
+  { code: 'BRB', name: 'Barbados', coords: [-59.54, 13.19] },
+  { code: 'VCT', name: 'San Vicente y las Granadinas', coords: [-61.28, 12.98] },
+  { code: 'GRD', name: 'Granada', coords: [-61.68, 12.11] },
+  { code: 'TTO', name: 'Trinidad y Tobago', coords: [-61.22, 10.69] },
 
   // Antillas del Sur
-  { code: 'ABW', name: 'Aruba', x: 195, y: 215, labelPosition: 'top', isGeekOnly: true },
-  { code: 'CUW', name: 'Curazao', x: 212, y: 215, labelPosition: 'top', isGeekOnly: true },
-  { code: 'BES', name: 'Bonaire', x: 226, y: 215, labelPosition: 'top', isGeekOnly: true }
+  { code: 'ABW', name: 'Aruba', coords: [-69.96, 12.52], isGeekOnly: true },
+  { code: 'CUW', name: 'Curazao', coords: [-68.99, 12.16], isGeekOnly: true },
+  { code: 'BES', name: 'Bonaire', coords: [-68.23, 12.20], isGeekOnly: true }
 ];
 
 export const CaribbeanInsetMap: React.FC<CaribbeanInsetMapProps> = ({
@@ -67,11 +75,18 @@ export const CaribbeanInsetMap: React.FC<CaribbeanInsetMapProps> = ({
   onCountryClick,
   isGeekMode = false
 }) => {
-  const visibleIslands = useMemo(() => {
-    return CARIBBEAN_ISLANDS.filter(island => isGeekMode || !island.isGeekOnly);
+  const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [position, setPosition] = useState<{ coordinates: [number, number]; zoom: number }>({
+    coordinates: [-70, 16.5],
+    zoom: 4.8
+  });
+
+  const visibleMarkers = useMemo(() => {
+    return CARIBBEAN_MARKERS.filter(m => isGeekMode || !m.isGeekOnly);
   }, [isGeekMode]);
 
-  const handleMarkerClick = (code: string) => {
+  const handleCountrySelect = (code: string) => {
     if (!onCountryClick) return;
     const country = countriesService.getCountryByCode(code);
     if (country) {
@@ -79,163 +94,195 @@ export const CaribbeanInsetMap: React.FC<CaribbeanInsetMapProps> = ({
     }
   };
 
+  const handleGeographyClick = (geo: any) => {
+    if (!onCountryClick) return;
+    const cca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
+    if (cca3) {
+      handleCountrySelect(cca3);
+    }
+  };
+
+  const getStyleForCode = (code: string) => {
+    const upper = code.toUpperCase();
+    const isPulsing = pulsingCountryCode?.toUpperCase() === upper;
+    const status = countryStatuses[upper];
+    const isSelected = selectedCountryCode?.toUpperCase() === upper;
+    const isTarget = targetCountryCode?.toUpperCase() === upper;
+
+    if (isPulsing) return { fill: '#EF4444', stroke: '#FEE2E2', strokeWidth: 0.9 };
+    if (status === 'correct') return { fill: '#10B981', stroke: '#34D399', strokeWidth: 0.6 };
+    if (status === 'wrong') return { fill: '#EF4444', stroke: '#F87171', strokeWidth: 0.6 };
+    if (status === 'hint' || isTarget) return { fill: '#F59E0B', stroke: '#FDE047', strokeWidth: 0.7 };
+    if (status === 'selected' || isSelected) return { fill: '#8B5CF6', stroke: '#C4B5FD', strokeWidth: 0.8 };
+
+    return { fill: '#24344D', stroke: '#3B4F6E', strokeWidth: 0.4 };
+  };
+
   return (
-    <div className="relative w-full h-full bg-[#0B1220] border-2 border-cyan-500/50 rounded-xl overflow-hidden shadow-2xl flex flex-col justify-between">
-      {/* Etiqueta de la Ventana Inset */}
-      <div className="absolute top-1.5 left-2 z-10 flex items-center gap-1.5 bg-slate-900/90 px-2 py-0.5 rounded-md border border-cyan-500/30 text-[10px] font-bold text-cyan-300">
+    <div className={`relative bg-[#0B1220] border-2 border-cyan-500/50 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 ${
+      isExpanded ? 'fixed inset-4 sm:inset-10 z-50' : 'w-full h-full'
+    }`}>
+      {/* Barra de Título y Controles */}
+      <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-xl border border-cyan-500/40 text-xs font-bold text-cyan-300 shadow-lg">
         <span>🏝️</span>
-        <span>Caribe & Antillas</span>
+        <span>Caribe & Antillas (Alta Resolución 50m)</span>
       </div>
 
-      {/* SVG del Mapa Regional del Caribe */}
-      <svg
-        viewBox="0 0 360 245"
-        className="w-full h-full select-none"
-        style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))' }}
+      {/* Controles de Zoom del Inset */}
+      <div className="absolute top-2 right-8 z-10 flex items-center gap-1 bg-slate-900/90 backdrop-blur-md p-1 rounded-xl border border-slate-700 shadow-lg">
+        <button
+          onClick={() => setPosition(p => ({ ...p, zoom: Math.min(p.zoom * 1.35, 25) }))}
+          className="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition"
+          title="Zoom +"
+        >
+          <ZoomIn className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => setPosition(p => ({ ...p, zoom: Math.max(p.zoom / 1.35, 2.5) }))}
+          className="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition"
+          title="Zoom -"
+        >
+          <ZoomOut className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => setPosition({ coordinates: [-70, 16.5], zoom: 4.8 })}
+          className="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition"
+          title="Restablecer vista"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="p-1.5 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 rounded-lg transition border-l border-slate-700 pl-2"
+          title={isExpanded ? "Reducir ventana" : "Ampliar a pantalla grande"}
+        >
+          {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+
+      {/* Mapa Vectorial Interactivo del Caribe con Geometría 50m Real */}
+      <ComposableMap
+        projection="geoMercator"
+        projectionConfig={{
+          scale: 160,
+        }}
+        className="w-full h-full cursor-grab active:cursor-grabbing bg-[#0A101C]"
       >
-        {/* Fondo Marítimo */}
-        <rect width="360" height="245" fill="#0E1729" />
+        <ZoomableGroup
+          zoom={position.zoom}
+          center={position.coordinates}
+          onMoveEnd={(pos) => setPosition(pos)}
+          minZoom={2.0}
+          maxZoom={25}
+        >
+          {/* Polígonos Geográficos Reales de las Islas y Costas */}
+          <Geographies
+            geography={geoUrl}
+            onError={() => setGeoUrl(FALLBACK_MAP_URL)}
+          >
+            {({ geographies }: { geographies: any[] }) =>
+              geographies.map((geo: any) => {
+                const cca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
+                const styles = getStyleForCode(cca3 || '');
 
-        {/* Siluetas Continentales de Fondo (Florida, Centroamérica, Sudamérica) */}
-        <g fill="#162035" stroke="#1E2D4A" strokeWidth="0.8">
-          {/* Florida */}
-          <path d="M 85 0 L 95 30 L 110 40 L 112 55 L 102 60 L 95 45 L 80 35 L 75 0 Z" />
-          {/* Península de Yucatán */}
-          <path d="M 0 65 L 25 65 L 35 80 L 30 115 L 0 120 Z" />
-          {/* Centroamérica */}
-          <path d="M 0 120 L 30 115 L 35 150 L 50 170 L 40 210 L 0 210 Z" />
-          {/* Norte de Colombia y Venezuela */}
-          <path d="M 50 215 L 90 205 L 140 220 L 175 210 L 210 230 L 260 225 L 330 240 L 360 245 L 360 245 L 0 245 L 0 215 Z" />
-        </g>
+                return (
+                  <Geography
+                    key={geo.rsmKey || geo.id || cca3}
+                    geography={geo}
+                    onClick={() => handleGeographyClick(geo)}
+                    style={{
+                      default: {
+                        fill: styles.fill,
+                        stroke: styles.stroke,
+                        strokeWidth: styles.strokeWidth / Math.sqrt(position.zoom / 4.8),
+                        outline: 'none',
+                        vectorEffect: 'non-scaling-stroke'
+                      },
+                      hover: {
+                        fill: '#0284C7',
+                        stroke: '#38BDF8',
+                        strokeWidth: 0.8,
+                        outline: 'none',
+                        cursor: 'pointer',
+                        vectorEffect: 'non-scaling-stroke'
+                      },
+                      pressed: {
+                        fill: '#0369A1',
+                        stroke: '#7DD3FC',
+                        strokeWidth: 0.9,
+                        outline: 'none',
+                        vectorEffect: 'non-scaling-stroke'
+                      }
+                    }}
+                  />
+                );
+              })
+            }
+          </Geographies>
 
-        {/* Cajas de agrupación y líneas discontinuas para archipiélagos */}
-        <g stroke="#38BDF8" strokeWidth="0.7" strokeDasharray="3 2" fill="none" opacity="0.45">
-          {/* Caja Bahamas */}
-          <path d="M 125 40 L 230 48 L 225 80 L 125 70 Z" />
-          {/* Caja Puerto Rico e Islas Vírgenes */}
-          <rect x="250" y="112" width="40" height="24" rx="3" />
-          {/* Cadena Curvada de las Pequeñas Antillas */}
-          <path d="M 290 112 Q 325 150 320 235" />
-          {/* Línea Antillas del Sur (ABC) */}
-          <path d="M 188 208 L 236 208 L 236 226 L 188 226 Z" />
-        </g>
+          {/* Marcadores Circulares Nítidos e Interactivos para cada Isla */}
+          {visibleMarkers.map((island) => {
+            const styles = getStyleForCode(island.code);
+            const isPulsing = pulsingCountryCode?.toUpperCase() === island.code.toUpperCase();
+            const isTarget = targetCountryCode?.toUpperCase() === island.code.toUpperCase();
+            const isResolved = styles.fill !== '#24344D';
 
-        {/* Siluetas vectoriales de Grandes Antillas */}
-        <g stroke="#334155" strokeWidth="0.6">
-          {/* Cuba */}
-          <path
-            d="M 65 92 Q 100 85 145 105 Q 115 110 80 102 Z"
-            fill="#1E293B"
-            className="hover:fill-cyan-700 cursor-pointer transition-colors"
-            onClick={() => handleMarkerClick('CUB')}
-          />
-          {/* La Española (Haití / Rep. Dominicana) */}
-          <path
-            d="M 175 120 Q 205 110 245 125 Q 230 140 185 135 Z"
-            fill="#1E293B"
-            className="hover:fill-cyan-700 cursor-pointer transition-colors"
-            onClick={() => handleMarkerClick('DOM')}
-          />
-          {/* Jamaica */}
-          <ellipse
-            cx="125"
-            cy="145"
-            rx="16"
-            ry="7"
-            fill="#1E293B"
-            className="hover:fill-cyan-700 cursor-pointer transition-colors"
-            onClick={() => handleMarkerClick('JAM')}
-          />
-          {/* Puerto Rico */}
-          <rect
-            x="254"
-            y="120"
-            width="15"
-            height="9"
-            rx="2"
-            fill="#1E293B"
-            className="hover:fill-cyan-700 cursor-pointer transition-colors"
-            onClick={() => handleMarkerClick('PRI')}
-          />
-        </g>
+            const dotFill = isPulsing ? '#EF4444' : isResolved ? styles.fill : '#FFFFFF';
+            const dotStroke = isPulsing ? '#FEE2E2' : isResolved ? styles.stroke : '#0F172A';
+            const radius = Math.max(0.4, 1.2 / Math.sqrt(position.zoom));
+            const haloRadius = radius * 2.0;
+            const hitRadius = Math.max(1.5, 3.5 / Math.sqrt(position.zoom));
 
-        {/* Puntos y Marcadores Interactivos de cada País / Isla */}
-        {visibleIslands.map((island) => {
-          const status = countryStatuses[island.code.toUpperCase()];
-          const isPulsing = pulsingCountryCode?.toUpperCase() === island.code.toUpperCase();
-          const isSelected = selectedCountryCode?.toUpperCase() === island.code.toUpperCase();
-          const isTarget = targetCountryCode?.toUpperCase() === island.code.toUpperCase();
+            return (
+              <Marker
+                key={`carib_m_${island.code}`}
+                coordinates={island.coords}
+              >
+                <g
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCountrySelect(island.code);
+                  }}
+                  className="cursor-pointer group"
+                >
+                  {/* Radar animado en fallo */}
+                  {isPulsing && (
+                    <circle
+                      r={haloRadius * 2.5}
+                      fill="rgba(239, 68, 68, 0.35)"
+                      className="animate-ping"
+                    />
+                  )}
 
-          // Colores de estado
-          let fill = '#FFFFFF';
-          let stroke = '#0F172A';
-          let radius = 3.6;
+                  {/* Halo sutil */}
+                  <circle
+                    r={haloRadius}
+                    fill={isPulsing ? '#EF4444' : isTarget ? '#F59E0B' : dotFill}
+                    opacity={isPulsing ? 0.9 : isResolved ? 0.4 : 0.2}
+                  />
 
-          if (isPulsing) {
-            fill = '#EF4444';
-            stroke = '#FEE2E2';
-            radius = 5.0;
-          } else if (status === 'correct') {
-            fill = '#10B981';
-            stroke = '#064E3B';
-          } else if (status === 'hint' || isTarget) {
-            fill = '#F59E0B';
-            stroke = '#78350F';
-          } else if (status === 'wrong') {
-            fill = '#EF4444';
-            stroke = '#7F1D1D';
-          } else if (status === 'selected' || isSelected) {
-            fill = '#8B5CF6';
-            stroke = '#4C1D95';
-            radius = 4.5;
-          }
+                  {/* Punto central */}
+                  <circle
+                    r={radius}
+                    fill={dotFill}
+                    stroke={dotStroke}
+                    strokeWidth={0.25}
+                    className="group-hover:scale-125 transition-transform origin-center"
+                  />
 
-          return (
-            <g
-              key={island.code}
-              className="cursor-pointer group"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleMarkerClick(island.code);
-              }}
-            >
-              {/* Radar de pulso si está activo */}
-              {isPulsing && (
-                <circle
-                  cx={island.x}
-                  cy={island.y}
-                  r={8}
-                  fill="rgba(239, 68, 68, 0.4)"
-                  className="animate-ping"
-                />
-              )}
+                  {/* Zona táctil invisible amplia */}
+                  <circle
+                    r={hitRadius}
+                    fill="transparent"
+                  />
 
-              {/* Halo en hover */}
-              <circle
-                cx={island.x}
-                cy={island.y}
-                r={radius + 3}
-                fill="transparent"
-                className="group-hover:fill-cyan-500/30 transition-colors"
-              />
-
-              {/* Punto circular visible */}
-              <circle
-                cx={island.x}
-                cy={island.y}
-                r={radius}
-                fill={fill}
-                stroke={stroke}
-                strokeWidth="1.0"
-                className="group-hover:scale-125 transition-transform origin-center"
-              />
-
-              {/* Nombre / Tooltip flotante */}
-              <title>{island.name}</title>
-            </g>
-          );
-        })}
-      </svg>
+                  <title>{island.name}</title>
+                </g>
+              </Marker>
+            );
+          })}
+        </ZoomableGroup>
+      </ComposableMap>
     </div>
   );
 };
