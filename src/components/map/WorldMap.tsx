@@ -12,8 +12,8 @@ import { MapControls } from './MapControls';
 import { countriesService } from '../../services/countriesService';
 import { FALLBACK_MAP_URL } from '../../data/fallbackCountries';
 
-// Ruta local y fallback CDN
-const LOCAL_GEO_URL = '/data/world-110m.json';
+// Ruta local relativa compatible con GitHub Pages y fallback CDN
+const LOCAL_GEO_URL = `${import.meta.env.BASE_URL}data/world-110m.json`;
 
 interface WorldMapProps {
   countryStatuses?: Record<string, CountryMapStatus>;
