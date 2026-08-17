@@ -10,6 +10,7 @@ import { Continent, Country, CountryMapStatus } from '../../types/country';
 import { CONTINENT_VIEWPORTS, MICROSTATE_CODES } from '../../data/geoAliases';
 import { MapTooltip } from './MapTooltip';
 import { MapControls } from './MapControls';
+import { ArchipelagoFocusMap, ArchipelagoRegion } from './ArchipelagoFocusMap';
 import { countriesService } from '../../services/countriesService';
 import { FALLBACK_MAP_URL, FALLBACK_COUNTRIES, GEEK_TERRITORIES } from '../../data/fallbackCountries';
 
@@ -56,6 +57,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
   const [hoveredCountry, setHoveredCountry] = useState<Country | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+  const [activeArchipelago, setActiveArchipelago] = useState<ArchipelagoRegion | null>(null);
 
   // Detección de arrastre vs. clic optimizada
   const pointerDownPos = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -274,6 +276,23 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     return countriesService.getCountryByCode(pulsingCountryCode);
   }, [pulsingCountryCode]);
 
+  // Si el usuario ha solicitado la vista regional exclusiva para archipiélagos (Caribe u Oceanía)
+  if (activeArchipelago) {
+    return (
+      <ArchipelagoFocusMap
+        region={activeArchipelago}
+        countryStatuses={countryStatuses}
+        selectedCountryCode={selectedCountryCode}
+        targetCountryCode={targetCountryCode}
+        pulsingCountryCode={pulsingCountryCode}
+        onCountryClick={onCountryClick}
+        onClose={() => setActiveArchipelago(null)}
+        onSwitchRegion={(r) => setActiveArchipelago(r)}
+        isGeekMode={isGeekMode}
+      />
+    );
+  }
+
   return (
     <div
       className={`relative w-full h-full min-h-[420px] bg-gradient-to-b from-[#090D16] via-[#0D1524] to-[#0A101C] rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl select-none ${className}`}
@@ -334,26 +353,26 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         </div>
       </div>
 
-      {/* Barra de Enfoque Rápido de Zoom para Islas y Regiones Densas (esquina inferior derecha) */}
-      <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-[#131C2E]/90 backdrop-blur-md px-2 py-1.5 rounded-xl border border-slate-700/70 shadow-xl overflow-x-auto max-w-[95%]">
-        <span className="text-[10px] uppercase font-bold text-slate-400 pl-1 pr-0.5 hidden lg:inline">
-          🔍 Zoom Islas:
+      {/* Barra de Vistas Exclusivas para Islas y Archipiélagos (Caribe y Oceanía sin solapamiento) */}
+      <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-[#131C2E]/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-cyan-500/40 shadow-2xl overflow-x-auto max-w-[95%]">
+        <span className="text-[10px] uppercase font-bold text-cyan-400 pl-1 pr-0.5 hidden lg:inline">
+          🏝️ Mapas Exclusivos:
         </span>
         <button
-          onClick={() => setPosition({ coordinates: CONTINENT_VIEWPORTS.Caribbean.center, zoom: CONTINENT_VIEWPORTS.Caribbean.zoom })}
-          title="Zoom a todas las Islas del Caribe y Antillas"
-          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 border border-slate-700/60 hover:border-cyan-500/40 transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
+          onClick={() => setActiveArchipelago('caribbean')}
+          title="Abrir mapa exclusivo del Caribe y Antillas sin solapamiento de islas"
+          className="px-2.5 py-1 rounded-lg text-xs font-bold bg-gradient-to-r from-sky-600/30 to-cyan-600/30 hover:from-sky-500/50 hover:to-cyan-500/50 text-cyan-300 hover:text-white border border-cyan-500/40 transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
         >
           <span>🏝️</span>
-          <span>Caribe</span>
+          <span>Caribe (Exclusivo)</span>
         </button>
         <button
-          onClick={() => setPosition({ coordinates: CONTINENT_VIEWPORTS.PacificIslands.center, zoom: CONTINENT_VIEWPORTS.PacificIslands.zoom })}
-          title="Zoom a las Islas del Pacífico y Oceanía"
-          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 border border-slate-700/60 hover:border-cyan-500/40 transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
+          onClick={() => setActiveArchipelago('pacific')}
+          title="Abrir mapa exclusivo de Oceanía y el Pacífico sin solapamiento de islas"
+          className="px-2.5 py-1 rounded-lg text-xs font-bold bg-gradient-to-r from-sky-600/30 to-cyan-600/30 hover:from-sky-500/50 hover:to-cyan-500/50 text-cyan-300 hover:text-white border border-cyan-500/40 transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
         >
           <span>🌊</span>
-          <span>Oceanía</span>
+          <span>Oceanía (Exclusivo)</span>
         </button>
         <button
           onClick={() => setPosition({ coordinates: CONTINENT_VIEWPORTS.EuropeMicro.center, zoom: CONTINENT_VIEWPORTS.EuropeMicro.zoom })}
