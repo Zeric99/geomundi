@@ -253,8 +253,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         onToggleTooltips={toggleTooltips}
       />
 
-      {/* Leyenda rápida interactiva */}
-      <div className="absolute bottom-3 left-3 z-20 hidden sm:flex items-center gap-3 bg-[#131C2E]/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/60 text-[11px] text-slate-300 font-medium">
+      {/* Leyenda rápida interactiva (esquina inferior izquierda) */}
+      <div className="absolute bottom-3 left-3 z-20 hidden md:flex items-center gap-3 bg-[#131C2E]/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/60 text-[11px] text-slate-300 font-medium shadow-lg">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-glow-emerald" />
           <span>Acierto</span>
@@ -271,10 +271,44 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-glow-purple" />
           <span>Selección</span>
         </div>
-        <div className="flex items-center gap-1.5 pl-1 border-l border-slate-700">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-          <span className="text-cyan-300">📍 Microestados/Islas</span>
-        </div>
+      </div>
+
+      {/* Barra de Enfoque Rápido de Zoom para Islas y Regiones Densas (esquina inferior derecha) */}
+      <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-[#131C2E]/90 backdrop-blur-md px-2 py-1.5 rounded-xl border border-slate-700/70 shadow-xl overflow-x-auto max-w-[95%]">
+        <span className="text-[10px] uppercase font-bold text-slate-400 pl-1 pr-0.5 hidden lg:inline">
+          🔍 Zoom Islas:
+        </span>
+        <button
+          onClick={() => setPosition({ coordinates: CONTINENT_VIEWPORTS.Caribbean.center, zoom: CONTINENT_VIEWPORTS.Caribbean.zoom })}
+          title="Zoom a todas las Islas del Caribe y Antillas"
+          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 border border-slate-700/60 hover:border-cyan-500/40 transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
+        >
+          <span>🏝️</span>
+          <span>Caribe</span>
+        </button>
+        <button
+          onClick={() => setPosition({ coordinates: CONTINENT_VIEWPORTS.PacificIslands.center, zoom: CONTINENT_VIEWPORTS.PacificIslands.zoom })}
+          title="Zoom a las Islas del Pacífico y Oceanía"
+          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 border border-slate-700/60 hover:border-cyan-500/40 transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
+        >
+          <span>🌊</span>
+          <span>Oceanía</span>
+        </button>
+        <button
+          onClick={() => setPosition({ coordinates: CONTINENT_VIEWPORTS.EuropeMicro.center, zoom: CONTINENT_VIEWPORTS.EuropeMicro.zoom })}
+          title="Zoom a Microestados de Europa (Andorra, Vaticano, San Marino, Mónaco, Liechtenstein, Malta)"
+          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 border border-slate-700/60 hover:border-cyan-500/40 transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
+        >
+          <span>🏰</span>
+          <span>Microestados</span>
+        </button>
+        <button
+          onClick={handleReset}
+          title="Restablecer vista completa del mundo"
+          className="px-2 py-1 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all shrink-0 active:scale-95"
+        >
+          <span>🌍 Mundo</span>
+        </button>
       </div>
 
       {/* Mapa Vectorial SVG */}
@@ -290,7 +324,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           center={position.coordinates}
           onMoveEnd={handleMoveEnd}
           minZoom={0.8}
-          maxZoom={12}
+          maxZoom={14}
         >
           {/* Polígonos de Países Principales */}
           <Geographies
@@ -345,7 +379,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             }
           </Geographies>
 
-          {/* Marcadores Interactivos para Microestados e Islas Pequeñas */}
+          {/* Marcadores Interactivos para Microestados e Islas Pequeñas con Hitbox y Radio Precisos */}
           {microstateCountries.map((country) => {
             const cca3 = country.cca3.toUpperCase();
             const styles = getCountryStyles(cca3);
@@ -355,9 +389,11 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             // Coordenadas [longitud, latitud] requeridas por react-simple-maps
             const coords: [number, number] = [country.latlng[1], country.latlng[0]];
             
-            // Radio adaptativo que se mantiene cómodo y nítido con el zoom
-            const baseR = Math.max(2.5, 4.5 / Math.sqrt(position.zoom));
-            const haloR = baseR * 1.8;
+            // Escala inversa con el zoom: al hacer zoom, el radio en coordenadas SVG se reduce
+            // para que no tape países vecinos y mantenga una hitbox perfecta y milimétrica
+            const baseR = Math.max(0.65, 2.0 / position.zoom);
+            const haloR = baseR * 1.5;
+            const hitR = Math.max(1.2, 3.0 / position.zoom);
 
             return (
               <Marker
@@ -365,7 +401,10 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                 coordinates={coords}
               >
                 <g
-                  onClick={() => handleDirectCountryClick(country)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDirectCountryClick(country);
+                  }}
                   onMouseEnter={(e: any) => {
                     if (enableTooltip && tooltipsEnabled) {
                       setHoveredCountry(country);
@@ -373,9 +412,9 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     }
                   }}
                   onMouseLeave={handleMouseLeave}
-                  className="cursor-pointer transition-transform duration-150 hover:scale-125"
+                  className="cursor-pointer transition-transform duration-100 hover:scale-125"
                 >
-                  {/* Halo exterior pulsante para microestados / pistas */}
+                  {/* Halo exterior para microestados / pistas */}
                   <circle
                     r={haloR}
                     fill={isTarget ? '#F59E0B' : styles.fill !== '#24344D' ? styles.fill : '#06B6D4'}
@@ -383,20 +422,20 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     className={isTarget ? 'animate-ping' : ''}
                   />
 
-                  {/* Círculo central táctil */}
+                  {/* Círculo central visible */}
                   <circle
                     r={baseR}
                     fill={styles.fill !== '#24344D' ? styles.fill : isHovered ? '#38BDF8' : '#06B6D4'}
                     stroke={styles.stroke !== '#3B4F6E' ? styles.stroke : '#CFFAFE'}
-                    strokeWidth={Math.max(0.6, 1.2 / Math.sqrt(position.zoom))}
+                    strokeWidth={Math.max(0.2, 0.6 / position.zoom)}
                     style={{
                       filter: isHovered || isTarget ? 'drop-shadow(0 0 4px #38BDF8)' : 'none'
                     }}
                   />
 
-                  {/* Zona de impacto táctil invisible más grande para facilitar el clic en móviles */}
+                  {/* Zona de impacto táctil ajustada al zoom */}
                   <circle
-                    r={Math.max(8, 12 / Math.sqrt(position.zoom))}
+                    r={hitR}
                     fill="transparent"
                   />
                 </g>

@@ -73,7 +73,7 @@ export const MICROSTATE_CODES = new Set([
 ]);
 
 /**
- * Centros geográficos y niveles de zoom sugeridos por continente para enfocar el mapa
+ * Centros geográficos y niveles de zoom sugeridos por continente y regiones especiales
  */
 export const CONTINENT_VIEWPORTS: Record<string, { center: [number, number]; zoom: number }> = {
   World: { center: [10, 0], zoom: 1 },
@@ -82,6 +82,10 @@ export const CONTINENT_VIEWPORTS: Record<string, { center: [number, number]; zoo
   Africa: { center: [20, 2], zoom: 2.2 },
   Asia: { center: [95, 30], zoom: 1.9 },
   Oceania: { center: [140, -22], zoom: 2.4 },
+  // Regiones especiales de microestados e islas
+  Caribbean: { center: [-68, 16], zoom: 5.0 },
+  PacificIslands: { center: [168, -5], zoom: 3.6 },
+  EuropeMicro: { center: [12, 44], zoom: 5.5 },
 };
 
 /**
@@ -94,4 +98,7 @@ export const CONTINENT_NAMES_ES: Record<string, string> = {
   Africa: 'África',
   Asia: 'Asia',
   Oceania: 'Oceanía',
+  Caribbean: 'Caribe e Islas',
+  PacificIslands: 'Islas de Oceanía',
+  EuropeMicro: 'Microestados de Europa',
 };
