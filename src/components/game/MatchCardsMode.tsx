@@ -1,0 +1,183 @@
+import React, { useState, useEffect } from 'react';
+import { Layers, CheckCircle2, XCircle, Sparkles, HelpCircle } from 'lucide-react';
+import { Country, CountryMapStatus } from '../../types/country';
+import { MatchPair, Question } from '../../types/game';
+import { WorldMap } from '../map/WorldMap';
+
+interface MatchCardsModeProps {
+  questions: Question[];
+  onFinishRound: (matchedCount: number, errorCount: number) => void;
+  onSingleMatchSuccess: (country: Country) => void;
+  onSingleMatchError: (selectedCardCountry: Country, clickedCountry: Country) => void;
+  lives: number;
+}
+
+export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
+  questions,
+  onFinishRound,
+  onSingleMatchSuccess,
+  onSingleMatchError,
+  lives
+}) => {
+  const [pairs, setPairs] = useState<MatchPair[]>([]);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [mapStatuses, setMapStatuses] = useState<Record<string, CountryMapStatus>>({});
+  const [errorFlashId, setErrorFlashId] = useState<string | null>(null);
+
+  // Inicializar las 5 tarjetas de la ronda actual
+  useEffect(() => {
+    const subset = questions.slice(0, 5);
+    const initialPairs: MatchPair[] = subset.map((q) => ({
+      id: `pair_${q.country.cca3}`,
+      country: q.country,
+      matched: false,
+      selected: false
+    }));
+
+    setPairs(initialPairs);
+    setSelectedCardId(initialPairs[0]?.id || null);
+    setMapStatuses({});
+  }, [questions]);
+
+  // Selección de tarjeta
+  const handleSelectCard = (pairId: string) => {
+    const targetPair = pairs.find(p => p.id === pairId);
+    if (targetPair?.matched) return;
+    setSelectedCardId(pairId);
+  };
+
+  // Clic en país del mapa
+  const handleCountryClick = (clickedCountry: Country, cca3: string) => {
+    if (!selectedCardId) return;
+
+    const currentPair = pairs.find(p => p.id === selectedCardId);
+    if (!currentPair || currentPair.matched) return;
+
+    const isMatch = currentPair.country.cca3.toUpperCase() === clickedCountry.cca3.toUpperCase();
+
+    if (isMatch) {
+      // Éxito: Marcar tarjeta y polígono como acertados
+      setPairs(prev =>
+        prev.map(p => (p.id === selectedCardId ? { ...p, matched: true, selected: false } : p))
+      );
+
+      setMapStatuses(prev => ({
+        ...prev,
+        [clickedCountry.cca3.toUpperCase()]: 'correct'
+      }));
+
+      onSingleMatchSuccess(clickedCountry);
+
+      // Auto-seleccionar la siguiente tarjeta no emparejada
+      const remaining = pairs.filter(p => p.id !== selectedCardId && !p.matched);
+      if (remaining.length > 0) {
+        setSelectedCardId(remaining[0].id);
+      } else {
+        setSelectedCardId(null);
+      }
+    } else {
+      // Error: Destello rojo en tarjeta y país
+      setErrorFlashId(selectedCardId);
+      setMapStatuses(prev => ({
+        ...prev,
+        [clickedCountry.cca3.toUpperCase()]: 'wrong'
+      }));
+
+      onSingleMatchError(currentPair.country, clickedCountry);
+
+      setTimeout(() => {
+        setErrorFlashId(null);
+        setMapStatuses(prev => {
+          const next = { ...prev };
+          delete next[clickedCountry.cca3.toUpperCase()];
+          return next;
+        });
+      }, 700);
+    }
+  };
+
+  const allMatched = pairs.length > 0 && pairs.every(p => p.matched);
+
+  return (
+    <div className="space-y-4">
+      {/* Barra de Instrucción */}
+      <div className="bg-[#131C2E]/90 backdrop-blur-md border border-purple-500/30 rounded-2xl p-4 shadow-xl flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-purple-500/20 border border-purple-500/40 rounded-xl text-purple-300">
+            <Layers className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-display font-bold text-white text-base">
+              Modo Emparejar (Match 5 Países)
+            </h3>
+            <p className="text-xs text-slate-300">
+              Selecciona una tarjeta y haz clic en su país correspondiente en el mapa.
+            </p>
+          </div>
+        </div>
+
+        <div className="text-xs font-mono text-cyan-300 bg-cyan-500/10 px-3 py-1.5 rounded-xl border border-cyan-500/30 font-bold">
+          {pairs.filter(p => p.matched).length} / {pairs.length} Emparejados
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        {/* Columna de 5 Tarjetas */}
+        <div className="lg:col-span-1 space-y-2.5">
+          {pairs.map((pair, idx) => {
+            const isSelected = selectedCardId === pair.id;
+            const isFlashingError = errorFlashId === pair.id;
+
+            return (
+              <button
+                key={pair.id}
+                onClick={() => handleSelectCard(pair.id)}
+                disabled={pair.matched}
+                className={`w-full p-3 rounded-2xl border text-left transition-all relative flex items-center gap-3 ${
+                  pair.matched
+                    ? 'bg-emerald-950/40 border-emerald-500/60 opacity-80 cursor-default'
+                    : isFlashingError
+                    ? 'bg-rose-900/60 border-rose-500 animate-shake'
+                    : isSelected
+                    ? 'bg-gradient-to-r from-purple-900/60 to-[#1E2B48] border-purple-400 shadow-glow-purple scale-[1.02]'
+                    : 'bg-[#131C2E]/80 hover:bg-[#1A2740] border-slate-800 text-slate-300'
+                }`}
+              >
+                <img
+                  src={pair.country.flagSvg}
+                  alt={pair.country.nameEs}
+                  className="w-10 h-7 object-cover rounded shadow border border-slate-700 flex-shrink-0"
+                />
+                <div className="overflow-hidden flex-1">
+                  <div className="font-display font-bold text-white text-sm truncate">
+                    {pair.country.nameEs}
+                  </div>
+                  <div className="text-[11px] text-slate-400 truncate">
+                    Cap: {pair.country.capital}
+                  </div>
+                </div>
+
+                {pair.matched && (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                )}
+                {isSelected && !pair.matched && (
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-glow-purple flex-shrink-0 animate-ping" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Mapa Interactivo */}
+        <div className="lg:col-span-3 h-[520px] sm:h-[580px]">
+          <WorldMap
+            countryStatuses={mapStatuses}
+            onCountryClick={handleCountryClick}
+            continent={pairs[0]?.country.continent || 'World'}
+            interactive={!allMatched && lives > 0}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};

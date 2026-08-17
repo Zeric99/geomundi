@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <circle cx="50" cy="50" r="46" fill="#0B0F19" stroke="#06B6D4" stroke-width="4"/>
+  <circle cx="50" cy="50" r="38" fill="#131C2E" stroke="#38BDF8" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <!-- Stylized Earth Continents -->
+  <path d="M38 25 C45 22, 58 24, 62 30 C64 35, 60 42, 54 44 C48 46, 44 42, 40 46 C36 50, 42 58, 48 62 C52 65, 48 74, 42 76 C36 78, 30 70, 32 60 C34 52, 28 46, 26 38 C25 32, 32 27, 38 25 Z" fill="#10B981" opacity="0.85"/>
+  <path d="M64 45 C70 42, 76 46, 78 52 C80 58, 72 65, 66 64 C60 63, 62 52, 64 45 Z" fill="#10B981" opacity="0.85"/>
+  <path d="M50 14 C70 14, 86 30, 86 50 C86 70, 70 86, 50 86 C30 86, 14 70, 14 50 C14 30, 30 14, 50 14" stroke="#06B6D4" stroke-width="2" stroke-linecap="round"/>
+  <!-- Target Pin Marker -->
+  <circle cx="58" cy="36" r="4" fill="#F43F5E"/>
+  <circle cx="58" cy="36" r="8" stroke="#F43F5E" stroke-width="1.5" opacity="0.6"/>
+</svg>
