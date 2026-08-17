@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, MapPin, Type, Layers, Compass, Sparkles, Flag, Landmark, Zap, Flame, Trophy } from 'lucide-react';
+import { Globe, MapPin, Type, Layers, Compass, Sparkles, Flag, Landmark, Zap, Flame, Trophy, ListChecks } from 'lucide-react';
 import { Continent } from '../../types/country';
 import { GameConfig, GameMode, QuestionType } from '../../types/game';
 import { BlindSpotItem } from '../../types/stats';
@@ -30,24 +30,30 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
   const modes: { id: GameMode; title: string; desc: string; icon: React.ReactNode; badge?: string }[] = [
     {
+      id: 'list-select',
+      title: 'Lista & Mapa (Colores)',
+      desc: 'Pulsa el nombre de un país de la lista y ubícalo: Verde (1º), Amarillo (2º), Rojo (Fallo).',
+      icon: <ListChecks className="w-5 h-5 text-emerald-400" />,
+      badge: '¡Nuevo!'
+    },
+    {
       id: 'trivia-curiosities',
       title: 'Trivia y Curiosidades',
       desc: 'Preguntas de récords mundiales, curiosidades insólitas y datos únicos de cada país.',
       icon: <Trophy className="w-5 h-5 text-indigo-400" />,
-      badge: '¡Nuevo!'
+      badge: 'Popular'
     },
     {
       id: 'click-find',
       title: 'Click & Find',
       desc: 'Te damos un país, bandera o capital y tú lo ubicas en el mapa.',
-      icon: <MapPin className="w-5 h-5 text-cyan-400" />,
-      badge: 'Popular'
+      icon: <MapPin className="w-5 h-5 text-cyan-400" />
     },
     {
       id: 'input-write',
       title: 'Modo Escribir',
       desc: 'El mapa resalta un país y escribes su nombre con tolerancia a tildes.',
-      icon: <Type className="w-5 h-5 text-emerald-400" />
+      icon: <Type className="w-5 h-5 text-teal-400" />
     },
     {
       id: 'match-cards',

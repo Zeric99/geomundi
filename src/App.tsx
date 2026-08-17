@@ -7,6 +7,7 @@ import { ClickAndFindMode } from './components/game/ClickAndFindMode';
 import { InputWriteMode } from './components/game/InputWriteMode';
 import { MatchCardsMode } from './components/game/MatchCardsMode';
 import { TriviaCuriositiesMode } from './components/game/TriviaCuriositiesMode';
+import { ListSelectMode } from './components/game/ListSelectMode';
 import { CountryExplorer } from './components/explore/CountryExplorer';
 import { TutorDashboard } from './components/tutor/TutorDashboard';
 import { GameOverModal } from './components/game/GameOverModal';
@@ -193,7 +194,16 @@ export function App() {
               />
             ) : (
               <div className="space-y-4">
-                {/* Modo Trivia de Curiosidades */}
+                {/* 1. Modo Lista & Mapa (Colores) */}
+                {config.mode === 'list-select' && (
+                  <ListSelectMode
+                    countries={countries}
+                    continent={config.continent}
+                    onQuit={quitGame}
+                  />
+                )}
+
+                {/* 2. Modo Trivia de Curiosidades */}
                 {config.mode === 'trivia-curiosities' && (
                   <TriviaCuriositiesMode
                     currentQuestion={currentQuestion}
@@ -211,8 +221,8 @@ export function App() {
                   />
                 )}
 
-                {/* Modos Estándar (con cabecera genérica) */}
-                {config.mode !== 'trivia-curiosities' && (
+                {/* 3. Modos Estándar (con cabecera genérica) */}
+                {config.mode !== 'trivia-curiosities' && config.mode !== 'list-select' && (
                   <>
                     <GameHeader
                       currentIndex={currentIndex}

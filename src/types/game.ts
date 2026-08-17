@@ -1,6 +1,6 @@
 import { Continent, Country } from './country';
 
-export type GameMode = 'click-find' | 'input-write' | 'match-cards' | 'trivia-curiosities' | 'explore';
+export type GameMode = 'click-find' | 'input-write' | 'match-cards' | 'trivia-curiosities' | 'list-select' | 'explore';
 
 export type QuestionType = 'name' | 'flag' | 'capital' | 'mixed' | 'trivia';
 
