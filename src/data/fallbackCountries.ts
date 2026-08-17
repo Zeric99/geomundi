@@ -312,6 +312,13 @@ export const FALLBACK_COUNTRIES: Country[] = [
     flagSvg: "https://flagcdn.com/cy.svg", flagEmoji: "🇨🇾", latlng: [35.1264, 33.4299],
     altSpellings: ["Chipre", "Cyprus"]
   },
+  {
+    cca2: "XK", cca3: "XKX", ccn3: "983", nameEs: "Kosovo", nameEn: "Kosovo",
+    officialNameEs: "República de Kosovo", capital: "Pristina", continent: "Europe", continentEs: "Europa",
+    subregion: "Southeast Europe", subregionEs: "Balcanes", population: 1873000,
+    flagSvg: "https://flagcdn.com/xk.svg", flagEmoji: "🇽🇰", latlng: [42.6026, 20.9030],
+    altSpellings: ["Kosovo", "Kosova", "Pristina"]
+  },
 
   // ==========================================
   // --- AMÉRICAS (35 países soberanos) ---
@@ -571,6 +578,13 @@ export const FALLBACK_COUNTRIES: Country[] = [
     subregion: "Eastern Asia", subregionEs: "Asia Oriental", population: 1402112000,
     flagSvg: "https://flagcdn.com/cn.svg", flagEmoji: "🇨🇳", latlng: [35.8617, 104.1954],
     altSpellings: ["China", "Beijing"]
+  },
+  {
+    cca2: "TW", cca3: "TWN", ccn3: "158", nameEs: "Taiwán", nameEn: "Taiwan",
+    officialNameEs: "República de China (Taiwán)", capital: "Taipéi", continent: "Asia", continentEs: "Asia",
+    subregion: "Eastern Asia", subregionEs: "Asia Oriental", population: 23570000,
+    flagSvg: "https://flagcdn.com/tw.svg", flagEmoji: "🇹🇼", latlng: [23.6978, 120.9605],
+    altSpellings: ["Taiwan", "Taipei", "Formosa", "Republic of China"]
   },
   {
     cca2: "JP", cca3: "JPN", ccn3: "392", nameEs: "Japón", nameEn: "Japan",
@@ -1384,6 +1398,332 @@ export const FALLBACK_COUNTRIES: Country[] = [
     subregion: "Polynesia", subregionEs: "Polinesia", population: 11792,
     flagSvg: "https://flagcdn.com/tv.svg", flagEmoji: "🇹🇻", latlng: [-7.1095, 177.6493],
     altSpellings: ["Tuvalu"]
+  }
+];
+
+/**
+ * =========================================================================
+ * --- MODO FRIKI: TERRITORIOS DEPENDIENTES Y ESTADOS DE FACTO (+40) ---
+ * =========================================================================
+ */
+export const GEEK_TERRITORIES: Country[] = [
+  // 1. Estados libres asociados y de estatus especial
+  {
+    cca2: "PR", cca3: "PRI", ccn3: "630", nameEs: "Puerto Rico", nameEn: "Puerto Rico",
+    officialNameEs: "Estado Libre Asociado de Puerto Rico", capital: "San Juan", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 3285874,
+    flagSvg: "https://flagcdn.com/pr.svg", flagEmoji: "🇵🇷", latlng: [18.2208, -66.5901],
+    altSpellings: ["Puerto Rico", "Borinquen"]
+  },
+  {
+    cca2: "CK", cca3: "COK", ccn3: "184", nameEs: "Islas Cook", nameEn: "Cook Islands",
+    officialNameEs: "Islas Cook", capital: "Avarua", continent: "Oceania", continentEs: "Oceanía",
+    subregion: "Polynesia", subregionEs: "Polinesia", population: 17564,
+    flagSvg: "https://flagcdn.com/ck.svg", flagEmoji: "🇨🇰", latlng: [-21.2367, -159.7777],
+    altSpellings: ["Cook Islands", "Islas Cook"]
+  },
+  {
+    cca2: "NU", cca3: "NIU", ccn3: "570", nameEs: "Niue", nameEn: "Niue",
+    officialNameEs: "Niue", capital: "Alofi", continent: "Oceania", continentEs: "Oceanía",
+    subregion: "Polynesia", subregionEs: "Polinesia", population: 1618,
+    flagSvg: "https://flagcdn.com/nu.svg", flagEmoji: "🇳🇺", latlng: [-19.0544, -169.8672],
+    altSpellings: ["Niue"]
+  },
+
+  // 2. Estados con reconocimiento internacional limitado o nulo
+  {
+    cca2: "SO", cca3: "SOL", ccn3: "991", nameEs: "Somalilandia", nameEn: "Somaliland",
+    officialNameEs: "República de Somalilandia", capital: "Hargeisa", continent: "Africa", continentEs: "África",
+    subregion: "Eastern Africa", subregionEs: "Cuerno de África", population: 3500000,
+    flagSvg: "https://flagcdn.com/so.svg", flagEmoji: "🇸🇴", latlng: [9.5624, 44.0770],
+    altSpellings: ["Somaliland", "Somalilandia", "Hargeisa"]
+  },
+  {
+    cca2: "EH", cca3: "ESH", ccn3: "732", nameEs: "Sáhara Occidental", nameEn: "Western Sahara",
+    officialNameEs: "República Árabe Saharaui Democrática", capital: "El Aaiún", continent: "Africa", continentEs: "África",
+    subregion: "Northern Africa", subregionEs: "Magreb", population: 597339,
+    flagSvg: "https://flagcdn.com/eh.svg", flagEmoji: "🇪🇭", latlng: [24.2155, -12.8858],
+    altSpellings: ["Sahara Occidental", "Western Sahara", "RASD"]
+  },
+  {
+    cca2: "CY", cca3: "CYN", ccn3: "992", nameEs: "Chipre del Norte", nameEn: "Northern Cyprus",
+    officialNameEs: "República Turca del Norte de Chipre", capital: "Nicosia Norte", continent: "Europe", continentEs: "Europa",
+    subregion: "Southern Europe", subregionEs: "Mediterráneo", population: 382836,
+    flagSvg: "https://flagcdn.com/cy.svg", flagEmoji: "🇨🇾", latlng: [35.2500, 33.7500],
+    altSpellings: ["Chipre del Norte", "Northern Cyprus", "TRNC"]
+  },
+  {
+    cca2: "MD", cca3: "PMR", ccn3: "993", nameEs: "Transnistria", nameEn: "Transnistria",
+    officialNameEs: "República Moldava Pridnestroviana", capital: "Tiráspol", continent: "Europe", continentEs: "Europa",
+    subregion: "Eastern Europe", subregionEs: "Europa del Este", population: 465200,
+    flagSvg: "https://flagcdn.com/md.svg", flagEmoji: "🇲🇩", latlng: [46.8403, 29.6433],
+    altSpellings: ["Transnistria", "Pridnestrovie", "Tiraspol"]
+  },
+  {
+    cca2: "GE", cca3: "ABK", ccn3: "994", nameEs: "Abjasia", nameEn: "Abkhazia",
+    officialNameEs: "República de Abjasia", capital: "Sujumi", continent: "Asia", continentEs: "Asia",
+    subregion: "Western Asia", subregionEs: "Cáucaso", population: 245424,
+    flagSvg: "https://flagcdn.com/ge.svg", flagEmoji: "🇬🇪", latlng: [43.0016, 41.0234],
+    altSpellings: ["Abjasia", "Abkhazia", "Sujumi"]
+  },
+  {
+    cca2: "GE", cca3: "OST", ccn3: "995", nameEs: "Osetia del Sur", nameEn: "South Ossetia",
+    officialNameEs: "República de Osetia del Sur", capital: "Tsjinvali", continent: "Asia", continentEs: "Asia",
+    subregion: "Western Asia", subregionEs: "Cáucaso", population: 53532,
+    flagSvg: "https://flagcdn.com/ge.svg", flagEmoji: "🇬🇪", latlng: [42.2289, 43.9712],
+    altSpellings: ["Osetia del Sur", "South Ossetia", "Tsjinvali"]
+  },
+
+  // 3. Territorios del Reino Unido 🇬🇧
+  {
+    cca2: "BM", cca3: "BMU", ccn3: "060", nameEs: "Bermudas", nameEn: "Bermuda",
+    officialNameEs: "Bermudas", capital: "Hamilton", continent: "Americas", continentEs: "América",
+    subregion: "North America", subregionEs: "Atlántico Norte", population: 63903,
+    flagSvg: "https://flagcdn.com/bm.svg", flagEmoji: "🇧🇲", latlng: [32.3078, -64.7505],
+    altSpellings: ["Bermuda", "Bermudas"]
+  },
+  {
+    cca2: "KY", cca3: "CYM", ccn3: "136", nameEs: "Islas Caimán", nameEn: "Cayman Islands",
+    officialNameEs: "Islas Caimán", capital: "George Town", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 65720,
+    flagSvg: "https://flagcdn.com/ky.svg", flagEmoji: "🇰🇾", latlng: [19.3133, -81.2546],
+    altSpellings: ["Cayman Islands", "Islas Caiman"]
+  },
+  {
+    cca2: "GI", cca3: "GIB", ccn3: "292", nameEs: "Gibraltar", nameEn: "Gibraltar",
+    officialNameEs: "Gibraltar", capital: "Gibraltar", continent: "Europe", continentEs: "Europa",
+    subregion: "Southern Europe", subregionEs: "Península Ibérica", population: 33691,
+    flagSvg: "https://flagcdn.com/gi.svg", flagEmoji: "🇬🇮", latlng: [36.1408, -5.3536],
+    altSpellings: ["Gibraltar"]
+  },
+  {
+    cca2: "FK", cca3: "FLK", ccn3: "238", nameEs: "Islas Malvinas", nameEn: "Falkland Islands",
+    officialNameEs: "Islas Malvinas", capital: "Puerto Argentino / Stanley", continent: "Americas", continentEs: "América",
+    subregion: "South America", subregionEs: "Atlántico Sur", population: 3480,
+    flagSvg: "https://flagcdn.com/fk.svg", flagEmoji: "🇫🇰", latlng: [-51.7963, -59.5236],
+    altSpellings: ["Islas Malvinas", "Falkland Islands"]
+  },
+  {
+    cca2: "MS", cca3: "MSR", ccn3: "500", nameEs: "Montserrat", nameEn: "Montserrat",
+    officialNameEs: "Montserrat", capital: "Brades", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 4992,
+    flagSvg: "https://flagcdn.com/ms.svg", flagEmoji: "🇲🇸", latlng: [16.7425, -62.1874],
+    altSpellings: ["Montserrat", "Plymouth"]
+  },
+  {
+    cca2: "AI", cca3: "AIA", ccn3: "660", nameEs: "Anguila", nameEn: "Anguilla",
+    officialNameEs: "Anguila", capital: "El Valle", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 15003,
+    flagSvg: "https://flagcdn.com/ai.svg", flagEmoji: "🇦🇮", latlng: [18.2206, -63.0686],
+    altSpellings: ["Anguilla", "Anguila"]
+  },
+  {
+    cca2: "VG", cca3: "VGB", ccn3: "092", nameEs: "Islas Vírgenes Británicas", nameEn: "British Virgin Islands",
+    officialNameEs: "Islas Vírgenes Británicas", capital: "Road Town", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 30231,
+    flagSvg: "https://flagcdn.com/vg.svg", flagEmoji: "🇻🇬", latlng: [18.4207, -64.6399],
+    altSpellings: ["British Virgin Islands", "BVI"]
+  },
+  {
+    cca2: "SH", cca3: "SHN", ccn3: "654", nameEs: "Santa Elena", nameEn: "Saint Helena",
+    officialNameEs: "Santa Elena, Ascensión y Tristán de Acuña", capital: "Jamestown", continent: "Africa", continentEs: "África",
+    subregion: "Western Africa", subregionEs: "Atlántico Sur", population: 6077,
+    flagSvg: "https://flagcdn.com/sh.svg", flagEmoji: "🇸🇭", latlng: [-15.9650, -5.7089],
+    altSpellings: ["Saint Helena", "Santa Elena", "Tristan da Cunha"]
+  },
+  {
+    cca2: "TC", cca3: "TCA", ccn3: "796", nameEs: "Islas Turcas y Caicos", nameEn: "Turks and Caicos Islands",
+    officialNameEs: "Islas Turcas y Caicos", capital: "Cockburn Town", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 38717,
+    flagSvg: "https://flagcdn.com/tc.svg", flagEmoji: "🇹🇨", latlng: [21.6940, -71.7979],
+    altSpellings: ["Turks and Caicos", "Islas Turcas y Caicos"]
+  },
+  {
+    cca2: "PN", cca3: "PCN", ccn3: "612", nameEs: "Islas Pitcairn", nameEn: "Pitcairn Islands",
+    officialNameEs: "Islas Pitcairn", capital: "Adamstown", continent: "Oceania", continentEs: "Oceanía",
+    subregion: "Polynesia", subregionEs: "Polinesia", population: 50,
+    flagSvg: "https://flagcdn.com/pn.svg", flagEmoji: "🇵🇳", latlng: [-25.0667, -130.1000],
+    altSpellings: ["Pitcairn", "Islas Pitcairn"]
+  },
+
+  // 4. Territorios de Estados Unidos 🇺🇸
+  {
+    cca2: "GU", cca3: "GUM", ccn3: "316", nameEs: "Guam", nameEn: "Guam",
+    officialNameEs: "Territorio de Guam", capital: "Agaña (Hagåtña)", continent: "Oceania", continentEs: "Oceanía",
+    subregion: "Micronesia", subregionEs: "Micronesia", population: 168783,
+    flagSvg: "https://flagcdn.com/gu.svg", flagEmoji: "🇬🇺", latlng: [13.4443, 144.7937],
+    altSpellings: ["Guam", "Hagatna", "Agana"]
+  },
+  {
+    cca2: "VI", cca3: "VIR", ccn3: "850", nameEs: "Islas Vírgenes de los EE. UU.", nameEn: "United States Virgin Islands",
+    officialNameEs: "Islas Vírgenes de los Estados Unidos", capital: "Carlota Amalia", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 104425,
+    flagSvg: "https://flagcdn.com/vi.svg", flagEmoji: "🇻🇮", latlng: [18.3358, -64.8963],
+    altSpellings: ["US Virgin Islands", "Islas Virgenes EEUU"]
+  },
+  {
+    cca2: "AS", cca3: "ASM", ccn3: "016", nameEs: "Samoa Americana", nameEn: "American Samoa",
+    officialNameEs: "Territorio de Samoa Americana", capital: "Pago Pago", continent: "Oceania", continentEs: "Oceanía",
+    subregion: "Polynesia", subregionEs: "Polinesia", population: 55197,
+    flagSvg: "https://flagcdn.com/as.svg", flagEmoji: "🇦🇸", latlng: [-14.2710, -170.1322],
+    altSpellings: ["American Samoa", "Samoa Americana", "Pago Pago"]
+  },
+  {
+    cca2: "MP", cca3: "MNP", ccn3: "580", nameEs: "Islas Marianas del Norte", nameEn: "Northern Mariana Islands",
+    officialNameEs: "Mancomunidad de las Islas Marianas del Norte", capital: "Saipán", continent: "Oceania", continentEs: "Oceanía",
+    subregion: "Micronesia", subregionEs: "Micronesia", population: 57559,
+    flagSvg: "https://flagcdn.com/mp.svg", flagEmoji: "🇲🇵", latlng: [15.0979, 145.6739],
+    altSpellings: ["Northern Mariana Islands", "Saipan"]
+  },
+
+  // 5. Territorios y Departamentos de Francia 🇫🇷
+  {
+    cca2: "PF", cca3: "PYF", ccn3: "258", nameEs: "Polinesia Francesa", nameEn: "French Polynesia",
+    officialNameEs: "Polinesia Francesa", capital: "Papeete", continent: "Oceania", continentEs: "Oceanía",
+    subregion: "Polynesia", subregionEs: "Polinesia", population: 280904,
+    flagSvg: "https://flagcdn.com/pf.svg", flagEmoji: "🇵🇫", latlng: [-17.6797, -149.4068],
+    altSpellings: ["French Polynesia", "Polinesia Francesa", "Tahiti"]
+  },
+  {
+    cca2: "NC", cca3: "NCL", ccn3: "540", nameEs: "Nueva Caledonia", nameEn: "New Caledonia",
+    officialNameEs: "Nueva Caledonia", capital: "Numea", continent: "Oceania", continentEs: "Oceanía",
+    subregion: "Melanesia", subregionEs: "Melanesia", population: 271960,
+    flagSvg: "https://flagcdn.com/nc.svg", flagEmoji: "🇳🇨", latlng: [-20.9043, 165.6180],
+    altSpellings: ["New Caledonia", "Nueva Caledonia", "Noumea"]
+  },
+  {
+    cca2: "BL", cca3: "BLM", ccn3: "652", nameEs: "San Bartolomé", nameEn: "Saint Barthélemy",
+    officialNameEs: "Colectividad de San Bartolomé", capital: "Gustavia", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 9885,
+    flagSvg: "https://flagcdn.com/bl.svg", flagEmoji: "🇧🇱", latlng: [17.9000, -62.8333],
+    altSpellings: ["Saint Barthelemy", "San Bartolome", "St Barts"]
+  },
+  {
+    cca2: "MF", cca3: "MAF", ccn3: "663", nameEs: "San Martín (Francia)", nameEn: "Saint Martin",
+    officialNameEs: "Colectividad de San Martín", capital: "Marigot", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 38659,
+    flagSvg: "https://flagcdn.com/mf.svg", flagEmoji: "🇲🇫", latlng: [18.0708, -63.0501],
+    altSpellings: ["Saint Martin", "San Martin"]
+  },
+  {
+    cca2: "PM", cca3: "SPM", ccn3: "666", nameEs: "San Pedro y Miquelón", nameEn: "Saint Pierre and Miquelon",
+    officialNameEs: "Colectividad de San Pedro y Miquelón", capital: "San Pedro", continent: "Americas", continentEs: "América",
+    subregion: "North America", subregionEs: "Atlántico Norte", population: 6008,
+    flagSvg: "https://flagcdn.com/pm.svg", flagEmoji: "🇵🇲", latlng: [46.8852, -56.3159],
+    altSpellings: ["Saint Pierre and Miquelon", "San Pedro y Miquelon"]
+  },
+  {
+    cca2: "WF", cca3: "WLF", ccn3: "876", nameEs: "Wallis y Futuna", nameEn: "Wallis and Futuna",
+    officialNameEs: "Territorio de las Islas Wallis y Futuna", capital: "Mata-Utu", continent: "Oceania", continentEs: "Oceanía",
+    subregion: "Polynesia", subregionEs: "Polinesia", population: 11246,
+    flagSvg: "https://flagcdn.com/wf.svg", flagEmoji: "🇼🇫", latlng: [-13.2816, -176.1745],
+    altSpellings: ["Wallis and Futuna", "Wallis y Futuna"]
+  },
+  {
+    cca2: "GF", cca3: "GUF", ccn3: "254", nameEs: "Guayana Francesa", nameEn: "French Guiana",
+    officialNameEs: "Guayana Francesa", capital: "Cayena", continent: "Americas", continentEs: "América",
+    subregion: "South America", subregionEs: "América del Sur", population: 290691,
+    flagSvg: "https://flagcdn.com/gf.svg", flagEmoji: "🇬🇫", latlng: [3.9339, -53.1258],
+    altSpellings: ["French Guiana", "Guayana Francesa", "Cayenne"]
+  },
+  {
+    cca2: "RE", cca3: "REU", ccn3: "638", nameEs: "Reunión", nameEn: "Réunion",
+    officialNameEs: "Departamento de Reunión", capital: "Saint-Denis", continent: "Africa", continentEs: "África",
+    subregion: "Eastern Africa", subregionEs: "Océano Índico", population: 859959,
+    flagSvg: "https://flagcdn.com/re.svg", flagEmoji: "🇷🇪", latlng: [-21.1151, 55.5364],
+    altSpellings: ["Reunion", "Reunión"]
+  },
+  {
+    cca2: "GP", cca3: "GLP", ccn3: "312", nameEs: "Guadalupe", nameEn: "Guadeloupe",
+    officialNameEs: "Guadalupe", capital: "Basse-Terre", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 395700,
+    flagSvg: "https://flagcdn.com/gp.svg", flagEmoji: "🇬🇵", latlng: [16.2650, -61.5510],
+    altSpellings: ["Guadeloupe", "Guadalupe"]
+  },
+  {
+    cca2: "MQ", cca3: "MTQ", ccn3: "474", nameEs: "Martinica", nameEn: "Martinique",
+    officialNameEs: "Martinica", capital: "Fort-de-France", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 376480,
+    flagSvg: "https://flagcdn.com/mq.svg", flagEmoji: "🇲🇶", latlng: [14.6415, -61.0242],
+    altSpellings: ["Martinique", "Martinica"]
+  },
+  {
+    cca2: "YT", cca3: "MYT", ccn3: "175", nameEs: "Mayotte", nameEn: "Mayotte",
+    officialNameEs: "Departamento de Mayotte", capital: "Mamoudzou", continent: "Africa", continentEs: "África",
+    subregion: "Eastern Africa", subregionEs: "Canal de Mozambique", population: 279471,
+    flagSvg: "https://flagcdn.com/yt.svg", flagEmoji: "🇾🇹", latlng: [-12.8275, 45.1662],
+    altSpellings: ["Mayotte"]
+  },
+
+  // 6. Países Autónomos de Países Bajos 🇳🇱
+  {
+    cca2: "AW", cca3: "ABW", ccn3: "533", nameEs: "Aruba", nameEn: "Aruba",
+    officialNameEs: "Aruba", capital: "Oranjestad", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe Sur", population: 106766,
+    flagSvg: "https://flagcdn.com/aw.svg", flagEmoji: "🇦🇼", latlng: [12.5211, -69.9683],
+    altSpellings: ["Aruba"]
+  },
+  {
+    cca2: "CW", cca3: "CUW", ccn3: "531", nameEs: "Curazao", nameEn: "Curaçao",
+    officialNameEs: "País de Curazao", capital: "Willemstad", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe Sur", population: 155014,
+    flagSvg: "https://flagcdn.com/cw.svg", flagEmoji: "🇨🇼", latlng: [12.1696, -68.9900],
+    altSpellings: ["Curacao", "Curazao"]
+  },
+  {
+    cca2: "SX", cca3: "SXM", ccn3: "534", nameEs: "Sint Maarten (Países Bajos)", nameEn: "Sint Maarten",
+    officialNameEs: "Sint Maarten", capital: "Philipsburg", continent: "Americas", continentEs: "América",
+    subregion: "Caribbean", subregionEs: "Caribe", population: 42848,
+    flagSvg: "https://flagcdn.com/sx.svg", flagEmoji: "🇸🇽", latlng: [18.0425, -63.0548],
+    altSpellings: ["Sint Maarten", "San Martin Holandes"]
+  },
+
+  // 7. Territorios de Australia 🇦🇺
+  {
+    cca2: "CX", cca3: "CXR", ccn3: "162", nameEs: "Isla de Navidad", nameEn: "Christmas Island",
+    officialNameEs: "Territorio de la Isla de Navidad", capital: "Flying Fish Cove", continent: "Oceania", continentEs: "Oceanía",
+    subregion: "Australia and New Zealand", subregionEs: "Océano Índico", population: 1843,
+    flagSvg: "https://flagcdn.com/cx.svg", flagEmoji: "🇨🇽", latlng: [-10.4475, 105.6904],
+    altSpellings: ["Christmas Island", "Isla de Navidad"]
+  },
+  {
+    cca2: "CC", cca3: "CCK", ccn3: "166", nameEs: "Islas Cocos (Keeling)", nameEn: "Cocos (Keeling) Islands",
+    officialNameEs: "Territorio de las Islas Cocos", capital: "West Island", continent: "Oceania", continentEs: "Oceanía",
+    subregion: "Australia and New Zealand", subregionEs: "Océano Índico", population: 544,
+    flagSvg: "https://flagcdn.com/cc.svg", flagEmoji: "🇨🇨", latlng: [-12.1642, 96.8710],
+    altSpellings: ["Cocos Islands", "Islas Cocos"]
+  },
+
+  // 8. Regiones Administrativas Especiales de China 🇨🇳
+  {
+    cca2: "HK", cca3: "HKG", ccn3: "344", nameEs: "Hong Kong", nameEn: "Hong Kong",
+    officialNameEs: "Región Administrativa Especial de Hong Kong", capital: "Hong Kong", continent: "Asia", continentEs: "Asia",
+    subregion: "Eastern Asia", subregionEs: "Asia Oriental", population: 7481800,
+    flagSvg: "https://flagcdn.com/hk.svg", flagEmoji: "🇭🇰", latlng: [22.3193, 114.1694],
+    altSpellings: ["Hong Kong", "HK"]
+  },
+  {
+    cca2: "MO", cca3: "MAC", ccn3: "446", nameEs: "Macao", nameEn: "Macau",
+    officialNameEs: "Región Administrativa Especial de Macao", capital: "Macao", continent: "Asia", continentEs: "Asia",
+    subregion: "Eastern Asia", subregionEs: "Asia Oriental", population: 683218,
+    flagSvg: "https://flagcdn.com/mo.svg", flagEmoji: "🇲🇴", latlng: [22.1987, 113.5439],
+    altSpellings: ["Macau", "Macao"]
+  },
+
+  // 9. Otros territorios especiales
+  {
+    cca2: "GL", cca3: "GRL", ccn3: "304", nameEs: "Groenlandia", nameEn: "Greenland",
+    officialNameEs: "Groenlandia", capital: "Nuuk", continent: "Americas", continentEs: "América",
+    subregion: "North America", subregionEs: "Ártico", population: 56367,
+    flagSvg: "https://flagcdn.com/gl.svg", flagEmoji: "🇬🇱", latlng: [71.7069, -42.6043],
+    altSpellings: ["Greenland", "Groenlandia", "Kalaallit Nunaat"]
+  },
+  {
+    cca2: "FO", cca3: "FRO", ccn3: "234", nameEs: "Islas Feroe", nameEn: "Faroe Islands",
+    officialNameEs: "Islas Feroe", capital: "Tórshavn", continent: "Europe", continentEs: "Europa",
+    subregion: "Northern Europe", subregionEs: "Atlántico Norte", population: 48865,
+    flagSvg: "https://flagcdn.com/fo.svg", flagEmoji: "🇫🇴", latlng: [61.8926, -6.9118],
+    altSpellings: ["Faroe Islands", "Islas Feroe"]
   }
 ];
 

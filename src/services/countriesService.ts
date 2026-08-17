@@ -1,5 +1,5 @@
 import { Continent, ContinentEs, Country, GeoFeatureProperties } from '../types/country';
-import { FALLBACK_COUNTRIES } from '../data/fallbackCountries';
+import { FALLBACK_COUNTRIES, GEEK_TERRITORIES } from '../data/fallbackCountries';
 import { GEO_ALIASES, NUMERIC_TO_CCA3 } from '../data/geoAliases';
 
 const CACHE_KEY = 'GEOMUNDI_COUNTRIES_CACHE_V2';
@@ -196,6 +196,14 @@ class CountriesService {
       this.countriesMap.set(c.cca3.toUpperCase(), c);
       if (c.cca2) this.countriesMap.set(c.cca2.toUpperCase(), c);
       if (c.ccn3) this.countriesMap.set(c.ccn3, c);
+    }
+    // Indexar también territorios especiales y estados de facto
+    for (const t of GEEK_TERRITORIES) {
+      if (!this.countriesMap.has(t.cca3.toUpperCase())) {
+        this.countriesMap.set(t.cca3.toUpperCase(), t);
+        if (t.cca2) this.countriesMap.set(t.cca2.toUpperCase(), t);
+        if (t.ccn3) this.countriesMap.set(t.ccn3, t);
+      }
     }
   }
 

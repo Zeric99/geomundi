@@ -37,7 +37,13 @@ export const NUMERIC_TO_CCA3: Record<string, string> = {
   "860": "UZB", "548": "VUT", "336": "VAT", "862": "VEN", "704": "VNM", "887": "YEM",
   "894": "ZMB", "716": "ZWE",
   // Territorios y especiales
-  "158": "TWN", "275": "PSE", "983": "XKX", "630": "PRI", "304": "GRL"
+  "158": "TWN", "275": "PSE", "983": "XKX", "630": "PRI", "304": "GRL", "238": "FLK",
+  "254": "GUF", "540": "NCL", "258": "PYF", "732": "ESH", "060": "BMU", "136": "CYM",
+  "292": "GIB", "533": "ABW", "531": "CUW", "534": "SXM", "344": "HKG", "446": "MAC",
+  "316": "GUM", "850": "VIR", "016": "ASM", "580": "MNP", "184": "COK", "570": "NIU",
+  "638": "REU", "312": "GLP", "474": "MTQ", "175": "MYT", "162": "CXR", "166": "CCK",
+  "234": "FRO", "654": "SHN", "796": "TCA", "612": "PCN", "652": "BLM", "663": "MAF",
+  "666": "SPM", "876": "WLF"
 };
 
 /**
@@ -50,26 +56,31 @@ export const GEO_ALIASES: Record<string, string> = {
   "KOS": "XKX",     // Kosovo
   "PSX": "PSE",     // Palestina
   "SOL": "SLB",     // Solomon Islands
-  "SOM": "SOM",     // Somaliland mapeado a Somalia
+  "SOM": "SOM",     // Somalia / Somalilandia
   "NCL": "NCL",     // New Caledonia
   "PRI": "PRI",     // Puerto Rico
   "GRL": "GRL",     // Groenlandia
+  "TWN": "TWN",     // Taiwan
+  "XKX": "XKX",     // Kosovo
 };
 
 /**
- * Conjunto completo de microestados e islas pequeñas con marcadores interactivos visibles en el mapa
+ * Conjunto completo de microestados, territorios e islas pequeñas con marcadores interactivos
  */
 export const MICROSTATE_CODES = new Set([
   // Europa
-  'AND', 'VAT', 'SMR', 'MCO', 'LIE', 'MLT', 'LUX',
+  'AND', 'VAT', 'SMR', 'MCO', 'LIE', 'MLT', 'LUX', 'XKX', 'GIB', 'FRO', 'CYN', 'PMR',
   // América y Caribe (Todas las islas y microestados)
   'ATG', 'BHS', 'BRB', 'DMA', 'GRD', 'KNA', 'LCA', 'VCT', 'TTO', 'JAM', 'HTI', 'DOM', 'CUB',
+  'PRI', 'BMU', 'CYM', 'FLK', 'MSR', 'AIA', 'VGB', 'VIR', 'TCA', 'BLM', 'MAF', 'SPM',
+  'ABW', 'CUW', 'SXM', 'GLP', 'MTQ', 'GUF',
   // África
-  'CPV', 'COM', 'MUS', 'STP', 'SYC', 'SWZ', 'LSO', 'DJI', 'GMB', 'STP',
+  'CPV', 'COM', 'MUS', 'STP', 'SYC', 'SWZ', 'LSO', 'DJI', 'GMB', 'SHN', 'REU', 'MYT', 'SOL', 'ESH',
   // Asia
-  'SGP', 'BHR', 'MDV', 'BRN', 'QAT', 'KWT', 'LBN', 'TLS', 'BTN', 'PSE',
+  'SGP', 'BHR', 'MDV', 'BRN', 'QAT', 'KWT', 'LBN', 'TLS', 'BTN', 'PSE', 'TWN', 'HKG', 'MAC', 'ABK', 'OST',
   // Oceanía (Todas las islas)
-  'FJI', 'KIR', 'MHL', 'FSM', 'NRU', 'PLW', 'WSM', 'SLB', 'TON', 'TUV', 'VUT'
+  'FJI', 'KIR', 'MHL', 'FSM', 'NRU', 'PLW', 'WSM', 'SLB', 'TON', 'TUV', 'VUT',
+  'COK', 'NIU', 'GUM', 'ASM', 'MNP', 'PYF', 'NCL', 'WLF', 'CXR', 'CCK', 'PCN'
 ]);
 
 /**

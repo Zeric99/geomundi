@@ -11,7 +11,7 @@ import { CONTINENT_VIEWPORTS, MICROSTATE_CODES } from '../../data/geoAliases';
 import { MapTooltip } from './MapTooltip';
 import { MapControls } from './MapControls';
 import { countriesService } from '../../services/countriesService';
-import { FALLBACK_MAP_URL, FALLBACK_COUNTRIES } from '../../data/fallbackCountries';
+import { FALLBACK_MAP_URL, FALLBACK_COUNTRIES, GEEK_TERRITORIES } from '../../data/fallbackCountries';
 
 // Ruta local relativa compatible con GitHub Pages y fallback CDN
 const LOCAL_GEO_URL = `${import.meta.env.BASE_URL}data/world-110m.json`;
@@ -281,9 +281,9 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     setHoverPosition(null);
   };
 
-  // Microestados a renderizar con marcadores interactivos
+  // Microestados y territorios a renderizar con marcadores interactivos
   const microstateCountries = useMemo(() => {
-    const all = FALLBACK_COUNTRIES;
+    const all = [...FALLBACK_COUNTRIES, ...GEEK_TERRITORIES];
     return all.filter(c => {
       const isMicro = MICROSTATE_CODES.has(c.cca3.toUpperCase());
       if (!isMicro) return false;

@@ -14,9 +14,11 @@ import {
   RotateCcw, 
   Target,
   ArrowRight,
-  Filter
+  Filter,
+  Brain
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { GEEK_TERRITORIES } from '../../data/fallbackCountries';
 
 interface ListSelectModeProps {
   countries: Country[];
@@ -39,15 +41,20 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
 }) => {
   const { playCorrectSound, playWrongSound, playVictorySound } = useAudioFeedback();
 
-  // Filtrar países según el continente elegido
+  // Opción Modo Friki (incluye dependencias, islas especiales y estados con reconocimiento limitado)
+  const [isGeekMode, setIsGeekMode] = useState<boolean>(false);
+
+  // Filtrar países y territorios según continente y modo friki
   const baseCountries = useMemo(() => {
-    if (continent === 'World') {
-      return [...countries].sort((a, b) => a.nameEs.localeCompare(b.nameEs));
+    let list = [...countries];
+    if (isGeekMode) {
+      list = [...list, ...GEEK_TERRITORIES];
     }
-    return countries
-      .filter(c => c.continent === continent)
-      .sort((a, b) => a.nameEs.localeCompare(b.nameEs));
-  }, [countries, continent]);
+    if (continent !== 'World') {
+      list = list.filter(c => c.continent === continent);
+    }
+    return list.sort((a, b) => a.nameEs.localeCompare(b.nameEs));
+  }, [countries, continent, isGeekMode]);
 
   // Estado de cada país en el modo lista
   const [itemsState, setItemsState] = useState<Record<string, CountryItemState>>(() => {
@@ -61,6 +68,21 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
     });
     return initial;
   });
+
+  // Reiniciar estado de lista cuando se alterna el modo friki o cambia el continente
+  useEffect(() => {
+    const nextState: Record<string, CountryItemState> = {};
+    baseCountries.forEach(c => {
+      nextState[c.cca3.toUpperCase()] = {
+        country: c,
+        status: 'pending',
+        attempts: 0
+      };
+    });
+    setItemsState(nextState);
+    setSelectedCountryCode(null);
+    setPulsingFailedCountryCode(null);
+  }, [baseCountries]);
 
   const [selectedCountryCode, setSelectedCountryCode] = useState<string | null>(null);
   const [pulsingFailedCountryCode, setPulsingFailedCountryCode] = useState<string | null>(null);
@@ -293,8 +315,8 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
     <div className="flex flex-col h-full gap-4 max-w-7xl mx-auto w-full px-2 sm:px-4">
       {/* 1. Barra de Estadísticas y Puntuación */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-slate-800 shadow-xl">
-        {/* Progreso Total */}
-        <div className="flex items-center gap-3">
+        {/* Progreso Total y Botón Modo Friki */}
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-xl">📋</span>
             <div>
@@ -302,10 +324,32 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
                 Modo Lista y Ubicación
               </h3>
               <p className="text-[11px] text-slate-400">
-                Selecciona el nombre arriba y ubícalo en el mapa
+                {isGeekMode ? '🧠 Modo Friki Activo (+40 Territorios)' : 'Países soberanos del atlas mundial'}
               </p>
             </div>
           </div>
+
+          {/* Toggle Modo Friki */}
+          <button
+            onClick={() => {
+              setIsGeekMode(prev => !prev);
+              setSelectedCountryCode(null);
+              setPulsingFailedCountryCode(null);
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm active:scale-95 ${
+              isGeekMode
+                ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 border-purple-400 text-white shadow-glow-purple ring-1 ring-purple-400/50'
+                : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-purple-300 hover:text-purple-200'
+            }`}
+          >
+            <Brain className="w-3.5 h-3.5 text-purple-300" />
+            <span>Modo Friki (+40 Territorios)</span>
+            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${
+              isGeekMode ? 'bg-emerald-400 text-slate-950' : 'bg-slate-700 text-slate-400'
+            }`}>
+              {isGeekMode ? 'ON' : 'OFF'}
+            </span>
+          </button>
         </div>
 
         {/* Resumen de Resultados en vivo */}
@@ -387,7 +431,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-300">
                 {counts.completed === counts.total 
-                  ? '🎉 ¡Enhorabuena! Has completado todos los países de la lista.'
+                  ? '🎉 ¡Enhorabuena! Has completado todos los países y territorios de la lista.'
                   : '👆 Haz clic en cualquier país de la lista de abajo para seleccionarlo'}
               </h2>
             </div>
@@ -461,14 +505,14 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar país en la lista..."
+              placeholder="Buscar país o territorio..."
               className="w-full pl-8 pr-3 py-1.5 bg-slate-950/70 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
             />
           </div>
         </div>
 
-        {/* Mosaico de Chips de Países */}
-        <div className="max-h-40 sm:max-h-48 overflow-y-auto pr-1 flex flex-wrap gap-1.5 custom-scrollbar">
+        {/* Mosaico de Chips de Países y Territorios */}
+        <div className="max-h-44 sm:max-h-52 overflow-y-auto pr-1 flex flex-wrap gap-1.5 custom-scrollbar">
           {filteredCountryItems.map((country) => {
             const cca3 = country.cca3.toUpperCase();
             const item = itemsState[cca3];
