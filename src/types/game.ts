@@ -22,6 +22,7 @@ export interface GameConfig {
   allowHints: boolean;
   focusedPracticeCodes?: string[]; // If playing a targeted session on blind spots
   isAllCountriesMarathon?: boolean;
+  isGeekMode?: boolean;         // Si incluye más de 40 territorios especiales y estados de facto
 }
 
 export interface Question {

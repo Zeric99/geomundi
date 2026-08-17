@@ -3,6 +3,7 @@ import { Country, CountryMapStatus } from '../types/country';
 import { GameConfig, GameRoundResult, GameSummary, Question, QuestionType } from '../types/game';
 import { useAudioFeedback } from './useAudioFeedback';
 import { getAllTriviaPool } from '../data/triviaPool';
+import { GEEK_TERRITORIES } from '../data/fallbackCountries';
 import confetti from 'canvas-confetti';
 
 interface UseGameStateProps {
@@ -20,7 +21,8 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
     continent: 'World',
     questionType: 'name',
     totalQuestions: 10,
-    allowHints: true
+    allowHints: true,
+    isGeekMode: false
   });
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -41,12 +43,12 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
 
   // Generador de preguntas barajadas
   const generateQuestions = useCallback((cfg: GameConfig): Question[] => {
+    const fullCountryList = cfg.isGeekMode ? [...countries, ...GEEK_TERRITORIES] : countries;
+
     // Si estamos en Modo Trivia de Curiosidades
     if (cfg.mode === 'trivia-curiosities') {
-      const countryMap = new Map<string, Country>();
-      countries.forEach(c => countryMap.set(c.cca3.toUpperCase(), c));
-
-      let triviaPool = getAllTriviaPool(countries);
+      const countryMap = new Map(fullCountryList.map(c => [c.cca3.toUpperCase(), c]));
+      let triviaPool = getAllTriviaPool(fullCountryList);
 
       if (cfg.continent !== 'World') {
         triviaPool = triviaPool.filter(t => {
@@ -61,7 +63,7 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
       const selectedTrivia = shuffledTrivia.slice(0, triviaCount);
 
       return selectedTrivia.map((trivia, idx) => {
-        const country = countryMap.get(trivia.countryCode.toUpperCase()) || countries[0];
+        const country = countryMap.get(trivia.countryCode.toUpperCase()) || fullCountryList[0];
         return {
           id: `q_trivia_${trivia.id}_${idx}`,
           country,
@@ -74,19 +76,19 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
       });
     }
 
-    // Modo Estándar (Click & Find, Input Write, Match Cards)
+    // Modo Estándar (Click & Find, Input Write, Match Cards, List Select)
     let pool: Country[] = [];
 
     if (cfg.focusedPracticeCodes && cfg.focusedPracticeCodes.length > 0) {
       const codeSet = new Set(cfg.focusedPracticeCodes.map(c => c.toUpperCase()));
-      pool = countries.filter(c => codeSet.has(c.cca3.toUpperCase()));
+      pool = fullCountryList.filter(c => codeSet.has(c.cca3.toUpperCase()));
     } else if (cfg.continent === 'World') {
-      pool = [...countries];
+      pool = [...fullCountryList];
     } else {
-      pool = countries.filter(c => c.continent === cfg.continent);
+      pool = fullCountryList.filter(c => c.continent === cfg.continent);
     }
 
-    if (pool.length === 0) pool = [...countries];
+    if (pool.length === 0) pool = [...fullCountryList];
 
     // Barajar Fisher-Yates
     const shuffled = [...pool].sort(() => Math.random() - 0.5);

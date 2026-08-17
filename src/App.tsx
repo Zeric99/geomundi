@@ -200,6 +200,7 @@ export function App() {
                     countries={countries}
                     continent={config.continent}
                     onQuit={quitGame}
+                    isGeekMode={config.isGeekMode}
                   />
                 )}
 
@@ -241,6 +242,7 @@ export function App() {
                         onUseHint={useHint}
                         activeHint={activeHint}
                         isEvaluating={isEvaluating}
+                        isGeekMode={config.isGeekMode}
                       />
                     )}
 

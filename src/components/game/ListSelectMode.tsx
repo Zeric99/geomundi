@@ -24,6 +24,7 @@ interface ListSelectModeProps {
   countries: Country[];
   continent: Continent;
   onQuit: () => void;
+  isGeekMode?: boolean;
 }
 
 type CountryResultStatus = 'pending' | 'correct' | 'second_try' | 'wrong';
@@ -37,14 +38,12 @@ interface CountryItemState {
 export const ListSelectMode: React.FC<ListSelectModeProps> = ({
   countries,
   continent,
-  onQuit
+  onQuit,
+  isGeekMode = false
 }) => {
   const { playCorrectSound, playWrongSound, playVictorySound } = useAudioFeedback();
 
-  // Opción Modo Friki (incluye dependencias, islas especiales y estados con reconocimiento limitado)
-  const [isGeekMode, setIsGeekMode] = useState<boolean>(false);
-
-  // Filtrar países y territorios según continente y modo friki
+  // Filtrar países y territorios según el continente y la configuración inicial de Modo Friki
   const baseCountries = useMemo(() => {
     let list = [...countries];
     if (isGeekMode) {
@@ -69,7 +68,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
     return initial;
   });
 
-  // Reiniciar estado de lista cuando se alterna el modo friki o cambia el continente
+  // Reiniciar estado de lista cuando cambie el pool inicial
   useEffect(() => {
     const nextState: Record<string, CountryItemState> = {};
     baseCountries.forEach(c => {
@@ -315,7 +314,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
     <div className="flex flex-col h-full gap-4 max-w-7xl mx-auto w-full px-2 sm:px-4">
       {/* 1. Barra de Estadísticas y Puntuación */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-slate-800 shadow-xl">
-        {/* Progreso Total y Botón Modo Friki */}
+        {/* Progreso Total y Badge Modo Friki */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-xl">📋</span>
@@ -324,32 +323,18 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
                 Modo Lista y Ubicación
               </h3>
               <p className="text-[11px] text-slate-400">
-                {isGeekMode ? '🧠 Modo Friki Activo (+40 Territorios)' : 'Países soberanos del atlas mundial'}
+                {isGeekMode ? '🧠 Modo Friki Activo (+40 Territorios Especiales)' : 'Países soberanos del atlas mundial'}
               </p>
             </div>
           </div>
 
-          {/* Toggle Modo Friki */}
-          <button
-            onClick={() => {
-              setIsGeekMode(prev => !prev);
-              setSelectedCountryCode(null);
-              setPulsingFailedCountryCode(null);
-            }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm active:scale-95 ${
-              isGeekMode
-                ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 border-purple-400 text-white shadow-glow-purple ring-1 ring-purple-400/50'
-                : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-purple-300 hover:text-purple-200'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5 text-purple-300" />
-            <span>Modo Friki (+40 Territorios)</span>
-            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${
-              isGeekMode ? 'bg-emerald-400 text-slate-950' : 'bg-slate-700 text-slate-400'
-            }`}>
-              {isGeekMode ? 'ON' : 'OFF'}
-            </span>
-          </button>
+          {/* Badge Informativo de Modo Friki */}
+          {isGeekMode && (
+            <div className="px-3 py-1 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 border border-purple-400 text-white shadow-glow-purple flex items-center gap-1.5">
+              <Brain className="w-3.5 h-3.5 text-purple-200" />
+              <span>Modo Friki Activado</span>
+            </div>
+          )}
         </div>
 
         {/* Resumen de Resultados en vivo */}
@@ -559,7 +544,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         </div>
       </div>
 
-      {/* 4. Mapa Interactivo Principal (Sin revelar la ubicación antes de hacer clic, con radar para país fallado) */}
+      {/* 4. Mapa Interactivo Principal (Renderiza marcadores de acuerdo al Modo Friki seleccionado antes de empezar) */}
       <div className="relative flex-1 min-h-[460px] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
         <WorldMap
           countryStatuses={mapCountryStatuses}
@@ -570,6 +555,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
           onCountryClick={handleMapCountryClick}
           interactive={true}
           enableTooltip={false}
+          isGeekMode={isGeekMode}
         />
       </div>
     </div>

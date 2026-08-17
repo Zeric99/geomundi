@@ -27,6 +27,7 @@ interface WorldMapProps {
   interactive?: boolean;
   className?: string;
   onSelectContinent?: (continent: Continent) => void;
+  isGeekMode?: boolean;
 }
 
 export const WorldMap: React.FC<WorldMapProps> = ({
@@ -39,7 +40,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   enableTooltip = true,
   interactive = true,
   className = '',
-  onSelectContinent
+  onSelectContinent,
+  isGeekMode = false
 }) => {
   const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
   const [hoveredCountry, setHoveredCountry] = useState<Country | null>(null);
@@ -290,16 +292,16 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     setHoverPosition(null);
   };
 
-  // Microestados y territorios a renderizar con marcadores interactivos
+  // Microestados y territorios a renderizar con marcadores interactivos (según Modo Friki)
   const microstateCountries = useMemo(() => {
-    const all = [...FALLBACK_COUNTRIES, ...GEEK_TERRITORIES];
+    const all = isGeekMode ? [...FALLBACK_COUNTRIES, ...GEEK_TERRITORIES] : FALLBACK_COUNTRIES;
     return all.filter(c => {
       const isMicro = MICROSTATE_CODES.has(c.cca3.toUpperCase());
       if (!isMicro) return false;
       if (continent === 'World') return true;
       return c.continent === continent;
     });
-  }, [continent]);
+  }, [continent, isGeekMode]);
 
   // País actualmente parpadeando por fallo
   const pulsingCountry = useMemo(() => {

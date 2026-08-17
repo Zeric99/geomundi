@@ -11,6 +11,7 @@ interface ClickAndFindModeProps {
   onUseHint: () => void;
   activeHint: string | null;
   isEvaluating: boolean;
+  isGeekMode?: boolean;
 }
 
 export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
@@ -19,7 +20,8 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
   onCountryClick,
   onUseHint,
   activeHint,
-  isEvaluating
+  isEvaluating,
+  isGeekMode = false
 }) => {
   const { country, questionType } = question;
 
@@ -122,6 +124,7 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
           continent={country.continent}
           targetCountryCode={question.hintUsed ? country.cca3 : null}
           interactive={!isEvaluating}
+          isGeekMode={isGeekMode}
         />
       </div>
     </div>

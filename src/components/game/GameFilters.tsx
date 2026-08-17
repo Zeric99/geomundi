@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, MapPin, Type, Layers, Compass, Sparkles, Flag, Landmark, Zap, Flame, Trophy, ListChecks } from 'lucide-react';
+import { Globe, MapPin, Type, Layers, Compass, Sparkles, Flag, Landmark, Zap, Flame, Trophy, ListChecks, Brain } from 'lucide-react';
 import { Continent } from '../../types/country';
 import { GameConfig, GameMode, QuestionType } from '../../types/game';
 import { BlindSpotItem } from '../../types/stats';
@@ -254,6 +254,47 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
         </div>
       )}
 
+      {/* 5. Selector de Modo Friki: Territorios Especiales y Estados de Facto */}
+      <div className="bg-[#131C2E] border border-purple-500/30 rounded-2xl p-4 flex items-center justify-between gap-4 flex-wrap shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className={`p-3 rounded-xl border transition-all ${
+            config.isGeekMode
+              ? 'bg-purple-500/20 border-purple-400/50 text-purple-300 shadow-glow-purple'
+              : 'bg-slate-800/80 border-slate-700 text-slate-400'
+          }`}>
+            <Brain className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="text-sm font-bold text-white">
+                🧠 Modo Friki (+40 Territorios Especiales & Estados de Facto)
+              </h4>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase ${
+                config.isGeekMode ? 'bg-purple-500 text-white shadow-glow-purple' : 'bg-slate-800 text-slate-400 border border-slate-700'
+              }`}>
+                {config.isGeekMode ? 'Activado' : 'Desactivado'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl">
+              Añade al mapa y al juego más de 40 territorios dependientes (Puerto Rico, Bermudas, Caimán, Malvinas, Groenlandia, Cook...), departamentos de ultramar y estados con reconocimiento limitado (Somalilandia, Transnistria, Abjasia, Sáhara...).
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onChangeConfig({ isGeekMode: !config.isGeekMode })}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 border shadow-md active:scale-95 ${
+            config.isGeekMode
+              ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 border-purple-400 text-white shadow-glow-purple ring-2 ring-purple-400/40'
+              : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+          }`}
+        >
+          <Brain className="w-4 h-4 text-purple-300" />
+          <span>{config.isGeekMode ? 'MODO FRIKI: ACTIVADO' : 'MODO FRIKI: DESACTIVADO'}</span>
+        </button>
+      </div>
+
       {/* Botón de Inicio Principal */}
       <div className="pt-2">
         <button
@@ -265,8 +306,10 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
             ? 'Comenzar a Explorar el Mundo' 
             : config.mode === 'trivia-curiosities'
             ? '¡Jugar Trivia de Curiosidades (10 Preguntas)!'
+            : config.mode === 'list-select'
+            ? `¡Comenzar Lista y Ubicación (${config.isGeekMode ? '238+ Países y Territorios' : '195+ Países'})!`
             : config.totalQuestions >= 190
-            ? '¡Comenzar Desafío Completo: Mundo Entero (195+ Países)!'
+            ? `¡Comenzar Desafío Completo: Mundo Entero (${config.isGeekMode ? '238+ Países y Territorios' : '195+ Países'})!`
             : '¡Comenzar Desafío!'}
         </button>
       </div>
