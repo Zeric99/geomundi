@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import {
   ComposableMap,
   Geographies,
@@ -27,41 +26,40 @@ interface PacificMarkerDef {
   code: string;
   name: string;
   coords: [number, number]; // [longitude, latitude]
-  labelOffset?: [number, number];
   isGeekOnly?: boolean;
 }
 
-// Coordenadas geográficas calibradas para el Pacífico con etiquetas legibles
+// Coordenadas geográficas reales calibradas para el Pacífico
 const PACIFIC_MARKERS: PacificMarkerDef[] = [
   // Micronesia
-  { code: 'PLW', name: 'Palaos', coords: [134.58, 7.51], labelOffset: [-14, -8] },
-  { code: 'GUM', name: 'Guam', coords: [144.79, 13.44], labelOffset: [12, 0], isGeekOnly: true },
-  { code: 'MNP', name: 'Islas Marianas', coords: [145.38, 15.09], labelOffset: [12, 0], isGeekOnly: true },
-  { code: 'FSM', name: 'Micronesia (FSM)', coords: [158.16, 6.92], labelOffset: [0, -12] },
-  { code: 'MHL', name: 'Islas Marshall', coords: [171.18, 7.13], labelOffset: [14, 0] },
-  { code: 'NRU', name: 'Nauru', coords: [166.93, -0.52], labelOffset: [-14, 0] },
-  { code: 'KIR', name: 'Kiribati', coords: [172.97, 1.45], labelOffset: [14, 0] },
+  { code: 'PLW', name: 'Palaos', coords: [134.58, 7.51] },
+  { code: 'GUM', name: 'Guam', coords: [144.79, 13.44], isGeekOnly: true },
+  { code: 'MNP', name: 'Islas Marianas', coords: [145.38, 15.09], isGeekOnly: true },
+  { code: 'FSM', name: 'Micronesia (FSM)', coords: [158.16, 6.92] },
+  { code: 'MHL', name: 'Islas Marshall', coords: [171.18, 7.13] },
+  { code: 'NRU', name: 'Nauru', coords: [166.93, -0.52] },
+  { code: 'KIR', name: 'Kiribati', coords: [172.97, 1.45] },
 
   // Melanesia
-  { code: 'PNG', name: 'Papúa Nueva Guinea', coords: [143.95, -6.31], labelOffset: [0, -14] },
-  { code: 'SLB', name: 'Islas Salomón', coords: [160.15, -9.64], labelOffset: [14, 0] },
-  { code: 'VUT', name: 'Vanuatu', coords: [168.32, -17.73], labelOffset: [-14, 0] },
-  { code: 'NCL', name: 'Nueva Caledonia', coords: [165.61, -20.90], labelOffset: [-16, 0], isGeekOnly: true },
-  { code: 'FJI', name: 'Fiyi', coords: [178.06, -17.71], labelOffset: [14, 0] },
+  { code: 'PNG', name: 'Papúa Nueva Guinea', coords: [143.95, -6.31] },
+  { code: 'SLB', name: 'Islas Salomón', coords: [160.15, -9.64] },
+  { code: 'VUT', name: 'Vanuatu', coords: [168.32, -17.73] },
+  { code: 'NCL', name: 'Nueva Caledonia', coords: [165.61, -20.90], isGeekOnly: true },
+  { code: 'FJI', name: 'Fiyi', coords: [178.06, -17.71] },
 
   // Polinesia
-  { code: 'TUV', name: 'Tuvalu', coords: [177.64, -7.10], labelOffset: [14, 0] },
-  { code: 'WLF', name: 'Wallis y Futuna', coords: [-176.20, -13.30], labelOffset: [-16, -6], isGeekOnly: true },
-  { code: 'WSM', name: 'Samoa', coords: [-172.10, -13.75], labelOffset: [0, -10] },
-  { code: 'ASM', name: 'Samoa Americana', coords: [-170.70, -14.27], labelOffset: [14, 0], isGeekOnly: true },
-  { code: 'TON', name: 'Tonga', coords: [-175.19, -21.17], labelOffset: [14, 0] },
-  { code: 'NIU', name: 'Niue', coords: [-169.86, -19.05], labelOffset: [12, 0], isGeekOnly: true },
-  { code: 'COK', name: 'Islas Cook', coords: [-159.77, -21.23], labelOffset: [14, 0], isGeekOnly: true },
-  { code: 'PYF', name: 'Polinesia Francesa', coords: [-149.40, -17.67], labelOffset: [16, 0], isGeekOnly: true },
+  { code: 'TUV', name: 'Tuvalu', coords: [177.64, -7.10] },
+  { code: 'WLF', name: 'Wallis y Futuna', coords: [-176.20, -13.30], isGeekOnly: true },
+  { code: 'WSM', name: 'Samoa', coords: [-172.10, -13.75] },
+  { code: 'ASM', name: 'Samoa Americana', coords: [-170.70, -14.27], isGeekOnly: true },
+  { code: 'TON', name: 'Tonga', coords: [-175.19, -21.17] },
+  { code: 'NIU', name: 'Niue', coords: [-169.86, -19.05], isGeekOnly: true },
+  { code: 'COK', name: 'Islas Cook', coords: [-159.77, -21.23], isGeekOnly: true },
+  { code: 'PYF', name: 'Polinesia Francesa', coords: [-149.40, -17.67], isGeekOnly: true },
 
   // Australasia
-  { code: 'AUS', name: 'Australia', coords: [133.77, -25.27], labelOffset: [0, 0] },
-  { code: 'NZL', name: 'Nueva Zelanda', coords: [174.88, -40.90], labelOffset: [16, 0] }
+  { code: 'AUS', name: 'Australia', coords: [133.77, -25.27] },
+  { code: 'NZL', name: 'Nueva Zelanda', coords: [174.88, -40.90] }
 ];
 
 export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
@@ -86,7 +84,7 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
   const handleToggleExpand = () => {
     if (!isExpanded) {
       setIsExpanded(true);
-      setPosition({ coordinates: [175, -8.0], zoom: 6.5 });
+      setPosition({ coordinates: [175, -8.0], zoom: 5.5 });
     } else {
       setIsExpanded(false);
       setPosition({ coordinates: [170, -8], zoom: 2.7 });
@@ -125,17 +123,20 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
     return { fill: '#24344D', stroke: '#3B4F6E', strokeWidth: 0.4 };
   };
 
-  // Contenido visual del mapa SVG
-  const mapContent = (expanded: boolean) => (
-    <div className="relative w-full h-full bg-[#0A101C] select-none flex flex-col justify-between overflow-hidden">
+  return (
+    <div className={`relative bg-[#0B1220] border-2 border-cyan-500/60 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 ${
+      isExpanded 
+        ? 'absolute inset-0 z-40 w-full h-full shadow-[0_0_50px_rgba(6,182,212,0.4)]' 
+        : 'w-full h-full'
+    }`}>
       {/* Barra de Título */}
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 bg-slate-900/95 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-cyan-500/50 text-xs font-bold text-cyan-300 shadow-2xl">
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-cyan-500/50 text-xs font-bold text-cyan-300 shadow-xl">
         <span className="text-base">🌊</span>
-        <span>Oceanía & Pacífico {expanded ? '(Vista Gigante a Pantalla Completa)' : ''}</span>
+        <span>Oceanía & Pacífico {isExpanded ? '(Vista Ampliada)' : ''}</span>
       </div>
 
       {/* Controles de Zoom del Inset */}
-      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-slate-900/95 backdrop-blur-md p-1.5 rounded-xl border border-slate-700 shadow-2xl">
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-1 bg-slate-900/95 backdrop-blur-md p-1.5 rounded-xl border border-slate-700 shadow-xl">
         <button
           onClick={() => setPosition(p => ({ ...p, zoom: Math.min(p.zoom * 1.35, 25) }))}
           className="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition"
@@ -151,7 +152,7 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
           <ZoomOut className="w-4 h-4" />
         </button>
         <button
-          onClick={() => setPosition({ coordinates: expanded ? [175, -8.0] : [170, -8], zoom: expanded ? 6.5 : 2.7 })}
+          onClick={() => setPosition({ coordinates: isExpanded ? [175, -8.0] : [170, -8], zoom: isExpanded ? 5.5 : 2.7 })}
           className="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition"
           title="Restablecer vista"
         >
@@ -160,17 +161,17 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
         <button
           onClick={handleToggleExpand}
           className="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-white rounded-lg transition font-bold text-xs flex items-center gap-1 border border-cyan-500/40 ml-1 shadow-sm active:scale-95"
-          title={expanded ? "Cerrar pantalla completa" : "Ampliar a pantalla completa"}
+          title={isExpanded ? "Volver a la vista recuadro" : "Ampliar a todo el mapa"}
         >
-          {expanded ? (
+          {isExpanded ? (
             <>
-              <X className="w-4 h-4" />
-              <span>Cerrar</span>
+              <Minimize2 className="w-3.5 h-3.5" />
+              <span>Reducir</span>
             </>
           ) : (
             <>
               <Maximize2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Ampliar</span>
+              <span>Ampliar</span>
             </>
           )}
         </button>
@@ -236,7 +237,7 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
             }
           </Geographies>
 
-          {/* Marcadores Circulares Nítidos e Interactivos para cada Isla / Nación */}
+          {/* Marcadores Circulares Nítidos e Interactivos para cada Isla / Nación (SIN NOMBRES DE PISTAS) */}
           {visibleMarkers.map((island) => {
             const styles = getStyleForCode(island.code);
             const isPulsing = pulsingCountryCode?.toUpperCase() === island.code.toUpperCase();
@@ -286,28 +287,11 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
                     className="group-hover:scale-125 transition-transform origin-center"
                   />
 
-                  {/* En vista gigante ampliada, mostrar etiquetas de nombres de las naciones de Oceanía */}
-                  {expanded && (
-                    <text
-                      x={(island.labelOffset?.[0] || 12) / Math.sqrt(position.zoom / 6.5)}
-                      y={(island.labelOffset?.[1] || 0) / Math.sqrt(position.zoom / 6.5)}
-                      fontSize={Math.max(2.2, 4.5 / Math.sqrt(position.zoom))}
-                      fontWeight="bold"
-                      fill="#FFFFFF"
-                      className="select-none drop-shadow-[0_2px_4px_rgba(0,0,0,1)] pointer-events-none"
-                      alignmentBaseline="middle"
-                    >
-                      {island.name}
-                    </text>
-                  )}
-
                   {/* Zona táctil invisible amplia */}
                   <circle
                     r={hitRadius}
                     fill="transparent"
                   />
-
-                  <title>{island.name}</title>
                 </g>
               </Marker>
             );
@@ -315,28 +299,5 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
         </ZoomableGroup>
       </ComposableMap>
     </div>
-  );
-
-  return (
-    <>
-      {/* Vista Compacta Normal */}
-      <div className="w-full h-full bg-[#0B1220] border-2 border-cyan-500/50 rounded-2xl overflow-hidden shadow-2xl">
-        {mapContent(false)}
-      </div>
-
-      {/* Vista Gigante a Pantalla Completa mediante React Portal para no ser atrapado por transforms */}
-      {isExpanded && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 md:p-8 animate-in fade-in duration-200">
-          <div 
-            onClick={handleToggleExpand}
-            className="absolute inset-0 bg-slate-950/90 backdrop-blur-lg"
-          />
-          <div className="relative z-10 w-full h-full max-w-7xl max-h-[92vh] bg-[#0A101C] border-2 border-cyan-500/80 rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(6,182,212,0.5)]">
-            {mapContent(true)}
-          </div>
-        </div>,
-        document.body
-      )}
-    </>
   );
 };
