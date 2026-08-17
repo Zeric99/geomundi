@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ComposableMap,
   Geographies,
@@ -9,7 +9,7 @@ import {
 import { Country, CountryMapStatus } from '../../types/country';
 import { countriesService } from '../../services/countriesService';
 import { FALLBACK_MAP_URL } from '../../data/fallbackCountries';
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, X } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2 } from 'lucide-react';
 
 const LOCAL_GEO_URL = `${import.meta.env.BASE_URL}data/world-50m.json`;
 
@@ -20,6 +20,8 @@ interface OceaniaInsetMapProps {
   pulsingCountryCode?: string | null;
   onCountryClick?: (country: Country, cca3: string) => void;
   isGeekMode?: boolean;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 interface PacificMarkerDef {
@@ -68,28 +70,28 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
   targetCountryCode = null,
   pulsingCountryCode = null,
   onCountryClick,
-  isGeekMode = false
+  isGeekMode = false,
+  isExpanded = false,
+  onToggleExpand
 }) => {
   const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [position, setPosition] = useState<{ coordinates: [number, number]; zoom: number }>({
-    coordinates: [170, -8],
-    zoom: 2.7
+    coordinates: isExpanded ? [175, -8.0] : [170, -8],
+    zoom: isExpanded ? 5.5 : 2.7
   });
+
+  // Ajustar coordenadas y zoom al expandir o reducir
+  useEffect(() => {
+    if (isExpanded) {
+      setPosition({ coordinates: [175, -8.0], zoom: 5.5 });
+    } else {
+      setPosition({ coordinates: [170, -8], zoom: 2.7 });
+    }
+  }, [isExpanded]);
 
   const visibleMarkers = useMemo(() => {
     return PACIFIC_MARKERS.filter(m => isGeekMode || !m.isGeekOnly);
   }, [isGeekMode]);
-
-  const handleToggleExpand = () => {
-    if (!isExpanded) {
-      setIsExpanded(true);
-      setPosition({ coordinates: [175, -8.0], zoom: 5.5 });
-    } else {
-      setIsExpanded(false);
-      setPosition({ coordinates: [170, -8], zoom: 2.7 });
-    }
-  };
 
   const handleCountrySelect = (code: string) => {
     if (!onCountryClick) return;
@@ -124,11 +126,7 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
   };
 
   return (
-    <div className={`relative bg-[#0B1220] border-2 border-cyan-500/60 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 ${
-      isExpanded 
-        ? 'absolute inset-0 z-40 w-full h-full shadow-[0_0_50px_rgba(6,182,212,0.4)]' 
-        : 'w-full h-full'
-    }`}>
+    <div className="relative w-full h-full bg-[#0B1220] border-2 border-cyan-500/60 rounded-2xl overflow-hidden shadow-2xl">
       {/* Barra de Título */}
       <div className="absolute top-3 left-3 z-20 flex items-center gap-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-cyan-500/50 text-xs font-bold text-cyan-300 shadow-xl">
         <span className="text-base">🌊</span>
@@ -158,23 +156,25 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
         >
           <RotateCcw className="w-4 h-4" />
         </button>
-        <button
-          onClick={handleToggleExpand}
-          className="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-white rounded-lg transition font-bold text-xs flex items-center gap-1 border border-cyan-500/40 ml-1 shadow-sm active:scale-95"
-          title={isExpanded ? "Volver a la vista recuadro" : "Ampliar a todo el mapa"}
-        >
-          {isExpanded ? (
-            <>
-              <Minimize2 className="w-3.5 h-3.5" />
-              <span>Reducir</span>
-            </>
-          ) : (
-            <>
-              <Maximize2 className="w-3.5 h-3.5" />
-              <span>Ampliar</span>
-            </>
-          )}
-        </button>
+        {onToggleExpand && (
+          <button
+            onClick={onToggleExpand}
+            className="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-white rounded-lg transition font-bold text-xs flex items-center gap-1 border border-cyan-500/40 ml-1 shadow-sm active:scale-95"
+            title={isExpanded ? "Reducir a recuadro" : "Ampliar en todo el mapa"}
+          >
+            {isExpanded ? (
+              <>
+                <Minimize2 className="w-3.5 h-3.5" />
+                <span>Reducir</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>Ampliar</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Mapa Vectorial Interactivo del Pacífico con Geometría 50m Real */}
@@ -237,7 +237,7 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
             }
           </Geographies>
 
-          {/* Marcadores Circulares Nítidos e Interactivos para cada Isla / Nación (SIN NOMBRES DE PISTAS) */}
+          {/* Marcadores Circulares Nítidos e Interactivos para cada Isla / Nación */}
           {visibleMarkers.map((island) => {
             const styles = getStyleForCode(island.code);
             const isPulsing = pulsingCountryCode?.toUpperCase() === island.code.toUpperCase();

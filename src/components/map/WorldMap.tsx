@@ -93,6 +93,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   // Estados de visibilidad de las ventanas de Inset (Caribe y Oceanía)
   const [showCaribbeanInset, setShowCaribbeanInset] = useState<boolean>(true);
   const [showOceaniaInset, setShowOceaniaInset] = useState<boolean>(true);
+  const [expandedInset, setExpandedInset] = useState<'caribbean' | 'oceania' | null>(null);
 
   // Detección de arrastre vs. clic optimizada
   const pointerDownPos = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -378,9 +379,13 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         </div>
       </div>
 
-      {/* RECUADRO INSET INFERIOR IZQUIERDO: EL CARIBE & ANTILLAS */}
-      {showCaribbean && (
-        <div className="absolute bottom-3 left-3 z-30 w-56 sm:w-72 md:w-80 h-40 sm:h-48 shadow-2xl transition-all animate-in fade-in zoom-in-95">
+      {/* RECUADRO INSET: EL CARIBE & ANTILLAS */}
+      {showCaribbean && expandedInset !== 'oceania' && (
+        <div className={`transition-all duration-300 ${
+          expandedInset === 'caribbean'
+            ? 'absolute inset-2 sm:inset-4 z-40 shadow-2xl rounded-2xl overflow-hidden'
+            : 'absolute bottom-3 left-3 z-30 w-56 sm:w-72 md:w-80 h-40 sm:h-48 shadow-2xl rounded-2xl overflow-hidden'
+        }`}>
           <CaribbeanInsetMap
             countryStatuses={countryStatuses}
             selectedCountryCode={selectedCountryCode}
@@ -388,20 +393,28 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             pulsingCountryCode={pulsingCountryCode}
             onCountryClick={onCountryClick}
             isGeekMode={isGeekMode}
+            isExpanded={expandedInset === 'caribbean'}
+            onToggleExpand={() => setExpandedInset(expandedInset === 'caribbean' ? null : 'caribbean')}
           />
-          <button
-            onClick={() => setShowCaribbeanInset(false)}
-            className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors"
-            title="Minimizar recuadro del Caribe"
-          >
-            <EyeOff className="w-3.5 h-3.5" />
-          </button>
+          {expandedInset !== 'caribbean' && (
+            <button
+              onClick={() => setShowCaribbeanInset(false)}
+              className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors"
+              title="Minimizar recuadro del Caribe"
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )}
 
-      {/* RECUADRO INSET INFERIOR DERECHO: OCEANÍA & PACÍFICO */}
-      {showOceania && (
-        <div className="absolute bottom-3 right-3 z-30 w-60 sm:w-80 md:w-96 h-40 sm:h-48 shadow-2xl transition-all animate-in fade-in zoom-in-95">
+      {/* RECUADRO INSET: OCEANÍA & PACÍFICO */}
+      {showOceania && expandedInset !== 'caribbean' && (
+        <div className={`transition-all duration-300 ${
+          expandedInset === 'oceania'
+            ? 'absolute inset-2 sm:inset-4 z-40 shadow-2xl rounded-2xl overflow-hidden'
+            : 'absolute bottom-3 right-3 z-30 w-60 sm:w-80 md:w-96 h-40 sm:h-48 shadow-2xl rounded-2xl overflow-hidden'
+        }`}>
           <OceaniaInsetMap
             countryStatuses={countryStatuses}
             selectedCountryCode={selectedCountryCode}
@@ -409,14 +422,18 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             pulsingCountryCode={pulsingCountryCode}
             onCountryClick={onCountryClick}
             isGeekMode={isGeekMode}
+            isExpanded={expandedInset === 'oceania'}
+            onToggleExpand={() => setExpandedInset(expandedInset === 'oceania' ? null : 'oceania')}
           />
-          <button
-            onClick={() => setShowOceaniaInset(false)}
-            className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors"
-            title="Minimizar recuadro de Oceanía"
-          >
-            <EyeOff className="w-3.5 h-3.5" />
-          </button>
+          {expandedInset !== 'oceania' && (
+            <button
+              onClick={() => setShowOceaniaInset(false)}
+              className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors"
+              title="Minimizar recuadro de Oceanía"
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )}
 

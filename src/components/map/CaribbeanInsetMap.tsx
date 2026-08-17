@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ComposableMap,
   Geographies,
@@ -9,7 +9,7 @@ import {
 import { Country, CountryMapStatus } from '../../types/country';
 import { countriesService } from '../../services/countriesService';
 import { FALLBACK_MAP_URL } from '../../data/fallbackCountries';
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, X } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2 } from 'lucide-react';
 
 const LOCAL_GEO_URL = `${import.meta.env.BASE_URL}data/world-50m.json`;
 
@@ -20,6 +20,8 @@ interface CaribbeanInsetMapProps {
   pulsingCountryCode?: string | null;
   onCountryClick?: (country: Country, cca3: string) => void;
   isGeekMode?: boolean;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 interface IslandMarkerDef {
@@ -29,7 +31,7 @@ interface IslandMarkerDef {
   isGeekOnly?: boolean;
 }
 
-// Coordenadas geográficas reales calibradas para el Caribe (Sin solapamientos)
+// Coordenadas geográficas reales calibradas para el Caribe
 const CARIBBEAN_MARKERS: IslandMarkerDef[] = [
   // Lucayas
   { code: 'BHS', name: 'Bahamas', coords: [-77.39, 25.03] },
@@ -73,28 +75,28 @@ export const CaribbeanInsetMap: React.FC<CaribbeanInsetMapProps> = ({
   targetCountryCode = null,
   pulsingCountryCode = null,
   onCountryClick,
-  isGeekMode = false
+  isGeekMode = false,
+  isExpanded = false,
+  onToggleExpand
 }) => {
   const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [position, setPosition] = useState<{ coordinates: [number, number]; zoom: number }>({
-    coordinates: [-70, 16.5],
-    zoom: 4.8
+    coordinates: isExpanded ? [-67.5, 15.8] : [-70, 16.5],
+    zoom: isExpanded ? 8.5 : 4.8
   });
+
+  // Ajustar coordenadas y zoom al expandir o reducir
+  useEffect(() => {
+    if (isExpanded) {
+      setPosition({ coordinates: [-67.5, 15.8], zoom: 8.5 });
+    } else {
+      setPosition({ coordinates: [-70, 16.5], zoom: 4.8 });
+    }
+  }, [isExpanded]);
 
   const visibleMarkers = useMemo(() => {
     return CARIBBEAN_MARKERS.filter(m => isGeekMode || !m.isGeekOnly);
   }, [isGeekMode]);
-
-  const handleToggleExpand = () => {
-    if (!isExpanded) {
-      setIsExpanded(true);
-      setPosition({ coordinates: [-67.5, 15.8], zoom: 8.5 });
-    } else {
-      setIsExpanded(false);
-      setPosition({ coordinates: [-70, 16.5], zoom: 4.8 });
-    }
-  };
 
   const handleCountrySelect = (code: string) => {
     if (!onCountryClick) return;
@@ -129,11 +131,7 @@ export const CaribbeanInsetMap: React.FC<CaribbeanInsetMapProps> = ({
   };
 
   return (
-    <div className={`relative bg-[#0B1220] border-2 border-cyan-500/60 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 ${
-      isExpanded 
-        ? 'absolute inset-0 z-40 w-full h-full shadow-[0_0_50px_rgba(6,182,212,0.4)]' 
-        : 'w-full h-full'
-    }`}>
+    <div className="relative w-full h-full bg-[#0B1220] border-2 border-cyan-500/60 rounded-2xl overflow-hidden shadow-2xl">
       {/* Barra de Título */}
       <div className="absolute top-3 left-3 z-20 flex items-center gap-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-cyan-500/50 text-xs font-bold text-cyan-300 shadow-xl">
         <span className="text-base">🏝️</span>
@@ -163,23 +161,25 @@ export const CaribbeanInsetMap: React.FC<CaribbeanInsetMapProps> = ({
         >
           <RotateCcw className="w-4 h-4" />
         </button>
-        <button
-          onClick={handleToggleExpand}
-          className="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-white rounded-lg transition font-bold text-xs flex items-center gap-1 border border-cyan-500/40 ml-1 shadow-sm active:scale-95"
-          title={isExpanded ? "Volver a la vista recuadro" : "Ampliar a todo el mapa"}
-        >
-          {isExpanded ? (
-            <>
-              <Minimize2 className="w-3.5 h-3.5" />
-              <span>Reducir</span>
-            </>
-          ) : (
-            <>
-              <Maximize2 className="w-3.5 h-3.5" />
-              <span>Ampliar</span>
-            </>
-          )}
-        </button>
+        {onToggleExpand && (
+          <button
+            onClick={onToggleExpand}
+            className="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-white rounded-lg transition font-bold text-xs flex items-center gap-1 border border-cyan-500/40 ml-1 shadow-sm active:scale-95"
+            title={isExpanded ? "Reducir a recuadro" : "Ampliar en todo el mapa"}
+          >
+            {isExpanded ? (
+              <>
+                <Minimize2 className="w-3.5 h-3.5" />
+                <span>Reducir</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>Ampliar</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Mapa Vectorial Interactivo del Caribe con Geometría 50m Real */}
@@ -242,7 +242,7 @@ export const CaribbeanInsetMap: React.FC<CaribbeanInsetMapProps> = ({
             }
           </Geographies>
 
-          {/* Marcadores Circulares Nítidos e Interactivos para cada Isla (SIN NOMBRES DE PISTAS) */}
+          {/* Marcadores Circulares Nítidos e Interactivos para cada Isla */}
           {visibleMarkers.map((island) => {
             const styles = getStyleForCode(island.code);
             const isPulsing = pulsingCountryCode?.toUpperCase() === island.code.toUpperCase();
