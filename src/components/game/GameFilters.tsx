@@ -1,5 +1,24 @@
-import React from 'react';
-import { Globe, MapPin, Type, Layers, Compass, Sparkles, Flag, Landmark, Zap, Flame, Trophy, ListChecks, Brain } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Globe, 
+  MapPin, 
+  Type, 
+  Layers, 
+  Compass, 
+  Sparkles, 
+  Flag, 
+  Landmark, 
+  Zap, 
+  Flame, 
+  Trophy, 
+  ListChecks, 
+  Brain,
+  X,
+  ArrowRight,
+  SlidersHorizontal,
+  CheckCircle2
+} from 'lucide-react';
 import { Continent } from '../../types/country';
 import { GameConfig, GameMode, QuestionType } from '../../types/game';
 import { BlindSpotItem } from '../../types/stats';
@@ -19,6 +38,9 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   blindSpots,
   onStartFocusedPractice
 }) => {
+  // Modal de configuración del modo seleccionado
+  const [activeConfigMode, setActiveConfigMode] = useState<GameMode | null>(null);
+
   const continents: { id: Continent; label: string; icon: string }[] = [
     { id: 'World', label: 'Mundo Entero', icon: '🌍' },
     { id: 'Europe', label: 'Europa', icon: '🏰' },
@@ -28,51 +50,81 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     { id: 'Oceania', label: 'Oceanía', icon: '🏝️' },
   ];
 
-  const modes: { id: GameMode; title: string; desc: string; icon: React.ReactNode; badge?: string }[] = [
+  const modes: { 
+    id: GameMode; 
+    title: string; 
+    desc: string; 
+    icon: React.ReactNode; 
+    badge?: string; 
+    accentColor: string;
+    borderGlow: string;
+    highlights: string[];
+  }[] = [
     {
       id: 'flag-skip-chain',
       title: 'Banderas (Con Salto & 2ª Vuelta)',
-      desc: 'Adivina banderas. Si dudas, salta y te saldrá en la segunda ronda hasta completarlas todas.',
-      icon: <Flag className="w-5 h-5 text-sky-400" />,
-      badge: '¡Nuevo!'
+      desc: 'Adivina banderas en el mapa. Si dudas con alguna, puedes saltarla y te volverá a salir en la segunda ronda hasta completarlas todas.',
+      icon: <Flag className="w-6 h-6 text-sky-400" />,
+      badge: '¡Nuevo y Recomendado!',
+      accentColor: 'from-sky-500/20 to-blue-600/10',
+      borderGlow: 'hover:border-sky-500/80 hover:shadow-[0_0_30px_rgba(56,189,248,0.25)]',
+      highlights: ['Salto de banderas', 'Segunda ronda acumulativa', 'Todas las regiones']
     },
     {
       id: 'list-select',
       title: 'Lista & Mapa (Colores)',
-      desc: 'Pulsa el nombre de un país de la lista y ubícalo: Verde (1º), Amarillo (2º), Rojo (Fallo).',
-      icon: <ListChecks className="w-5 h-5 text-emerald-400" />,
-      badge: 'Popular'
+      desc: 'Pulsa el nombre de un país de la lista superior y ubícalo: Verde (1º intento), Amarillo (2º intento), Rojo (Fallo).',
+      icon: <ListChecks className="w-6 h-6 text-emerald-400" />,
+      badge: 'Popular',
+      accentColor: 'from-emerald-500/20 to-teal-600/10',
+      borderGlow: 'hover:border-emerald-500/80 hover:shadow-[0_0_30px_rgba(16,185,129,0.25)]',
+      highlights: ['Pool completo de países', 'Códigos de color', 'Práctica de memoria']
     },
     {
       id: 'trivia-curiosities',
       title: 'Trivia y Curiosidades',
-      desc: 'Preguntas de récords mundiales, curiosidades insólitas y datos únicos de cada país.',
-      icon: <Trophy className="w-5 h-5 text-indigo-400" />,
-      badge: 'Trivia'
+      desc: 'Preguntas de récords mundiales, curiosidades insólitas y hechos geográficos únicos que debes localizar en el mapa.',
+      icon: <Trophy className="w-6 h-6 text-indigo-400" />,
+      badge: 'Trivia',
+      accentColor: 'from-indigo-500/20 to-purple-600/10',
+      borderGlow: 'hover:border-indigo-500/80 hover:shadow-[0_0_30px_rgba(99,102,241,0.25)]',
+      highlights: ['Récords mundiales', 'Cultura e historia', 'Aprende mientras juegas']
     },
     {
       id: 'click-find',
       title: 'Click & Find',
-      desc: 'Te damos un país, bandera o capital y tú lo ubicas en el mapa.',
-      icon: <MapPin className="w-5 h-5 text-cyan-400" />
+      desc: 'El modo clásico: te damos un país, bandera o capital y tú lo ubicas directamente haciendo clic en el mapa.',
+      icon: <MapPin className="w-6 h-6 text-cyan-400" />,
+      accentColor: 'from-cyan-500/20 to-sky-600/10',
+      borderGlow: 'hover:border-cyan-500/80 hover:shadow-[0_0_30px_rgba(6,182,212,0.25)]',
+      highlights: ['Nombres, banderas o capitales', 'Selección de cantidad', 'Pistas dinámicas']
     },
     {
       id: 'input-write',
       title: 'Modo Escribir',
-      desc: 'El mapa resalta un país y escribes su nombre con tolerancia a tildes.',
-      icon: <Type className="w-5 h-5 text-teal-400" />
+      desc: 'El mapa resalta un país en ámbar y tú debes escribir su nombre exacto con tolerancia a tildes y ortografía.',
+      icon: <Type className="w-6 h-6 text-teal-400" />,
+      accentColor: 'from-teal-500/20 to-emerald-600/10',
+      borderGlow: 'hover:border-teal-500/80 hover:shadow-[0_0_30px_rgba(20,184,166,0.25)]',
+      highlights: ['Escritura activa', 'Tolerancia ortográfica', 'Localización inversa']
     },
     {
       id: 'match-cards',
       title: 'Match / Emparejar',
-      desc: 'Empareja 5 tarjetas interactivas con sus países en el mapa.',
-      icon: <Layers className="w-5 h-5 text-purple-400" />
+      desc: 'Empareja 5 tarjetas interactivas de países simultáneamente con sus posiciones en el mapa.',
+      icon: <Layers className="w-6 h-6 text-purple-400" />,
+      accentColor: 'from-purple-500/20 to-pink-600/10',
+      borderGlow: 'hover:border-purple-500/80 hover:shadow-[0_0_30px_rgba(168,85,247,0.25)]',
+      highlights: ['Emparejamiento de 5 en 5', 'Agilidad visual', 'Banderas y capitales']
     },
     {
       id: 'explore',
-      title: 'Modo Explorador',
-      desc: 'Navegación libre: haz clic en cualquier país para aprender datos.',
-      icon: <Compass className="w-5 h-5 text-amber-400" />
+      title: 'Modo Explorador Libre',
+      desc: 'Navegación libre por el globo: haz clic en cualquier país o isla para ver su ficha, capital, bandera y fronteras.',
+      icon: <Compass className="w-6 h-6 text-amber-400" />,
+      accentColor: 'from-amber-500/20 to-orange-600/10',
+      borderGlow: 'hover:border-amber-500/80 hover:shadow-[0_0_30px_rgba(245,158,11,0.25)]',
+      highlights: ['Buscador inteligente', 'Inspección de fronteras', 'Sin límites de tiempo']
     },
   ];
 
@@ -88,11 +140,23 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     { count: 10, label: '10 Países', desc: 'Estándar' },
     { count: 20, label: '20 Países', desc: 'Desafío' },
     { count: 50, label: '50 Países', desc: 'Maratón' },
-    { count: 195, label: '🌍 Todos (195+)', desc: 'Mundo Entero' },
+    { count: 195, label: '🌍 Todos', desc: 'Completo' },
   ];
 
+  const handleOpenModeConfig = (modeId: GameMode) => {
+    onChangeConfig({ mode: modeId });
+    setActiveConfigMode(modeId);
+  };
+
+  const handleStartFromModal = () => {
+    setActiveConfigMode(null);
+    onStartGame();
+  };
+
+  const activeModeData = modes.find(m => m.id === activeConfigMode) || modes[0];
+
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6">
+    <div className="w-full max-w-6xl mx-auto space-y-6">
       {/* Banner de Práctica Focalizada (Tutor IA) si hay puntos ciegos */}
       {blindSpots.length > 0 && (
         <div className="bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-cyan-500/15 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap shadow-lg">
@@ -117,209 +181,267 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-sm shadow-glow-amber transition-all transform active:scale-95 flex items-center gap-2"
           >
             <Zap className="w-4 h-4 fill-slate-950" />
-            Iniciar Práctica Focalizada
+            <span>Iniciar Práctica Focalizada</span>
           </button>
         </div>
       )}
 
-      {/* 1. Selector de Modo de Juego */}
-      <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
-          1. Selecciona Modalidad de Juego
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {modes.map((m) => {
-            const isSelected = config.mode === m.id;
-            return (
-              <button
-                key={m.id}
-                onClick={() => onChangeConfig({ mode: m.id })}
-                className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between ${
-                  isSelected
-                    ? 'bg-gradient-to-b from-[#1E2B48] to-[#131C2E] border-cyan-500/80 shadow-glow-cyan scale-[1.02]'
-                    : 'bg-[#131C2E]/70 hover:bg-[#1A2740] border-slate-800 text-slate-300'
-                }`}
-              >
-                {m.badge && (
-                  <span className={`absolute top-2.5 right-2.5 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                    m.id === 'trivia-curiosities'
-                      ? 'bg-indigo-500/30 text-indigo-300 border-indigo-500/50 animate-pulse'
-                      : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                  }`}>
-                    {m.badge}
+      {/* Título de Selección de Modalidades */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-black font-display text-white">
+            Elige una Modalidad de Juego
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+            Selecciona el modo que prefieras y configúralo a tu medida antes de jugar.
+          </p>
+        </div>
+      </div>
+
+      {/* Grid Principal de Tarjetas de Modos de Juego */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {modes.map((m) => (
+          <div
+            key={m.id}
+            onClick={() => handleOpenModeConfig(m.id)}
+            className={`cursor-pointer p-5 sm:p-6 rounded-3xl border border-slate-800 bg-gradient-to-b ${m.accentColor} bg-[#111827]/90 backdrop-blur-md transition-all duration-200 transform hover:-translate-y-1 ${m.borderGlow} flex flex-col justify-between group relative overflow-hidden`}
+          >
+            {/* Badge destacado */}
+            {m.badge && (
+              <span className="absolute top-4 right-4 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full border bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm">
+                {m.badge}
+              </span>
+            )}
+
+            <div>
+              <div className="p-3 bg-slate-900/80 rounded-2xl w-fit mb-4 border border-slate-700/80 shadow-md group-hover:scale-110 transition-transform">
+                {m.icon}
+              </div>
+
+              <h3 className="font-display font-black text-white text-lg sm:text-xl mb-1.5 group-hover:text-cyan-300 transition-colors">
+                {m.title}
+              </h3>
+
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+                {m.desc}
+              </p>
+
+              {/* Puntos destacados */}
+              <div className="flex flex-wrap gap-1.5 mb-5">
+                {m.highlights.map((h, i) => (
+                  <span
+                    key={i}
+                    className="text-[10px] font-semibold text-slate-400 bg-slate-900/60 px-2 py-0.5 rounded-lg border border-slate-800"
+                  >
+                    • {h}
                   </span>
-                )}
-                <div>
-                  <div className="p-2.5 bg-slate-900/60 rounded-xl w-fit mb-3 border border-slate-700/60">
-                    {m.icon}
-                  </div>
-                  <h4 className="font-display font-bold text-white text-base mb-1">
-                    {m.title}
-                  </h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {m.desc}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Botón de acción */}
+            <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-bold text-cyan-400 group-hover:text-cyan-300">
+              <span>Configurar y Jugar</span>
+              <div className="p-1.5 rounded-xl bg-slate-800/80 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all">
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* 2. Selector de Continente */}
-      <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
-          2. Selecciona Región / Continente
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          {continents.map((c) => {
-            const isSelected = config.continent === c.id;
-            return (
+      {/* Modal de Configuración Específica del Modo Elegido */}
+      <AnimatePresence>
+        {activeConfigMode && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 select-none">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setActiveConfigMode(null)}
+              className="absolute inset-0 bg-slate-950/85 backdrop-blur-md"
+            />
+
+            {/* Modal Body */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative z-10 w-full max-w-2xl bg-gradient-to-b from-[#131C2E] via-[#0F172A] to-[#0A101C] border border-cyan-500/50 rounded-3xl p-6 sm:p-8 shadow-[0_0_60px_rgba(6,182,212,0.3)] overflow-hidden space-y-6 max-h-[90vh] overflow-y-auto"
+            >
+              {/* Glow superior */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 shadow-glow-cyan" />
+
+              {/* Botón Cerrar (X) */}
               <button
-                key={c.id}
-                onClick={() => onChangeConfig({ continent: c.id })}
-                className={`py-3 px-3 rounded-xl border text-center font-semibold text-sm transition-all flex flex-col items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-glow-cyan'
-                    : 'bg-[#131C2E] hover:bg-[#1A2740] border-slate-800 text-slate-200'
-                }`}
+                onClick={() => setActiveConfigMode(null)}
+                className="absolute top-5 right-5 p-2.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all active:scale-95 border border-slate-700"
+                title="Cerrar (Esc)"
               >
-                <span className="text-xl">{c.icon}</span>
-                <span className="text-xs">{c.label}</span>
+                <X className="w-5 h-5" />
               </button>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* 3. Selector de Preguntas & Cantidad (Solo si no es explorador ni trivia) */}
-      {config.mode !== 'explore' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Tipo de Pregunta (Solo para modos estándar) */}
-          {config.mode !== 'trivia-curiosities' ? (
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                3. ¿Qué deseas identificar?
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {questionTypes.map((q) => {
-                  const isSelected = config.questionType === q.id;
-                  return (
-                    <button
-                      key={q.id}
-                      onClick={() => onChangeConfig({ questionType: q.id })}
-                      className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                        isSelected
-                          ? 'bg-purple-600 text-white border-purple-400 shadow-glow-purple'
-                          : 'bg-[#131C2E] hover:bg-[#1A2740] border-slate-800 text-slate-300'
-                      }`}
-                    >
-                      {q.icon}
-                      <span>{q.label}</span>
-                    </button>
-                  );
-                })}
+              {/* Cabecera del Modo */}
+              <div className="flex items-center gap-3.5 pr-10">
+                <div className="p-3 bg-slate-900 rounded-2xl border border-slate-700 text-cyan-400">
+                  {activeModeData.icon}
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-wider font-extrabold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+                    Ajustes de Partida
+                  </span>
+                  <h2 className="text-2xl font-black font-display text-white mt-0.5">
+                    {activeModeData.title}
+                  </h2>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                3. Tipo de Trivia
-              </label>
-              <div className="p-3 bg-indigo-950/30 border border-indigo-800/40 rounded-xl text-xs text-indigo-200 flex items-center gap-2.5">
-                <Sparkles className="w-5 h-5 text-indigo-400 shrink-0" />
-                <span>Rondas de <strong>10 preguntas aleatorias</strong> extraídas de la pool completa de más de 200 curiosidades mundiales.</span>
-              </div>
-            </div>
-          )}
 
-          {/* Cantidad de Preguntas / Modo Todos los Países */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-              4. Duración de la Partida
-            </label>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-              {questionCounts.map((item) => {
-                const isSelected = config.totalQuestions === item.count;
-                return (
+              {/* OPCIÓN 1: CONTINENTE (Para todos los modos) */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+                  1. Selecciona Región o Continente
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {continents.map((c) => {
+                    const isSelected = config.continent === c.id;
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => onChangeConfig({ continent: c.id })}
+                        className={`p-3 rounded-2xl border text-center font-semibold text-xs transition-all flex items-center justify-center gap-2 ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-cyan-500 to-sky-500 text-slate-950 font-bold border-cyan-400 shadow-glow-cyan scale-[1.02]'
+                            : 'bg-slate-900/80 hover:bg-slate-800 border-slate-800 text-slate-200'
+                        }`}
+                      >
+                        <span className="text-base">{c.icon}</span>
+                        <span>{c.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* OPCIÓN 2: QUÉ DESEAS IDENTIFICAR (ÚNICAMENTE para Click & Find) */}
+              {activeConfigMode === 'click-find' && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+                    2. ¿Qué deseas identificar?
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {questionTypes.map((q) => {
+                      const isSelected = config.questionType === q.id;
+                      return (
+                        <button
+                          key={q.id}
+                          onClick={() => onChangeConfig({ questionType: q.id })}
+                          className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                            isSelected
+                              ? 'bg-purple-600 text-white border-purple-400 shadow-glow-purple'
+                              : 'bg-slate-900/80 hover:bg-slate-800 border-slate-800 text-slate-300'
+                          }`}
+                        >
+                          {q.icon}
+                          <span>{q.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* OPCIÓN 3: DURACIÓN / CANTIDAD DE PAÍSES (Para Banderas con Salto, Click & Find, Modo Escribir) */}
+              {(activeConfigMode === 'flag-skip-chain' || 
+                activeConfigMode === 'click-find' || 
+                activeConfigMode === 'input-write') && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+                    {activeConfigMode === 'flag-skip-chain' ? '2. Cantidad de Banderas en la Partida' : '3. Duración de la Partida'}
+                  </label>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {questionCounts.map((item) => {
+                      const isSelected = config.totalQuestions === item.count;
+                      return (
+                        <button
+                          key={item.count}
+                          onClick={() => onChangeConfig({ totalQuestions: item.count })}
+                          className={`p-2.5 rounded-xl border text-center transition-all ${
+                            isSelected
+                              ? 'bg-emerald-600 text-white border-emerald-400 shadow-glow-emerald font-bold'
+                              : 'bg-slate-900/80 hover:bg-slate-800 border-slate-800 text-slate-300'
+                          }`}
+                        >
+                          <div className="text-xs font-bold truncate">{item.label}</div>
+                          <div className="text-[10px] opacity-70 truncate">{item.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* OPCIÓN 4: MODO FRIKI (Para todos los modos excepto Trivia) */}
+              {activeConfigMode !== 'trivia-curiosities' && activeConfigMode !== 'explore' && (
+                <div className="bg-slate-900/90 border border-purple-500/40 rounded-2xl p-4 flex items-center justify-between gap-4 flex-wrap shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl border ${
+                      config.isGeekMode
+                        ? 'bg-purple-500/20 border-purple-400/50 text-purple-300 shadow-glow-purple'
+                        : 'bg-slate-800 border-slate-700 text-slate-400'
+                    }`}>
+                      <Brain className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">
+                        🧠 Modo Friki (+40 Territorios Especiales & Estados de Facto)
+                      </h4>
+                      <p className="text-[11px] text-slate-300 mt-0.5 max-w-md">
+                        Incluye Puerto Rico, Groenlandia, Bermudas, Caimán, Malvinas, Somalilandia, Cook, etc.
+                      </p>
+                    </div>
+                  </div>
+
                   <button
-                    key={item.count}
-                    onClick={() => onChangeConfig({ totalQuestions: item.count })}
-                    className={`py-2 px-1.5 rounded-xl border text-center transition-all ${
-                      isSelected
-                        ? 'bg-emerald-600 text-white border-emerald-400 shadow-glow-emerald'
-                        : 'bg-[#131C2E] hover:bg-[#1A2740] border-slate-800 text-slate-300'
+                    type="button"
+                    onClick={() => onChangeConfig({ isGeekMode: !config.isGeekMode })}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all border ${
+                      config.isGeekMode
+                        ? 'bg-purple-600 border-purple-400 text-white shadow-glow-purple'
+                        : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-300'
                     }`}
                   >
-                    <div className="text-[11px] font-bold truncate">{item.label}</div>
-                    <div className="text-[9px] opacity-70 truncate">{item.desc}</div>
+                    {config.isGeekMode ? 'ACTIVADO' : 'DESACTIVADO'}
                   </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+                </div>
+              )}
 
-      {/* 5. Selector de Modo Friki: Territorios Especiales y Estados de Facto */}
-      <div className="bg-[#131C2E] border border-purple-500/30 rounded-2xl p-4 flex items-center justify-between gap-4 flex-wrap shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className={`p-3 rounded-xl border transition-all ${
-            config.isGeekMode
-              ? 'bg-purple-500/20 border-purple-400/50 text-purple-300 shadow-glow-purple'
-              : 'bg-slate-800/80 border-slate-700 text-slate-400'
-          }`}>
-            <Brain className="w-6 h-6" />
+              {/* BOTÓN PRINCIPAL DE INICIO DE LA PARTIDA */}
+              <div className="pt-2">
+                <button
+                  onClick={handleStartFromModal}
+                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-display font-extrabold text-base sm:text-lg tracking-wide shadow-glow-cyan transition-all transform active:scale-[0.99] flex items-center justify-center gap-3"
+                >
+                  <Sparkles className="w-5 h-5 fill-slate-950" />
+                  <span>
+                    {activeConfigMode === 'flag-skip-chain'
+                      ? '¡Comenzar Desafío de Banderas!'
+                      : activeConfigMode === 'list-select'
+                      ? '¡Comenzar Lista y Mapa!'
+                      : activeConfigMode === 'trivia-curiosities'
+                      ? '¡Comenzar Trivia (10 Curiosidades)!'
+                      : activeConfigMode === 'explore'
+                      ? '¡Comenzar a Explorar!'
+                      : '¡Comenzar Partida!'}
+                  </span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            </motion.div>
           </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="text-sm font-bold text-white">
-                🧠 Modo Friki (+40 Territorios Especiales & Estados de Facto)
-              </h4>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase ${
-                config.isGeekMode ? 'bg-purple-500 text-white shadow-glow-purple' : 'bg-slate-800 text-slate-400 border border-slate-700'
-              }`}>
-                {config.isGeekMode ? 'Activado' : 'Desactivado'}
-              </span>
-            </div>
-            <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-              Añade al mapa y al juego más de 40 territorios dependientes (Puerto Rico, Bermudas, Caimán, Malvinas, Groenlandia, Cook...), departamentos de ultramar y estados con reconocimiento limitado (Somalilandia, Transnistria, Abjasia, Sáhara...).
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => onChangeConfig({ isGeekMode: !config.isGeekMode })}
-          className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 border shadow-md active:scale-95 ${
-            config.isGeekMode
-              ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 border-purple-400 text-white shadow-glow-purple ring-2 ring-purple-400/40'
-              : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
-          }`}
-        >
-          <Brain className="w-4 h-4 text-purple-300" />
-          <span>{config.isGeekMode ? 'MODO FRIKI: ACTIVADO' : 'MODO FRIKI: DESACTIVADO'}</span>
-        </button>
-      </div>
-
-      {/* Botón de Inicio Principal */}
-      <div className="pt-2">
-        <button
-          onClick={() => onStartGame()}
-          className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-display font-extrabold text-lg tracking-wide shadow-glow-cyan transition-all transform active:scale-[0.99] flex items-center justify-center gap-3"
-        >
-          <Sparkles className="w-5 h-5 fill-slate-950" />
-          {config.mode === 'explore' 
-            ? 'Comenzar a Explorar el Mundo' 
-            : config.mode === 'trivia-curiosities'
-            ? '¡Jugar Trivia de Curiosidades (10 Preguntas)!'
-            : config.mode === 'list-select'
-            ? `¡Comenzar Lista y Ubicación (${config.isGeekMode ? '238+ Países y Territorios' : '195+ Países'})!`
-            : config.totalQuestions >= 190
-            ? `¡Comenzar Desafío Completo: Mundo Entero (${config.isGeekMode ? '238+ Países y Territorios' : '195+ Países'})!`
-            : '¡Comenzar Desafío!'}
-        </button>
-      </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
