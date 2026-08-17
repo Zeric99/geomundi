@@ -6,6 +6,7 @@ import { GameHeader } from './components/game/GameHeader';
 import { ClickAndFindMode } from './components/game/ClickAndFindMode';
 import { InputWriteMode } from './components/game/InputWriteMode';
 import { MatchCardsMode } from './components/game/MatchCardsMode';
+import { TriviaCuriositiesMode } from './components/game/TriviaCuriositiesMode';
 import { CountryExplorer } from './components/explore/CountryExplorer';
 import { TutorDashboard } from './components/tutor/TutorDashboard';
 import { GameOverModal } from './components/game/GameOverModal';
@@ -55,6 +56,7 @@ export function App() {
     roundResults,
     isEvaluating,
     activeHint,
+    updateConfig,
     startGame,
     submitAnswer,
     useHint,
@@ -184,53 +186,75 @@ export function App() {
             {!isPlaying ? (
               <GameFilters
                 config={config}
-                onChangeConfig={(newCfg) => startGame(newCfg)}
+                onChangeConfig={(newCfg) => updateConfig(newCfg)}
                 onStartGame={(overrideCfg) => startGame(overrideCfg)}
                 blindSpots={blindSpots}
                 onStartFocusedPractice={() => handleStartFocusedPractice()}
               />
             ) : (
               <div className="space-y-4">
-                <GameHeader
-                  currentIndex={currentIndex}
-                  totalQuestions={questions.length}
-                  lives={lives}
-                  score={score}
-                  streak={streak}
-                  onQuit={quitGame}
-                />
-
-                {/* Renderizar Modo Activo */}
-                {config.mode === 'click-find' && currentQuestion && (
-                  <ClickAndFindMode
-                    question={currentQuestion}
-                    countryStatuses={countryStatuses}
-                    onCountryClick={submitAnswer}
-                    onUseHint={useHint}
-                    activeHint={activeHint}
-                    isEvaluating={isEvaluating}
-                  />
-                )}
-
-                {config.mode === 'input-write' && currentQuestion && (
-                  <InputWriteMode
-                    question={currentQuestion}
-                    countryStatuses={countryStatuses}
-                    onSubmitAnswer={submitAnswer}
-                    onUseHint={useHint}
-                    activeHint={activeHint}
-                    isEvaluating={isEvaluating}
-                  />
-                )}
-
-                {config.mode === 'match-cards' && (
-                  <MatchCardsMode
-                    questions={questions}
-                    onFinishRound={() => {}}
-                    onSingleMatchSuccess={handleSingleMatchSuccess}
-                    onSingleMatchError={handleSingleMatchError}
+                {/* Modo Trivia de Curiosidades */}
+                {config.mode === 'trivia-curiosities' && (
+                  <TriviaCuriositiesMode
+                    currentQuestion={currentQuestion}
+                    currentIndex={currentIndex}
+                    totalQuestions={questions.length}
                     lives={lives}
+                    score={score}
+                    streak={streak}
+                    countryStatuses={countryStatuses}
+                    isEvaluating={isEvaluating}
+                    activeHint={activeHint}
+                    onCountrySelect={submitAnswer}
+                    onUseHint={useHint}
+                    onQuit={quitGame}
                   />
+                )}
+
+                {/* Modos Estándar (con cabecera genérica) */}
+                {config.mode !== 'trivia-curiosities' && (
+                  <>
+                    <GameHeader
+                      currentIndex={currentIndex}
+                      totalQuestions={questions.length}
+                      lives={lives}
+                      score={score}
+                      streak={streak}
+                      onQuit={quitGame}
+                    />
+
+                    {config.mode === 'click-find' && currentQuestion && (
+                      <ClickAndFindMode
+                        question={currentQuestion}
+                        countryStatuses={countryStatuses}
+                        onCountryClick={submitAnswer}
+                        onUseHint={useHint}
+                        activeHint={activeHint}
+                        isEvaluating={isEvaluating}
+                      />
+                    )}
+
+                    {config.mode === 'input-write' && currentQuestion && (
+                      <InputWriteMode
+                        question={currentQuestion}
+                        countryStatuses={countryStatuses}
+                        onSubmitAnswer={submitAnswer}
+                        onUseHint={useHint}
+                        activeHint={activeHint}
+                        isEvaluating={isEvaluating}
+                      />
+                    )}
+
+                    {config.mode === 'match-cards' && (
+                      <MatchCardsMode
+                        questions={questions}
+                        onFinishRound={() => {}}
+                        onSingleMatchSuccess={handleSingleMatchSuccess}
+                        onSingleMatchError={handleSingleMatchError}
+                        lives={lives}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             )}

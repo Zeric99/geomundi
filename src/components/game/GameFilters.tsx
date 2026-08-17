@@ -1,6 +1,6 @@
 import React from 'react';
-import { Globe, MapPin, Type, Layers, Compass, Sparkles, Flag, Landmark, Zap } from 'lucide-react';
-import { Continent, ContinentEs } from '../../types/country';
+import { Globe, MapPin, Type, Layers, Compass, Sparkles, Flag, Landmark, Zap, Flame, Trophy } from 'lucide-react';
+import { Continent } from '../../types/country';
 import { GameConfig, GameMode, QuestionType } from '../../types/game';
 import { BlindSpotItem } from '../../types/stats';
 
@@ -29,6 +29,13 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   ];
 
   const modes: { id: GameMode; title: string; desc: string; icon: React.ReactNode; badge?: string }[] = [
+    {
+      id: 'trivia-curiosities',
+      title: 'Trivia y Curiosidades',
+      desc: 'Preguntas de récords mundiales, curiosidades insólitas y datos únicos de cada país.',
+      icon: <Trophy className="w-5 h-5 text-indigo-400" />,
+      badge: '¡Nuevo!'
+    },
     {
       id: 'click-find',
       title: 'Click & Find',
@@ -61,6 +68,14 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     { id: 'flag', label: 'Banderas', icon: <Flag className="w-4 h-4" /> },
     { id: 'capital', label: 'Capitales', icon: <Landmark className="w-4 h-4" /> },
     { id: 'mixed', label: 'Mixto (Variado)', icon: <Zap className="w-4 h-4" /> },
+  ];
+
+  const questionCounts = [
+    { count: 5, label: '5 Países', desc: 'Rápido' },
+    { count: 10, label: '10 Países', desc: 'Estándar' },
+    { count: 20, label: '20 Países', desc: 'Desafío' },
+    { count: 50, label: '50 Países', desc: 'Maratón' },
+    { count: 195, label: '🌍 Todos (195+)', desc: 'Mundo Entero' },
   ];
 
   return (
@@ -99,7 +114,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
         <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
           1. Selecciona Modalidad de Juego
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {modes.map((m) => {
             const isSelected = config.mode === m.id;
             return (
@@ -113,7 +128,11 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                 }`}
               >
                 {m.badge && (
-                  <span className="absolute top-2.5 right-2.5 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                  <span className={`absolute top-2.5 right-2.5 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                    m.id === 'trivia-curiosities'
+                      ? 'bg-indigo-500/30 text-indigo-300 border-indigo-500/50 animate-pulse'
+                      : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                  }`}>
                     {m.badge}
                   </span>
                 )}
@@ -160,54 +179,67 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
         </div>
       </div>
 
-      {/* 3. Selector de Preguntas & Cantidad (Solo si no es explorador) */}
+      {/* 3. Selector de Preguntas & Cantidad (Solo si no es explorador ni trivia) */}
       {config.mode !== 'explore' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Tipo de Pregunta */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-              3. ¿Qué deseas identificar?
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {questionTypes.map((q) => {
-                const isSelected = config.questionType === q.id;
-                return (
-                  <button
-                    key={q.id}
-                    onClick={() => onChangeConfig({ questionType: q.id })}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                      isSelected
-                        ? 'bg-purple-600 text-white border-purple-400 shadow-glow-purple'
-                        : 'bg-[#131C2E] hover:bg-[#1A2740] border-slate-800 text-slate-300'
-                    }`}
-                  >
-                    {q.icon}
-                    <span>{q.label}</span>
-                  </button>
-                );
-              })}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Tipo de Pregunta (Solo para modos estándar) */}
+          {config.mode !== 'trivia-curiosities' ? (
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                3. ¿Qué deseas identificar?
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {questionTypes.map((q) => {
+                  const isSelected = config.questionType === q.id;
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => onChangeConfig({ questionType: q.id })}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                        isSelected
+                          ? 'bg-purple-600 text-white border-purple-400 shadow-glow-purple'
+                          : 'bg-[#131C2E] hover:bg-[#1A2740] border-slate-800 text-slate-300'
+                      }`}
+                    >
+                      {q.icon}
+                      <span>{q.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                3. Tipo de Trivia
+              </label>
+              <div className="p-3 bg-indigo-950/30 border border-indigo-800/40 rounded-xl text-xs text-indigo-200 flex items-center gap-2.5">
+                <Sparkles className="w-5 h-5 text-indigo-400 shrink-0" />
+                <span>Rondas de <strong>10 preguntas aleatorias</strong> extraídas de la pool completa de más de 200 curiosidades mundiales.</span>
+              </div>
+            </div>
+          )}
 
-          {/* Cantidad de Preguntas */}
+          {/* Cantidad de Preguntas / Modo Todos los Países */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-              4. Duración de la Ronda
+              4. Duración de la Partida
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {[5, 10, 20].map((num) => {
-                const isSelected = config.totalQuestions === num;
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+              {questionCounts.map((item) => {
+                const isSelected = config.totalQuestions === item.count;
                 return (
                   <button
-                    key={num}
-                    onClick={() => onChangeConfig({ totalQuestions: num })}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-all ${
+                    key={item.count}
+                    onClick={() => onChangeConfig({ totalQuestions: item.count })}
+                    className={`py-2 px-1.5 rounded-xl border text-center transition-all ${
                       isSelected
                         ? 'bg-emerald-600 text-white border-emerald-400 shadow-glow-emerald'
                         : 'bg-[#131C2E] hover:bg-[#1A2740] border-slate-800 text-slate-300'
                     }`}
                   >
-                    {num} Países
+                    <div className="text-[11px] font-bold truncate">{item.label}</div>
+                    <div className="text-[9px] opacity-70 truncate">{item.desc}</div>
                   </button>
                 );
               })}
@@ -223,7 +255,13 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
           className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-display font-extrabold text-lg tracking-wide shadow-glow-cyan transition-all transform active:scale-[0.99] flex items-center justify-center gap-3"
         >
           <Sparkles className="w-5 h-5 fill-slate-950" />
-          {config.mode === 'explore' ? 'Comenzar a Explorar el Mundo' : '¡Comenzar Desafío!'}
+          {config.mode === 'explore' 
+            ? 'Comenzar a Explorar el Mundo' 
+            : config.mode === 'trivia-curiosities'
+            ? '¡Jugar Trivia de Curiosidades (10 Preguntas)!'
+            : config.totalQuestions >= 190
+            ? '¡Comenzar Desafío Completo: Mundo Entero (195+ Países)!'
+            : '¡Comenzar Desafío!'}
         </button>
       </div>
     </div>

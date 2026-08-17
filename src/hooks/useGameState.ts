@@ -1,7 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Country, CountryMapStatus } from '../types/country';
 import { GameConfig, GameRoundResult, GameSummary, Question, QuestionType } from '../types/game';
 import { useAudioFeedback } from './useAudioFeedback';
+import { getAllTriviaPool } from '../data/triviaPool';
 import confetti from 'canvas-confetti';
 
 interface UseGameStateProps {
@@ -40,6 +41,40 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
 
   // Generador de preguntas barajadas
   const generateQuestions = useCallback((cfg: GameConfig): Question[] => {
+    // Si estamos en Modo Trivia de Curiosidades
+    if (cfg.mode === 'trivia-curiosities') {
+      const countryMap = new Map<string, Country>();
+      countries.forEach(c => countryMap.set(c.cca3.toUpperCase(), c));
+
+      let triviaPool = getAllTriviaPool(countries);
+
+      if (cfg.continent !== 'World') {
+        triviaPool = triviaPool.filter(t => {
+          const c = countryMap.get(t.countryCode.toUpperCase());
+          return c && c.continent === cfg.continent;
+        });
+      }
+
+      // Barajar trivia pool
+      const shuffledTrivia = [...triviaPool].sort(() => Math.random() - 0.5);
+      const triviaCount = Math.min(cfg.totalQuestions || 10, shuffledTrivia.length);
+      const selectedTrivia = shuffledTrivia.slice(0, triviaCount);
+
+      return selectedTrivia.map((trivia, idx) => {
+        const country = countryMap.get(trivia.countryCode.toUpperCase()) || countries[0];
+        return {
+          id: `q_trivia_${trivia.id}_${idx}`,
+          country,
+          questionType: 'trivia',
+          promptText: trivia.question,
+          hintUsed: false,
+          attempts: 0,
+          triviaItem: trivia
+        };
+      });
+    }
+
+    // Modo Estándar (Click & Find, Input Write, Match Cards)
     let pool: Country[] = [];
 
     if (cfg.focusedPracticeCodes && cfg.focusedPracticeCodes.length > 0) {
@@ -55,7 +90,10 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
 
     // Barajar Fisher-Yates
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    const count = Math.min(cfg.totalQuestions, shuffled.length);
+    // Si totalQuestions >= 190 o es maratón completo, jugar TODOS los países del pool
+    const count = (cfg.totalQuestions >= 190 || cfg.isAllCountriesMarathon) 
+      ? shuffled.length 
+      : Math.min(cfg.totalQuestions, shuffled.length);
     const selected = shuffled.slice(0, count);
 
     const questionTypes: QuestionType[] = ['name', 'flag', 'capital'];
@@ -297,6 +335,10 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
     }));
   }, [currentQuestion, config.allowHints, playHintSound]);
 
+  const updateConfig = useCallback((newConfig: Partial<GameConfig>) => {
+    setConfig(prev => ({ ...prev, ...newConfig }));
+  }, []);
+
   const quitGame = useCallback(() => {
     setIsPlaying(false);
     setIsGameOver(false);
@@ -317,6 +359,7 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
     roundResults,
     isEvaluating,
     activeHint,
+    updateConfig,
     startGame,
     submitAnswer,
     useHint,

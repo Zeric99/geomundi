@@ -1,17 +1,27 @@
 import { Continent, Country } from './country';
 
-export type GameMode = 'click-find' | 'input-write' | 'match-cards' | 'explore';
+export type GameMode = 'click-find' | 'input-write' | 'match-cards' | 'trivia-curiosities' | 'explore';
 
-export type QuestionType = 'name' | 'flag' | 'capital' | 'mixed';
+export type QuestionType = 'name' | 'flag' | 'capital' | 'mixed' | 'trivia';
+
+export interface TriviaItem {
+  id: string;
+  countryCode: string; // cca3
+  question: string;
+  factExplanation: string;
+  category: 'records' | 'nature' | 'history' | 'culture' | 'geography';
+  hint?: string;
+}
 
 export interface GameConfig {
   mode: GameMode;
   continent: Continent;
   questionType: QuestionType;
-  totalQuestions: number;      // e.g. 10, 20, or custom
+  totalQuestions: number;      // e.g. 5, 10, 20, 50, 195 (todos)
   timeLimitPerQuestion?: number;// in seconds (0 = no limit)
   allowHints: boolean;
   focusedPracticeCodes?: string[]; // If playing a targeted session on blind spots
+  isAllCountriesMarathon?: boolean;
 }
 
 export interface Question {
@@ -21,6 +31,7 @@ export interface Question {
   promptText: string;
   hintUsed: boolean;
   attempts: number;
+  triviaItem?: TriviaItem;
 }
 
 export interface MatchPair {
