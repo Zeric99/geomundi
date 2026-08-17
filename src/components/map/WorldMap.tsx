@@ -20,6 +20,7 @@ interface WorldMapProps {
   countryStatuses?: Record<string, CountryMapStatus>;
   selectedCountryCode?: string | null;
   targetCountryCode?: string | null; // País a encontrar o pista activa
+  pulsingCountryCode?: string | null; // País a resaltar con parpadeo y centrado de cámara
   onCountryClick?: (country: Country, cca3: string) => void;
   continent?: Continent;
   enableTooltip?: boolean;
@@ -32,6 +33,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   countryStatuses = {},
   selectedCountryCode = null,
   targetCountryCode = null,
+  pulsingCountryCode = null,
   onCountryClick,
   continent = 'World',
   enableTooltip = true,
@@ -87,6 +89,19 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       zoom: targetVp.zoom
     });
   }, [continent]);
+
+  // Centrar cámara automáticamente en país que se pide resaltar (por fallo)
+  useEffect(() => {
+    if (pulsingCountryCode) {
+      const country = countriesService.getCountryByCode(pulsingCountryCode);
+      if (country && country.latlng && country.latlng.length === 2) {
+        setPosition(prev => ({
+          coordinates: [country.latlng[1], country.latlng[0]],
+          zoom: Math.max(prev.zoom, 3.4)
+        }));
+      }
+    }
+  }, [pulsingCountryCode]);
 
   const handleZoomIn = () => {
     setPosition(prev => ({
@@ -162,9 +177,20 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     }
 
     const upper = cca3.toUpperCase();
+    const isPulsing = pulsingCountryCode?.toUpperCase() === upper;
     const status = countryStatuses[upper];
     const isSelected = selectedCountryCode?.toUpperCase() === upper;
     const isTarget = targetCountryCode?.toUpperCase() === upper;
+
+    if (isPulsing) {
+      return {
+        fill: '#EF4444', // Rojo coral parpadeante
+        stroke: '#FEE2E2',
+        strokeWidth: 2.2,
+        cursor: interactive ? 'pointer' : 'default',
+        filter: 'drop-shadow(0 0 10px rgba(239, 68, 68, 1))'
+      };
+    }
 
     if (status === 'correct') {
       return {
@@ -213,7 +239,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       strokeWidth: 0.6,
       cursor: interactive ? 'pointer' : 'default'
     };
-  }, [countryStatuses, selectedCountryCode, targetCountryCode, interactive]);
+  }, [countryStatuses, selectedCountryCode, targetCountryCode, pulsingCountryCode, interactive]);
 
   const handleGeographyClick = (geo: any) => {
     // Si el usuario estaba arrastrando para moverse por el mapa, ignorar el clic
@@ -265,6 +291,12 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       return c.continent === continent;
     });
   }, [continent]);
+
+  // País actualmente parpadeando por fallo
+  const pulsingCountry = useMemo(() => {
+    if (!pulsingCountryCode) return null;
+    return countriesService.getCountryByCode(pulsingCountryCode);
+  }, [pulsingCountryCode]);
 
   return (
     <div
@@ -318,6 +350,10 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-glow-purple" />
           <span>Selección</span>
+        </div>
+        <div className="flex items-center gap-1.5 pl-1 border-l border-slate-700">
+          <span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-400 shadow-sm" />
+          <span className="text-white font-medium">📍 Microestados (Blanco)</span>
         </div>
       </div>
 
@@ -433,12 +469,13 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             const styles = getCountryStyles(cca3);
             const isHovered = hoveredCountry?.cca3?.toUpperCase() === cca3;
             const isTarget = targetCountryCode?.toUpperCase() === cca3;
+            const isPulsing = pulsingCountryCode?.toUpperCase() === cca3;
             const isResolved = styles.fill !== '#24344D';
             
             // Color blanco puro por defecto para no confundir con verde o azul
-            const dotFill = isResolved ? styles.fill : isHovered ? '#38BDF8' : '#FFFFFF';
-            const haloFill = isTarget ? '#F59E0B' : isResolved ? styles.fill : isHovered ? '#38BDF8' : '#FFFFFF';
-            const dotStroke = isResolved ? styles.stroke : isHovered ? '#0284C7' : '#94A3B8';
+            const dotFill = isPulsing ? '#EF4444' : isResolved ? styles.fill : isHovered ? '#38BDF8' : '#FFFFFF';
+            const haloFill = isPulsing ? '#EF4444' : isTarget ? '#F59E0B' : isResolved ? styles.fill : isHovered ? '#38BDF8' : '#FFFFFF';
+            const dotStroke = isPulsing ? '#FEE2E2' : isResolved ? styles.stroke : isHovered ? '#0284C7' : '#94A3B8';
             
             // Coordenadas [longitud, latitud] requeridas por react-simple-maps
             const coords: [number, number] = [country.latlng[1], country.latlng[0]];
@@ -447,7 +484,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             const baseR = Math.max(1.0, 2.4 / Math.sqrt(position.zoom));
             const haloR = baseR * 1.5;
             const hitR = Math.max(2.0, 4.0 / Math.sqrt(position.zoom));
-            const showLabel = position.zoom >= 3.2 && enableTooltip && tooltipsEnabled;
+            const showLabel = (position.zoom >= 3.2 && enableTooltip && tooltipsEnabled) || isPulsing;
 
             return (
               <Marker
@@ -472,8 +509,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                   <circle
                     r={haloR}
                     fill={haloFill}
-                    opacity={isHovered ? 0.6 : isTarget ? 0.7 : isResolved ? 0.4 : 0.2}
-                    className={isTarget ? 'animate-ping' : ''}
+                    opacity={isPulsing ? 0.9 : isHovered ? 0.6 : isTarget ? 0.7 : isResolved ? 0.4 : 0.2}
+                    className={isPulsing || isTarget ? 'animate-ping' : ''}
                   />
 
                   {/* Círculo central: BLANCO PURO si está pendiente, VERDE/AMARILLO/ROJO si está resuelto */}
@@ -483,7 +520,9 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     stroke={dotStroke}
                     strokeWidth={Math.max(0.3, 0.7 / Math.sqrt(position.zoom))}
                     style={{
-                      filter: isHovered || isTarget 
+                      filter: isPulsing 
+                        ? 'drop-shadow(0 0 8px #EF4444)' 
+                        : isHovered || isTarget 
                         ? 'drop-shadow(0 0 5px #38BDF8)' 
                         : isResolved 
                         ? 'drop-shadow(0 0 3px ' + styles.fill + ')' 
@@ -491,12 +530,12 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     }}
                   />
 
-                  {/* Etiqueta textual visible al hacer zoom amplio (solo en modo exploración/aprendizaje) */}
+                  {/* Etiqueta textual visible al hacer zoom o cuando parpadea por fallo */}
                   {showLabel && (
                     <text
                       y={baseR + Math.max(2, 3.5 / Math.sqrt(position.zoom))}
                       textAnchor="middle"
-                      fill="#E2E8F0"
+                      fill={isPulsing ? "#FCA5A5" : "#E2E8F0"}
                       fontSize={Math.max(1.8, 3.2 / Math.sqrt(position.zoom))}
                       fontWeight="bold"
                       className="pointer-events-none select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
@@ -514,6 +553,42 @@ export const WorldMap: React.FC<WorldMapProps> = ({
               </Marker>
             );
           })}
+
+          {/* Baliza Radar Superpuesta para País Fallado (Funciona tanto para países grandes como islas) */}
+          {pulsingCountry && (
+            <Marker coordinates={[pulsingCountry.latlng[1], pulsingCountry.latlng[0]]}>
+              <g className="pointer-events-none">
+                {/* Anillo de radar pulsante exterior */}
+                <circle
+                  r={Math.max(6, 16 / Math.sqrt(position.zoom))}
+                  fill="rgba(239, 68, 68, 0.25)"
+                  stroke="#EF4444"
+                  strokeWidth={Math.max(0.6, 1.8 / Math.sqrt(position.zoom))}
+                  className="animate-ping"
+                />
+                {/* Punto central del radar */}
+                <circle
+                  r={Math.max(2.5, 6 / Math.sqrt(position.zoom))}
+                  fill="#EF4444"
+                  stroke="#FFFFFF"
+                  strokeWidth={Math.max(0.4, 1.2 / Math.sqrt(position.zoom))}
+                  className="animate-pulse"
+                />
+                {/* Etiqueta flotante con Bandera y Nombre del país */}
+                <g transform={`translate(0, -${Math.max(5, 12 / Math.sqrt(position.zoom))})`}>
+                  <text
+                    textAnchor="middle"
+                    fill="#FFFFFF"
+                    fontSize={Math.max(2.5, 4.8 / Math.sqrt(position.zoom))}
+                    fontWeight="900"
+                    className="select-none drop-shadow-[0_2px_4px_rgba(0,0,0,1)]"
+                  >
+                    📍 {pulsingCountry.flagEmoji} {pulsingCountry.nameEs}
+                  </text>
+                </g>
+              </g>
+            </Marker>
+          )}
         </ZoomableGroup>
       </ComposableMap>
 

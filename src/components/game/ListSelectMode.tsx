@@ -63,6 +63,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
   });
 
   const [selectedCountryCode, setSelectedCountryCode] = useState<string | null>(null);
+  const [pulsingFailedCountryCode, setPulsingFailedCountryCode] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'correct' | 'wrong'>('all');
@@ -147,6 +148,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
     // Si no hay país seleccionado de la lista, avisamos al usuario que elija uno
     if (!selectedCountryCode) {
       if (clickedItem && clickedItem.status === 'pending') {
+        setPulsingFailedCountryCode(null);
         setSelectedCountryCode(upperClicked);
         setBannerMessage({
           text: `Has seleccionado ${clickedCountry.nameEs}. ¡Busca y confírmalo en el mapa!`,
@@ -170,6 +172,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
 
     if (isMatch) {
       // --- ACIERTO ---
+      setPulsingFailedCountryCode(null);
       if (currentTarget.attempts === 0) {
         // Acierto al 1er intento -> VERDE
         const newStreak = streak + 1;
@@ -234,17 +237,20 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         });
       } else {
         // Segundo fallo -> ROJO (fallo definitivo)
+        // El mapa hace parpadeo y enfoca la cámara al país para aprender dónde está
+        const failedCode = selectedCountryCode;
         const updated = {
           ...itemsState,
-          [selectedCountryCode]: {
+          [failedCode]: {
             ...currentTarget,
             status: 'wrong' as CountryResultStatus,
             attempts: 2
           }
         };
         setItemsState(updated);
+        setPulsingFailedCountryCode(failedCode);
         setBannerMessage({
-          text: `❌ Agotaste los 2 intentos para ${currentTarget.country.nameEs}. Se ha marcado en rojo. Selecciona otro país de la lista.`,
+          text: `❌ Agotaste los 2 intentos para ${currentTarget.country.nameEs}. Ubicación resaltada en el mapa. Selecciona otro país de la lista.`,
           type: 'error'
         });
         setSelectedCountryCode(null); // DESPUÉS DE UN FALLO NO SE SELECCIONA NADA SOLO
@@ -491,6 +497,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
                 key={cca3}
                 onClick={() => {
                   if (status === 'pending') {
+                    setPulsingFailedCountryCode(null);
                     setSelectedCountryCode(cca3);
                   }
                 }}
@@ -508,12 +515,13 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         </div>
       </div>
 
-      {/* 4. Mapa Interactivo Principal (Sin revelar la ubicación antes de hacer clic) */}
+      {/* 4. Mapa Interactivo Principal (Sin revelar la ubicación antes de hacer clic, con radar para país fallado) */}
       <div className="relative flex-1 min-h-[460px] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
         <WorldMap
           countryStatuses={mapCountryStatuses}
           selectedCountryCode={null}
           targetCountryCode={null}
+          pulsingCountryCode={pulsingFailedCountryCode}
           continent={continent}
           onCountryClick={handleMapCountryClick}
           interactive={true}
