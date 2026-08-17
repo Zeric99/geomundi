@@ -445,20 +445,22 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     onMouseLeave={handleMouseLeave}
                     style={{
                       default: {
-                        fill: styles.fill,
-                        stroke: styles.stroke,
-                        strokeWidth: styles.strokeWidth,
+                        fill: isHovered && styles.fill === '#24344D' ? '#0284C7' : styles.fill,
+                        stroke: isHovered ? '#38BDF8' : styles.stroke,
+                        strokeWidth: isHovered ? Math.max(0.7 / Math.sqrt(position.zoom), 0.45) : styles.strokeWidth,
                         outline: 'none',
-                        transition: 'fill 150ms ease-out, stroke 150ms ease-out',
-                        filter: styles.filter || 'none'
+                        transition: 'fill 120ms ease-out, stroke 120ms ease-out',
+                        filter: isHovered
+                          ? 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.9))'
+                          : (styles.filter || 'none')
                       },
                       hover: {
-                        fill: isHovered && styles.fill === '#24344D' ? '#0284C7' : styles.fill,
+                        fill: '#0284C7',
                         stroke: '#38BDF8',
-                        strokeWidth: Math.max(0.6 / Math.sqrt(position.zoom), 0.4),
+                        strokeWidth: Math.max(0.7 / Math.sqrt(position.zoom), 0.45),
                         outline: 'none',
                         cursor: styles.cursor,
-                        filter: 'drop-shadow(0 0 5px rgba(56, 189, 248, 0.8))'
+                        filter: 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.9))'
                       },
                       pressed: {
                         fill: '#0369A1',
@@ -513,11 +515,23 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                   onMouseLeave={handleMouseLeave}
                   className="cursor-pointer transition-transform duration-100 hover:scale-125"
                 >
+                  {/* Zona de resalto iluminado del archipiélago al pasar el ratón por el punto */}
+                  {isHovered && (
+                    <circle
+                      r={Math.max(10, 26 / Math.sqrt(position.zoom))}
+                      fill="rgba(6, 182, 212, 0.2)"
+                      stroke="#38BDF8"
+                      strokeWidth={Math.max(0.5, 1.0 / Math.sqrt(position.zoom))}
+                      strokeDasharray="3 3"
+                      className="animate-pulse"
+                    />
+                  )}
+
                   {/* Halo sutil */}
                   <circle
                     r={haloR}
                     fill={haloFill}
-                    opacity={isPulsing ? 0.9 : isHovered ? 0.6 : isTarget ? 0.7 : isResolved ? 0.3 : 0.15}
+                    opacity={isPulsing ? 0.9 : isHovered ? 0.8 : isTarget ? 0.7 : isResolved ? 0.3 : 0.15}
                     className={isPulsing || isTarget ? 'animate-ping' : ''}
                   />
 
@@ -531,7 +545,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                       filter: isPulsing 
                         ? 'drop-shadow(0 0 6px #EF4444)' 
                         : isHovered || isTarget 
-                        ? 'drop-shadow(0 0 4px #38BDF8)' 
+                        ? 'drop-shadow(0 0 6px #38BDF8)' 
                         : isResolved 
                         ? 'drop-shadow(0 0 2px ' + styles.fill + ')' 
                         : 'none'
