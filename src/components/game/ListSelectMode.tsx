@@ -503,16 +503,16 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         </div>
       </div>
 
-      {/* 4. Mapa Interactivo Principal */}
+      {/* 4. Mapa Interactivo Principal (Sin revelar la ubicación antes de hacer clic) */}
       <div className="relative flex-1 min-h-[460px] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
         <WorldMap
           countryStatuses={mapCountryStatuses}
-          selectedCountryCode={selectedCountryCode}
-          targetCountryCode={selectedCountryCode}
+          selectedCountryCode={null}
+          targetCountryCode={null}
           continent={continent}
           onCountryClick={handleMapCountryClick}
           interactive={true}
-          enableTooltip={true}
+          enableTooltip={false}
         />
       </div>
     </div>
