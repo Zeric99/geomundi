@@ -329,6 +329,7 @@ export function App() {
         country={previewFlagCountry}
         isOpen={Boolean(previewFlagCountry)}
         onClose={() => setPreviewFlagCountry(null)}
+        hideDetails={activeTab === 'game'}
       />
 
       {/* Modal de Fin de Partida */}
