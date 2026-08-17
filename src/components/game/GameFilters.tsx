@@ -30,18 +30,25 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
   const modes: { id: GameMode; title: string; desc: string; icon: React.ReactNode; badge?: string }[] = [
     {
+      id: 'flag-skip-chain',
+      title: 'Banderas (Con Salto & 2ª Vuelta)',
+      desc: 'Adivina banderas. Si dudas, salta y te saldrá en la segunda ronda hasta completarlas todas.',
+      icon: <Flag className="w-5 h-5 text-sky-400" />,
+      badge: '¡Nuevo!'
+    },
+    {
       id: 'list-select',
       title: 'Lista & Mapa (Colores)',
       desc: 'Pulsa el nombre de un país de la lista y ubícalo: Verde (1º), Amarillo (2º), Rojo (Fallo).',
       icon: <ListChecks className="w-5 h-5 text-emerald-400" />,
-      badge: '¡Nuevo!'
+      badge: 'Popular'
     },
     {
       id: 'trivia-curiosities',
       title: 'Trivia y Curiosidades',
       desc: 'Preguntas de récords mundiales, curiosidades insólitas y datos únicos de cada país.',
       icon: <Trophy className="w-5 h-5 text-indigo-400" />,
-      badge: 'Popular'
+      badge: 'Trivia'
     },
     {
       id: 'click-find',

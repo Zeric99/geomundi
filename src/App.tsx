@@ -8,6 +8,7 @@ import { InputWriteMode } from './components/game/InputWriteMode';
 import { MatchCardsMode } from './components/game/MatchCardsMode';
 import { TriviaCuriositiesMode } from './components/game/TriviaCuriositiesMode';
 import { ListSelectMode } from './components/game/ListSelectMode';
+import { FlagSkipChainMode } from './components/game/FlagSkipChainMode';
 import { CountryExplorer } from './components/explore/CountryExplorer';
 import { TutorDashboard } from './components/tutor/TutorDashboard';
 import { GameOverModal } from './components/game/GameOverModal';
@@ -18,6 +19,7 @@ import { useGameState } from './hooks/useGameState';
 import { Country } from './types/country';
 import { GameConfig, GameSummary } from './types/game';
 import { TutorAdvice } from './types/stats';
+import { GEEK_TERRITORIES } from './data/fallbackCountries';
 import { Loader2 } from 'lucide-react';
 
 export function App() {
@@ -197,7 +199,22 @@ export function App() {
               />
             ) : (
               <div className="space-y-4">
-                {/* 1. Modo Lista & Mapa (Colores) */}
+                {/* 1. Modo Banderas (Con Salto & 2ª Ronda) */}
+                {config.mode === 'flag-skip-chain' && (
+                  <FlagSkipChainMode
+                    initialCountries={
+                      config.isGeekMode
+                        ? [...countries, ...GEEK_TERRITORIES]
+                        : countries
+                    }
+                    onFinishGame={handleGameComplete}
+                    onQuit={quitGame}
+                    isGeekMode={config.isGeekMode}
+                    onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
+                  />
+                )}
+
+                {/* 2. Modo Lista & Mapa (Colores) */}
                 {config.mode === 'list-select' && (
                   <ListSelectMode
                     countries={countries}
@@ -207,7 +224,7 @@ export function App() {
                   />
                 )}
 
-                {/* 2. Modo Trivia de Curiosidades */}
+                {/* 3. Modo Trivia de Curiosidades */}
                 {config.mode === 'trivia-curiosities' && (
                   <TriviaCuriositiesMode
                     currentQuestion={currentQuestion}
@@ -227,8 +244,8 @@ export function App() {
                   />
                 )}
 
-                {/* 3. Modos Estándar (con cabecera genérica) */}
-                {config.mode !== 'trivia-curiosities' && config.mode !== 'list-select' && (
+                {/* 4. Modos Estándar (con cabecera genérica) */}
+                {config.mode !== 'trivia-curiosities' && config.mode !== 'list-select' && config.mode !== 'flag-skip-chain' && (
                   <>
                     <GameHeader
                       currentIndex={currentIndex}
