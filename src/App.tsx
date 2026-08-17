@@ -319,6 +319,10 @@ export function App() {
         <GameOverModal
           summary={lastGameSummary}
           onPlayAgain={() => startGame()}
+          onReturnToMenu={() => {
+            quitGame();
+            setActiveTab('game');
+          }}
           onGoToTutor={() => {
             quitGame();
             setActiveTab('tutor');

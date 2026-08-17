@@ -1,11 +1,12 @@
 import React from 'react';
-import { Trophy, RotateCcw, Sparkles, Brain, CheckCircle2, XCircle, Flame, ArrowRight } from 'lucide-react';
+import { Trophy, RotateCcw, Sparkles, Brain, CheckCircle2, XCircle, Flame, ArrowRight, Home, X } from 'lucide-react';
 import { GameSummary } from '../../types/game';
 
 interface GameOverModalProps {
   summary: GameSummary;
   onPlayAgain: () => void;
   onGoToTutor: () => void;
+  onReturnToMenu?: () => void;
   onPracticeMistakes?: (mistakeCodes: string[]) => void;
 }
 
@@ -13,6 +14,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   summary,
   onPlayAgain,
   onGoToTutor,
+  onReturnToMenu,
   onPracticeMistakes
 }) => {
   const isPerfect = summary.accuracy === 100;
@@ -27,6 +29,17 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         {/* Glow de fondo */}
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Botón de cierre directo al menú */}
+        {onReturnToMenu && (
+          <button
+            onClick={onReturnToMenu}
+            className="absolute top-5 right-5 p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-all border border-slate-700 active:scale-95"
+            title="Volver al Menú Principal"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
 
         {/* Encabezado con Icono */}
         <div className="text-center space-y-2">
@@ -131,14 +144,28 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
             )}
           </div>
 
-          <button
-            onClick={onGoToTutor}
-            className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition-all flex items-center justify-center gap-2"
-          >
-            <Brain className="w-4 h-4 text-purple-400" />
-            <span>Ver Diagnóstico y Recomendaciones del Tutor IA</span>
-            <ArrowRight className="w-3.5 h-3.5 text-slate-500" />
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {onReturnToMenu && (
+              <button
+                onClick={onReturnToMenu}
+                className="py-2.5 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-750 text-slate-200 hover:text-white border border-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm"
+              >
+                <Home className="w-4 h-4 text-cyan-400" />
+                <span>Menú Principal</span>
+              </button>
+            )}
+
+            <button
+              onClick={onGoToTutor}
+              className={`py-2.5 px-3 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 text-purple-200 hover:text-purple-100 border border-purple-800/60 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                !onReturnToMenu ? 'sm:col-span-2' : ''
+              }`}
+            >
+              <Brain className="w-3.5 h-3.5 text-purple-400" />
+              <span>Tutor IA</span>
+              <ArrowRight className="w-3 h-3 text-purple-400" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
