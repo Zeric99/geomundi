@@ -67,7 +67,7 @@ export const MICROSTATE_CODES = new Set([
   // África
   'CPV', 'COM', 'MUS', 'STP', 'SYC', 'SWZ', 'LSO', 'DJI', 'GMB',
   // Asia
-  'SGP', 'BHR', 'MDV', 'BRN', 'QAT', 'KWT', 'LBN', 'TLS', 'BTN',
+  'SGP', 'BHR', 'MDV', 'BRN', 'QAT', 'KWT', 'LBN', 'TLS', 'BTN', 'PSE',
   // Oceanía
   'FJI', 'KIR', 'MHL', 'FSM', 'NRU', 'PLW', 'WSM', 'SLB', 'TON', 'TUV', 'VUT'
 ]);

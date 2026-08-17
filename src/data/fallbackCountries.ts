@@ -894,6 +894,13 @@ export const FALLBACK_COUNTRIES: Country[] = [
     flagSvg: "https://flagcdn.com/sy.svg", flagEmoji: "🇸🇾", latlng: [34.8021, 38.9968],
     altSpellings: ["Syria", "Damascus"]
   },
+  {
+    cca2: "PS", cca3: "PSE", ccn3: "275", nameEs: "Palestina", nameEn: "Palestine",
+    officialNameEs: "Estado de Palestina", capital: "Jerusalén Este", continent: "Asia", continentEs: "Asia",
+    subregion: "Western Asia", subregionEs: "Medio Oriente", population: 5101414,
+    flagSvg: "https://flagcdn.com/ps.svg", flagEmoji: "🇵🇸", latlng: [31.9522, 35.2332],
+    altSpellings: ["Palestine", "Palestina", "State of Palestine", "Cisjordania", "Gaza", "Jerusalen"]
+  },
 
   // ==========================================
   // --- ÁFRICA (54 países y microestados) ---
