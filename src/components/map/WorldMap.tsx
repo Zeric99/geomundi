@@ -10,9 +10,11 @@ import { Continent, Country, CountryMapStatus } from '../../types/country';
 import { CONTINENT_VIEWPORTS, MICROSTATE_CODES } from '../../data/geoAliases';
 import { MapTooltip } from './MapTooltip';
 import { MapControls } from './MapControls';
-import { ArchipelagoFocusMap, ArchipelagoRegion } from './ArchipelagoFocusMap';
+import { CaribbeanInsetMap } from './CaribbeanInsetMap';
+import { OceaniaInsetMap } from './OceaniaInsetMap';
 import { countriesService } from '../../services/countriesService';
 import { FALLBACK_MAP_URL, FALLBACK_COUNTRIES, GEEK_TERRITORIES } from '../../data/fallbackCountries';
+import { Maximize2, Minimize2, Eye, EyeOff } from 'lucide-react';
 
 // Mapa de alta resolución 1:50,000,000 con todos los contornos geográficos reales
 const LOCAL_GEO_URL = `${import.meta.env.BASE_URL}data/world-50m.json`;
@@ -26,6 +28,18 @@ const BASE_STYLES = {
   neutral: { fill: '#24344D', stroke: '#3B4F6E', strokeWidth: 0.35 },
   hover: { fill: '#0284C7', stroke: '#38BDF8', strokeWidth: 0.6 }
 };
+
+// Códigos de islas gestionadas por las ventanas Inset para evitar duplicación y solapamiento en el mapa global
+const INSET_CARIBBEAN_CODES = new Set([
+  'BHS', 'TCA', 'CUB', 'JAM', 'HTI', 'DOM', 'PRI', 'CYM', 'VGB', 'VIR',
+  'AIA', 'SXM', 'BLM', 'KNA', 'ATG', 'MSR', 'GLP', 'DMA', 'MTQ', 'LCA',
+  'BRB', 'VCT', 'GRD', 'TTO', 'ABW', 'CUW', 'BES'
+]);
+
+const INSET_PACIFIC_CODES = new Set([
+  'PLW', 'GUM', 'MNP', 'FSM', 'MHL', 'NRU', 'KIR', 'SLB', 'VUT', 'NCL',
+  'FJI', 'TUV', 'WLF', 'WSM', 'ASM', 'TON', 'NIU', 'COK', 'PYF'
+]);
 
 interface WorldMapProps {
   countryStatuses?: Record<string, CountryMapStatus>;
@@ -57,7 +71,10 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
   const [hoveredCountry, setHoveredCountry] = useState<Country | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
-  const [activeArchipelago, setActiveArchipelago] = useState<ArchipelagoRegion | null>(null);
+
+  // Estados de visibilidad de las ventanas de Inset (Caribe y Oceanía)
+  const [showCaribbeanInset, setShowCaribbeanInset] = useState<boolean>(true);
+  const [showOceaniaInset, setShowOceaniaInset] = useState<boolean>(true);
 
   // Detección de arrastre vs. clic optimizada
   const pointerDownPos = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -259,12 +276,19 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     setHoverPosition(null);
   };
 
-  // Microestados a renderizar con marcadores discretos
+  // Microestados a renderizar en el mapa global (excluyendo Caribe y Pacífico para que no se solapen con las ventanas Inset)
   const microstateCountries = useMemo(() => {
     const all = isGeekMode ? [...FALLBACK_COUNTRIES, ...GEEK_TERRITORIES] : FALLBACK_COUNTRIES;
     return all.filter(c => {
-      const isMicro = MICROSTATE_CODES.has(c.cca3.toUpperCase());
+      const upper = c.cca3.toUpperCase();
+      const isMicro = MICROSTATE_CODES.has(upper);
       if (!isMicro) return false;
+      
+      // Si estamos en vista Mundial o en América/Oceanía, las islas del Caribe y Pacífico se gestionan en las ventanas Inset
+      if (INSET_CARIBBEAN_CODES.has(upper) || INSET_PACIFIC_CODES.has(upper)) {
+        return false;
+      }
+
       if (continent === 'World') return true;
       return c.continent === continent;
     });
@@ -276,26 +300,13 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     return countriesService.getCountryByCode(pulsingCountryCode);
   }, [pulsingCountryCode]);
 
-  // Si el usuario ha solicitado la vista regional exclusiva para archipiélagos (Caribe u Oceanía)
-  if (activeArchipelago) {
-    return (
-      <ArchipelagoFocusMap
-        region={activeArchipelago}
-        countryStatuses={countryStatuses}
-        selectedCountryCode={selectedCountryCode}
-        targetCountryCode={targetCountryCode}
-        pulsingCountryCode={pulsingCountryCode}
-        onCountryClick={onCountryClick}
-        onClose={() => setActiveArchipelago(null)}
-        onSwitchRegion={(r) => setActiveArchipelago(r)}
-        isGeekMode={isGeekMode}
-      />
-    );
-  }
+  // Determinar si mostramos los recuadros Inset
+  const showCaribbean = (continent === 'World' || continent === 'Americas') && showCaribbeanInset;
+  const showOceania = (continent === 'World' || continent === 'Oceania') && showOceaniaInset;
 
   return (
     <div
-      className={`relative w-full h-full min-h-[420px] bg-gradient-to-b from-[#090D16] via-[#0D1524] to-[#0A101C] rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl select-none ${className}`}
+      className={`relative w-full h-full min-h-[440px] bg-gradient-to-b from-[#090D16] via-[#0D1524] to-[#0A101C] rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl select-none ${className}`}
       onMouseDown={handlePointerDown}
       onMouseMove={handlePointerMove}
       onMouseUp={handlePointerUp}
@@ -329,8 +340,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         onToggleTooltips={toggleTooltips}
       />
 
-      {/* Leyenda rápida interactiva (esquina inferior izquierda) */}
-      <div className="absolute bottom-3 left-3 z-20 hidden md:flex items-center gap-3 bg-[#131C2E]/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/60 text-[11px] text-slate-300 font-medium shadow-lg">
+      {/* Leyenda rápida interactiva (esquina superior central) */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 hidden lg:flex items-center gap-3 bg-[#131C2E]/85 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-slate-700/60 text-[11px] text-slate-300 font-medium shadow-lg">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
           <span>Acierto</span>
@@ -347,49 +358,73 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
           <span>Selección</span>
         </div>
-        <div className="flex items-center gap-1.5 pl-1 border-l border-slate-700">
-          <span className="w-2 rounded-full bg-white border border-slate-400 inline-block h-2" />
-          <span className="text-white font-medium">📍 Microestados</span>
-        </div>
       </div>
 
-      {/* Barra de Vistas Exclusivas para Islas y Archipiélagos (Caribe y Oceanía sin solapamiento) */}
-      <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-[#131C2E]/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-cyan-500/40 shadow-2xl overflow-x-auto max-w-[95%]">
-        <span className="text-[10px] uppercase font-bold text-cyan-400 pl-1 pr-0.5 hidden lg:inline">
-          🏝️ Mapas Exclusivos:
-        </span>
-        <button
-          onClick={() => setActiveArchipelago('caribbean')}
-          title="Abrir mapa exclusivo del Caribe y Antillas sin solapamiento de islas"
-          className="px-2.5 py-1 rounded-lg text-xs font-bold bg-gradient-to-r from-sky-600/30 to-cyan-600/30 hover:from-sky-500/50 hover:to-cyan-500/50 text-cyan-300 hover:text-white border border-cyan-500/40 transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
-        >
-          <span>🏝️</span>
-          <span>Caribe (Exclusivo)</span>
-        </button>
-        <button
-          onClick={() => setActiveArchipelago('pacific')}
-          title="Abrir mapa exclusivo de Oceanía y el Pacífico sin solapamiento de islas"
-          className="px-2.5 py-1 rounded-lg text-xs font-bold bg-gradient-to-r from-sky-600/30 to-cyan-600/30 hover:from-sky-500/50 hover:to-cyan-500/50 text-cyan-300 hover:text-white border border-cyan-500/40 transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
-        >
-          <span>🌊</span>
-          <span>Oceanía (Exclusivo)</span>
-        </button>
-        <button
-          onClick={() => setPosition({ coordinates: CONTINENT_VIEWPORTS.EuropeMicro.center, zoom: CONTINENT_VIEWPORTS.EuropeMicro.zoom })}
-          title="Zoom a Microestados de Europa"
-          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 border border-slate-700/60 hover:border-cyan-500/40 transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
-        >
-          <span>🏰</span>
-          <span>Microestados</span>
-        </button>
-        <button
-          onClick={handleReset}
-          title="Restablecer vista completa del mundo"
-          className="px-2 py-1 rounded-lg text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all shrink-0 active:scale-95"
-        >
-          <span>🌍 Mundo</span>
-        </button>
-      </div>
+      {/* RECUADRO INSET INFERIOR IZQUIERDO: EL CARIBE & ANTILLAS */}
+      {showCaribbean && (
+        <div className="absolute bottom-3 left-3 z-30 w-56 sm:w-72 md:w-80 h-40 sm:h-48 shadow-2xl transition-all animate-in fade-in zoom-in-95">
+          <CaribbeanInsetMap
+            countryStatuses={countryStatuses}
+            selectedCountryCode={selectedCountryCode}
+            targetCountryCode={targetCountryCode}
+            pulsingCountryCode={pulsingCountryCode}
+            onCountryClick={onCountryClick}
+            isGeekMode={isGeekMode}
+          />
+          <button
+            onClick={() => setShowCaribbeanInset(false)}
+            className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors"
+            title="Minimizar recuadro del Caribe"
+          >
+            <EyeOff className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* RECUADRO INSET INFERIOR DERECHO: OCEANÍA & PACÍFICO */}
+      {showOceania && (
+        <div className="absolute bottom-3 right-3 z-30 w-60 sm:w-80 md:w-96 h-40 sm:h-48 shadow-2xl transition-all animate-in fade-in zoom-in-95">
+          <OceaniaInsetMap
+            countryStatuses={countryStatuses}
+            selectedCountryCode={selectedCountryCode}
+            targetCountryCode={targetCountryCode}
+            pulsingCountryCode={pulsingCountryCode}
+            onCountryClick={onCountryClick}
+            isGeekMode={isGeekMode}
+          />
+          <button
+            onClick={() => setShowOceaniaInset(false)}
+            className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors"
+            title="Minimizar recuadro de Oceanía"
+          >
+            <EyeOff className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Botones para restaurar los recuadros si se cerraron */}
+      {(!showCaribbeanInset || !showOceaniaInset) && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl">
+          {!showCaribbeanInset && (
+            <button
+              onClick={() => setShowCaribbeanInset(true)}
+              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 rounded-lg flex items-center gap-1 border border-slate-600"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Ver Caribe</span>
+            </button>
+          )}
+          {!showOceaniaInset && (
+            <button
+              onClick={() => setShowOceaniaInset(true)}
+              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 rounded-lg flex items-center gap-1 border border-slate-600"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Ver Oceanía</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Mapa Vectorial SVG en Alta Resolución 50m con aceleración por hardware */}
       <ComposableMap
@@ -459,7 +494,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             }
           </Geographies>
 
-          {/* Marcadores Sutiles para Microestados Pequeños (Ultra-ligeros) */}
+          {/* Marcadores para Microestados de Europa, África y Asia (excluyendo Caribe y Pacífico que van en los Insets) */}
           {microstateCountries.map((country) => {
             const cca3 = country.cca3.toUpperCase();
             const styles = getCountryStyles(cca3);
@@ -496,17 +531,6 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                   onMouseLeave={handleMouseLeave}
                   className="cursor-pointer"
                 >
-                  {/* Zona de resalto iluminado del archipiélago al pasar el ratón por el punto */}
-                  {isHovered && (
-                    <circle
-                      r={Math.max(10, 24 / Math.sqrt(position.zoom))}
-                      fill="rgba(6, 182, 212, 0.2)"
-                      stroke="#38BDF8"
-                      strokeWidth={0.6}
-                      strokeDasharray="3 3"
-                    />
-                  )}
-
                   {/* Halo sutil */}
                   <circle
                     r={haloR}
