@@ -13,8 +13,18 @@ import { MapControls } from './MapControls';
 import { countriesService } from '../../services/countriesService';
 import { FALLBACK_MAP_URL, FALLBACK_COUNTRIES, GEEK_TERRITORIES } from '../../data/fallbackCountries';
 
-// Mapa de alta resolución 1:50,000,000 con todos los contornos geográficos reales de islas y archipiélagos
+// Mapa de alta resolución 1:50,000,000 con todos los contornos geográficos reales
 const LOCAL_GEO_URL = `${import.meta.env.BASE_URL}data/world-50m.json`;
+
+// Paleta de estilos de alto rendimiento optimizada para renderizado GPU sin cuellos de botella
+const BASE_STYLES = {
+  correct: { fill: '#10B981', stroke: '#34D399', strokeWidth: 0.5 },
+  wrong: { fill: '#EF4444', stroke: '#F87171', strokeWidth: 0.6 },
+  hint: { fill: '#F59E0B', stroke: '#FDE047', strokeWidth: 0.6 },
+  selected: { fill: '#8B5CF6', stroke: '#C4B5FD', strokeWidth: 0.7 },
+  neutral: { fill: '#24344D', stroke: '#3B4F6E', strokeWidth: 0.35 },
+  hover: { fill: '#0284C7', stroke: '#38BDF8', strokeWidth: 0.6 }
+};
 
 interface WorldMapProps {
   countryStatuses?: Record<string, CountryMapStatus>;
@@ -47,7 +57,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const [hoveredCountry, setHoveredCountry] = useState<Country | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
 
-  // Detección de arrastre vs. clic para evitar selecciones accidentales sin bloquear clics reales
+  // Detección de arrastre vs. clic optimizada
   const pointerDownPos = useRef<{ x: number; y: number; time: number } | null>(null);
   const isDraggingRef = useRef<boolean>(false);
 
@@ -145,11 +155,12 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     const clientY = 'touches' in e ? e.touches[0]?.clientY : (e as React.MouseEvent).clientY;
     if (pointerDownPos.current && clientX !== undefined && clientY !== undefined) {
       const dist = Math.hypot(clientX - pointerDownPos.current.x, clientY - pointerDownPos.current.y);
-      if (dist > 18) {
+      if (dist > 12) {
         isDraggingRef.current = true;
       }
     }
-    if ('clientX' in e) {
+    // Durante el arrastre NO actualizamos coordenadas de tooltip para evitar re-renderizados continuos
+    if (!isDraggingRef.current && 'clientX' in e) {
       handleMouseMove(e as React.MouseEvent);
     }
   };
@@ -164,15 +175,10 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     }, 50);
   };
 
-  // Obtiene el color de relleno y borde con trazo fino adaptativo
+  // Obtiene el color de relleno y borde ultra-optimizado (sin filtros CSS pesados)
   const getCountryStyles = useCallback((cca3: string | null) => {
     if (!cca3) {
-      return {
-        fill: '#1E293B',
-        stroke: '#334155',
-        strokeWidth: 0.35 / Math.sqrt(position.zoom),
-        cursor: 'default'
-      };
+      return BASE_STYLES.neutral;
     }
 
     const upper = cca3.toUpperCase();
@@ -182,63 +188,23 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     const isTarget = targetCountryCode?.toUpperCase() === upper;
 
     if (isPulsing) {
-      return {
-        fill: '#EF4444', // Rojo coral parpadeante
-        stroke: '#FEE2E2',
-        strokeWidth: 1.2 / Math.sqrt(position.zoom),
-        cursor: interactive ? 'pointer' : 'default',
-        filter: 'drop-shadow(0 0 8px rgba(239, 68, 68, 1))'
-      };
+      return { fill: '#EF4444', stroke: '#FEE2E2', strokeWidth: 0.9 };
     }
-
     if (status === 'correct') {
-      return {
-        fill: '#10B981', // Verde esmeralda brillante
-        stroke: '#34D399',
-        strokeWidth: 0.7 / Math.sqrt(position.zoom),
-        cursor: interactive ? 'pointer' : 'default',
-        filter: 'drop-shadow(0 0 5px rgba(16, 185, 129, 0.8))'
-      };
+      return BASE_STYLES.correct;
     }
-
     if (status === 'wrong') {
-      return {
-        fill: '#EF4444', // Rojo coral
-        stroke: '#F87171',
-        strokeWidth: 0.7 / Math.sqrt(position.zoom),
-        cursor: interactive ? 'pointer' : 'default',
-        filter: 'drop-shadow(0 0 5px rgba(239, 68, 68, 0.8))'
-      };
+      return BASE_STYLES.wrong;
     }
-
     if (status === 'hint' || isTarget) {
-      return {
-        fill: '#F59E0B', // Ámbar neón
-        stroke: '#FDE047',
-        strokeWidth: 0.8 / Math.sqrt(position.zoom),
-        cursor: interactive ? 'pointer' : 'default',
-        filter: 'drop-shadow(0 0 6px rgba(245, 158, 11, 0.9))'
-      };
+      return BASE_STYLES.hint;
     }
-
     if (status === 'selected' || isSelected) {
-      return {
-        fill: '#8B5CF6', // Púrpura eléctrico
-        stroke: '#C4B5FD',
-        strokeWidth: 0.8 / Math.sqrt(position.zoom),
-        cursor: interactive ? 'pointer' : 'default',
-        filter: 'drop-shadow(0 0 6px rgba(139, 92, 246, 0.9))'
-      };
+      return BASE_STYLES.selected;
     }
 
-    // Estado Neutral por defecto con trazo fino nítido
-    return {
-      fill: '#24344D',
-      stroke: '#3B4F6E',
-      strokeWidth: 0.35 / Math.sqrt(position.zoom),
-      cursor: interactive ? 'pointer' : 'default'
-    };
-  }, [countryStatuses, selectedCountryCode, targetCountryCode, pulsingCountryCode, interactive, position.zoom]);
+    return BASE_STYLES.neutral;
+  }, [countryStatuses, selectedCountryCode, targetCountryCode, pulsingCountryCode]);
 
   const handleGeographyClick = (geo: any) => {
     if (!interactive || !onCountryClick || isDraggingRef.current) return;
@@ -291,7 +257,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     setHoverPosition(null);
   };
 
-  // Microestados a renderizar con marcadores sutiles (sin etiquetas invasivas)
+  // Microestados a renderizar con marcadores discretos
   const microstateCountries = useMemo(() => {
     const all = isGeekMode ? [...FALLBACK_COUNTRIES, ...GEEK_TERRITORIES] : FALLBACK_COUNTRIES;
     return all.filter(c => {
@@ -317,6 +283,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       onTouchStart={handlePointerDown}
       onTouchMove={handlePointerMove}
       onTouchEnd={handlePointerUp}
+      style={{ transform: 'translateZ(0)', willChange: 'transform' }}
     >
       {/* Rejilla de Fondo / Efecto de Coordenadas */}
       <div
@@ -346,23 +313,23 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       {/* Leyenda rápida interactiva (esquina inferior izquierda) */}
       <div className="absolute bottom-3 left-3 z-20 hidden md:flex items-center gap-3 bg-[#131C2E]/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/60 text-[11px] text-slate-300 font-medium shadow-lg">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-glow-emerald" />
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
           <span>Acierto</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-glow-rose" />
+          <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
           <span>Fallo</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-glow-amber" />
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
           <span>Pista</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-glow-purple" />
+          <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
           <span>Selección</span>
         </div>
         <div className="flex items-center gap-1.5 pl-1 border-l border-slate-700">
-          <span className="w-2 rounded-full bg-white border border-slate-400 shadow-sm inline-block h-2" />
+          <span className="w-2 rounded-full bg-white border border-slate-400 inline-block h-2" />
           <span className="text-white font-medium">📍 Microestados</span>
         </div>
       </div>
@@ -405,7 +372,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         </button>
       </div>
 
-      {/* Mapa Vectorial SVG en Alta Resolución 50m */}
+      {/* Mapa Vectorial SVG en Alta Resolución 50m con aceleración por hardware */}
       <ComposableMap
         projection="geoEqualEarth"
         projectionConfig={{
@@ -445,28 +412,26 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     onMouseLeave={handleMouseLeave}
                     style={{
                       default: {
-                        fill: isHovered && styles.fill === '#24344D' ? '#0284C7' : styles.fill,
-                        stroke: isHovered ? '#38BDF8' : styles.stroke,
-                        strokeWidth: isHovered ? Math.max(0.7 / Math.sqrt(position.zoom), 0.45) : styles.strokeWidth,
+                        fill: isHovered && styles.fill === '#24344D' ? BASE_STYLES.hover.fill : styles.fill,
+                        stroke: isHovered ? BASE_STYLES.hover.stroke : styles.stroke,
+                        strokeWidth: isHovered ? BASE_STYLES.hover.strokeWidth : styles.strokeWidth,
                         outline: 'none',
-                        transition: 'fill 120ms ease-out, stroke 120ms ease-out',
-                        filter: isHovered
-                          ? 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.9))'
-                          : (styles.filter || 'none')
+                        vectorEffect: 'non-scaling-stroke'
                       },
                       hover: {
-                        fill: '#0284C7',
-                        stroke: '#38BDF8',
-                        strokeWidth: Math.max(0.7 / Math.sqrt(position.zoom), 0.45),
+                        fill: BASE_STYLES.hover.fill,
+                        stroke: BASE_STYLES.hover.stroke,
+                        strokeWidth: BASE_STYLES.hover.strokeWidth,
                         outline: 'none',
-                        cursor: styles.cursor,
-                        filter: 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.9))'
+                        cursor: interactive ? 'pointer' : 'default',
+                        vectorEffect: 'non-scaling-stroke'
                       },
                       pressed: {
                         fill: '#0369A1',
                         stroke: '#7DD3FC',
-                        strokeWidth: Math.max(0.8 / Math.sqrt(position.zoom), 0.5),
+                        strokeWidth: 0.7,
                         outline: 'none',
+                        vectorEffect: 'non-scaling-stroke'
                       }
                     }}
                   />
@@ -475,24 +440,21 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             }
           </Geographies>
 
-          {/* Marcadores Sutiles para Microestados Pequeños (Sin etiquetas invasivas) */}
+          {/* Marcadores Sutiles para Microestados Pequeños (Ultra-ligeros) */}
           {microstateCountries.map((country) => {
             const cca3 = country.cca3.toUpperCase();
             const styles = getCountryStyles(cca3);
             const isHovered = hoveredCountry?.cca3?.toUpperCase() === cca3;
-            const isTarget = targetCountryCode?.toUpperCase() === cca3;
             const isPulsing = pulsingCountryCode?.toUpperCase() === cca3;
             const isResolved = styles.fill !== '#24344D';
             
-            // Puntos discretos y elegantes
             const dotFill = isPulsing ? '#EF4444' : isResolved ? styles.fill : isHovered ? '#38BDF8' : '#FFFFFF';
-            const haloFill = isPulsing ? '#EF4444' : isTarget ? '#F59E0B' : isResolved ? styles.fill : isHovered ? '#38BDF8' : '#FFFFFF';
+            const haloFill = isPulsing ? '#EF4444' : isResolved ? styles.fill : isHovered ? '#38BDF8' : '#FFFFFF';
             const dotStroke = isPulsing ? '#FEE2E2' : isResolved ? styles.stroke : isHovered ? '#0284C7' : '#64748B';
             
             const coords: [number, number] = [country.latlng[1], country.latlng[0]];
             
-            // Tamaño diminuto y sutil adaptado al zoom
-            const baseR = Math.max(0.8, 1.8 / Math.sqrt(position.zoom));
+            const baseR = Math.max(0.9, 1.8 / Math.sqrt(position.zoom));
             const haloR = baseR * 1.6;
             const hitR = Math.max(3.0, 5.5 / Math.sqrt(position.zoom));
 
@@ -513,17 +475,16 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     }
                   }}
                   onMouseLeave={handleMouseLeave}
-                  className="cursor-pointer transition-transform duration-100 hover:scale-125"
+                  className="cursor-pointer"
                 >
                   {/* Zona de resalto iluminado del archipiélago al pasar el ratón por el punto */}
                   {isHovered && (
                     <circle
-                      r={Math.max(10, 26 / Math.sqrt(position.zoom))}
+                      r={Math.max(10, 24 / Math.sqrt(position.zoom))}
                       fill="rgba(6, 182, 212, 0.2)"
                       stroke="#38BDF8"
-                      strokeWidth={Math.max(0.5, 1.0 / Math.sqrt(position.zoom))}
+                      strokeWidth={0.6}
                       strokeDasharray="3 3"
-                      className="animate-pulse"
                     />
                   )}
 
@@ -531,8 +492,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                   <circle
                     r={haloR}
                     fill={haloFill}
-                    opacity={isPulsing ? 0.9 : isHovered ? 0.8 : isTarget ? 0.7 : isResolved ? 0.3 : 0.15}
-                    className={isPulsing || isTarget ? 'animate-ping' : ''}
+                    opacity={isPulsing ? 0.9 : isHovered ? 0.7 : isResolved ? 0.3 : 0.15}
                   />
 
                   {/* Punto central */}
@@ -540,16 +500,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     r={baseR}
                     fill={dotFill}
                     stroke={dotStroke}
-                    strokeWidth={Math.max(0.2, 0.5 / Math.sqrt(position.zoom))}
-                    style={{
-                      filter: isPulsing 
-                        ? 'drop-shadow(0 0 6px #EF4444)' 
-                        : isHovered || isTarget 
-                        ? 'drop-shadow(0 0 6px #38BDF8)' 
-                        : isResolved 
-                        ? 'drop-shadow(0 0 2px ' + styles.fill + ')' 
-                        : 'none'
-                    }}
+                    strokeWidth={0.4}
                   />
 
                   {/* Zona de impacto táctil */}
@@ -570,15 +521,14 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                   r={Math.max(6, 16 / Math.sqrt(position.zoom))}
                   fill="rgba(239, 68, 68, 0.25)"
                   stroke="#EF4444"
-                  strokeWidth={Math.max(0.6, 1.8 / Math.sqrt(position.zoom))}
+                  strokeWidth={0.8}
                   className="animate-ping"
                 />
                 <circle
                   r={Math.max(2.5, 6 / Math.sqrt(position.zoom))}
                   fill="#EF4444"
                   stroke="#FFFFFF"
-                  strokeWidth={Math.max(0.4, 1.2 / Math.sqrt(position.zoom))}
-                  className="animate-pulse"
+                  strokeWidth={0.5}
                 />
                 <g transform={`translate(0, -${Math.max(5, 12 / Math.sqrt(position.zoom))})`}>
                   <text
