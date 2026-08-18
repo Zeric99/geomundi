@@ -348,121 +348,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         }}
       />
 
-      {/* Controles de Zoom, Centrado y Toggle de Tooltips */}
-      <MapControls
-        onZoomIn={handleZoomIn}
-        onZoomOut={handleZoomOut}
-        onReset={handleReset}
-        currentContinent={continent}
-        onSelectContinent={onSelectContinent}
-        zoomLevel={position.zoom}
-        tooltipsEnabled={tooltipsEnabled}
-        onToggleTooltips={toggleTooltips}
-      />
-
-      {/* Leyenda rápida interactiva (esquina superior central) */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 hidden lg:flex items-center gap-3 bg-[#131C2E]/85 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-slate-700/60 text-[11px] text-slate-300 font-medium shadow-lg">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-          <span>Acierto</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-          <span>Fallo</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-          <span>Pista</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-          <span>Selección</span>
-        </div>
-      </div>
-
-      {/* RECUADRO INSET: EL CARIBE & ANTILLAS */}
-      {showCaribbean && expandedInset !== 'oceania' && (
-        <div className={`transition-all duration-300 ${
-          expandedInset === 'caribbean'
-            ? 'absolute inset-2 sm:inset-4 z-40 shadow-2xl rounded-2xl overflow-hidden'
-            : 'absolute bottom-2 sm:bottom-3 left-2 sm:left-3 z-30 w-[240px] sm:w-[280px] md:w-[320px] h-[145px] sm:h-[165px] md:h-[185px] shadow-2xl rounded-2xl overflow-hidden'
-        }`}>
-          <CaribbeanInsetMap
-            countryStatuses={countryStatuses}
-            selectedCountryCode={selectedCountryCode}
-            targetCountryCode={targetCountryCode}
-            pulsingCountryCode={pulsingCountryCode}
-            onCountryClick={onCountryClick}
-            isGeekMode={isGeekMode}
-            isExpanded={expandedInset === 'caribbean'}
-            onToggleExpand={() => setExpandedInset(expandedInset === 'caribbean' ? null : 'caribbean')}
-          />
-          {expandedInset !== 'caribbean' && (
-            <button
-              onClick={() => setShowCaribbeanInset(false)}
-              className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors"
-              title="Minimizar recuadro del Caribe"
-            >
-              <EyeOff className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* RECUADRO INSET: OCEANÍA & PACÍFICO */}
-      {showOceania && expandedInset !== 'caribbean' && (
-        <div className={`transition-all duration-300 ${
-          expandedInset === 'oceania'
-            ? 'absolute inset-2 sm:inset-4 z-40 shadow-2xl rounded-2xl overflow-hidden'
-            : 'absolute bottom-2 sm:bottom-3 right-2 sm:right-3 z-30 w-[250px] sm:w-[290px] md:w-[330px] h-[145px] sm:h-[165px] md:h-[185px] shadow-2xl rounded-2xl overflow-hidden'
-        }`}>
-          <OceaniaInsetMap
-            countryStatuses={countryStatuses}
-            selectedCountryCode={selectedCountryCode}
-            targetCountryCode={targetCountryCode}
-            pulsingCountryCode={pulsingCountryCode}
-            onCountryClick={onCountryClick}
-            isGeekMode={isGeekMode}
-            isExpanded={expandedInset === 'oceania'}
-            onToggleExpand={() => setExpandedInset(expandedInset === 'oceania' ? null : 'oceania')}
-          />
-          {expandedInset !== 'oceania' && (
-            <button
-              onClick={() => setShowOceaniaInset(false)}
-              className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors"
-              title="Minimizar recuadro de Oceanía"
-            >
-              <EyeOff className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Botones para restaurar los recuadros si se cerraron */}
-      {(!showCaribbeanInset || !showOceaniaInset) && (
-        <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl">
-          {!showCaribbeanInset && (
-            <button
-              onClick={() => setShowCaribbeanInset(true)}
-              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 rounded-lg flex items-center gap-1 border border-slate-600"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Ver Caribe</span>
-            </button>
-          )}
-          {!showOceaniaInset && (
-            <button
-              onClick={() => setShowOceaniaInset(true)}
-              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 rounded-lg flex items-center gap-1 border border-slate-600"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Ver Oceanía</span>
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Mapa Vectorial SVG en Alta Resolución 50m con aceleración por hardware */}
+      {/* 1. Mapa Vectorial SVG Principal (Capa Base del Lienzo) */}
       <ComposableMap
         projection="geoEqualEarth"
         projectionConfig={{
@@ -626,7 +512,121 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         </ZoomableGroup>
       </ComposableMap>
 
-      {/* Tooltip con información del país al pasar el cursor */}
+      {/* 2. Controles de Zoom, Centrado y Toggle de Tooltips */}
+      <MapControls
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onReset={handleReset}
+        currentContinent={continent}
+        onSelectContinent={onSelectContinent}
+        zoomLevel={position.zoom}
+        tooltipsEnabled={tooltipsEnabled}
+        onToggleTooltips={toggleTooltips}
+      />
+
+      {/* 3. Leyenda rápida interactiva (esquina superior central) */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 hidden lg:flex items-center gap-3 bg-[#131C2E]/85 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-slate-700/60 text-[11px] text-slate-300 font-medium shadow-lg pointer-events-none">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+          <span>Acierto</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+          <span>Fallo</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+          <span>Pista</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+          <span>Selección</span>
+        </div>
+      </div>
+
+      {/* 4. RECUADRO INSET: EL CARIBE & ANTILLAS (Superpuesto en esquina inferior izquierda) */}
+      {showCaribbean && expandedInset !== 'oceania' && (
+        <div className={`transition-all duration-300 pointer-events-auto ${
+          expandedInset === 'caribbean'
+            ? 'absolute inset-2 sm:inset-4 z-40 shadow-2xl rounded-2xl overflow-hidden'
+            : 'absolute bottom-2 sm:bottom-3 left-2 sm:left-3 z-30 w-[240px] sm:w-[280px] md:w-[320px] h-[145px] sm:h-[165px] md:h-[185px] shadow-2xl rounded-2xl overflow-hidden'
+        }`}>
+          <CaribbeanInsetMap
+            countryStatuses={countryStatuses}
+            selectedCountryCode={selectedCountryCode}
+            targetCountryCode={targetCountryCode}
+            pulsingCountryCode={pulsingCountryCode}
+            onCountryClick={onCountryClick}
+            isGeekMode={isGeekMode}
+            isExpanded={expandedInset === 'caribbean'}
+            onToggleExpand={() => setExpandedInset(expandedInset === 'caribbean' ? null : 'caribbean')}
+          />
+          {expandedInset !== 'caribbean' && (
+            <button
+              onClick={() => setShowCaribbeanInset(false)}
+              className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors z-30"
+              title="Minimizar recuadro del Caribe"
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 5. RECUADRO INSET: OCEANÍA & PACÍFICO (Superpuesto en esquina inferior derecha) */}
+      {showOceania && expandedInset !== 'caribbean' && (
+        <div className={`transition-all duration-300 pointer-events-auto ${
+          expandedInset === 'oceania'
+            ? 'absolute inset-2 sm:inset-4 z-40 shadow-2xl rounded-2xl overflow-hidden'
+            : 'absolute bottom-2 sm:bottom-3 right-2 sm:right-3 z-30 w-[250px] sm:w-[290px] md:w-[330px] h-[145px] sm:h-[165px] md:h-[185px] shadow-2xl rounded-2xl overflow-hidden'
+        }`}>
+          <OceaniaInsetMap
+            countryStatuses={countryStatuses}
+            selectedCountryCode={selectedCountryCode}
+            targetCountryCode={targetCountryCode}
+            pulsingCountryCode={pulsingCountryCode}
+            onCountryClick={onCountryClick}
+            isGeekMode={isGeekMode}
+            isExpanded={expandedInset === 'oceania'}
+            onToggleExpand={() => setExpandedInset(expandedInset === 'oceania' ? null : 'oceania')}
+          />
+          {expandedInset !== 'oceania' && (
+            <button
+              onClick={() => setShowOceaniaInset(false)}
+              className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors z-30"
+              title="Minimizar recuadro de Oceanía"
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 6. Botones para restaurar los recuadros si se cerraron */}
+      {(!showCaribbeanInset || !showOceaniaInset) && (
+        <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl pointer-events-auto">
+          {!showCaribbeanInset && (
+            <button
+              onClick={() => setShowCaribbeanInset(true)}
+              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 rounded-lg flex items-center gap-1 border border-slate-600"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Ver Caribe</span>
+            </button>
+          )}
+          {!showOceaniaInset && (
+            <button
+              onClick={() => setShowOceaniaInset(true)}
+              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 rounded-lg flex items-center gap-1 border border-slate-600"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Ver Oceanía</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 7. Tooltip con información del país al pasar el cursor */}
       {enableTooltip && tooltipsEnabled && !isDraggingRef.current && (
         <MapTooltip
           country={hoveredCountry}
