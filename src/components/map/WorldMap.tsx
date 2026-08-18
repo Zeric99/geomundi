@@ -38,7 +38,8 @@ const INSET_CARIBBEAN_CODES = new Set([
 
 const INSET_PACIFIC_CODES = new Set([
   'PLW', 'GUM', 'MNP', 'FSM', 'MHL', 'NRU', 'KIR', 'SLB', 'VUT', 'NCL',
-  'FJI', 'TUV', 'WLF', 'WSM', 'ASM', 'TON', 'NIU', 'COK', 'PYF'
+  'FJI', 'TUV', 'WLF', 'WSM', 'ASM', 'TON', 'NIU', 'COK', 'PYF',
+  'CXR', 'CCK', 'NFK', 'PCN', 'TKL', 'HMD'
 ]);
 
 // Coordenadas calibradas con separación para microestados contiguos (Hong Kong, Macao, etc.)

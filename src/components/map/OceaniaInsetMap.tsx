@@ -27,41 +27,99 @@ interface OceaniaInsetMapProps {
 interface PacificMarkerDef {
   code: string;
   name: string;
+  islandName: string;
   coords: [number, number]; // [longitude, latitude]
   isGeekOnly?: boolean;
 }
 
-// Coordenadas geográficas reales calibradas para el Pacífico
+// Coordenadas geográficas calibradas para todas las islas y archipiélagos del Pacífico y Oceanía
 const PACIFIC_MARKERS: PacificMarkerDef[] = [
-  // Micronesia
-  { code: 'PLW', name: 'Palaos', coords: [134.58, 7.51] },
-  { code: 'GUM', name: 'Guam', coords: [144.79, 13.44], isGeekOnly: true },
-  { code: 'MNP', name: 'Islas Marianas', coords: [145.38, 15.09], isGeekOnly: true },
-  { code: 'FSM', name: 'Micronesia (FSM)', coords: [158.16, 6.92] },
-  { code: 'MHL', name: 'Islas Marshall', coords: [171.18, 7.13] },
-  { code: 'NRU', name: 'Nauru', coords: [166.93, -0.52] },
-  { code: 'KIR', name: 'Kiribati', coords: [172.97, 1.45] },
+  // Micronesia (Estados Federados de Micronesia) - 4 Estados
+  { code: 'FSM', name: 'Micronesia (FSM)', islandName: 'Pohnpei', coords: [158.21, 6.92] },
+  { code: 'FSM', name: 'Micronesia (FSM)', islandName: 'Chuuk', coords: [151.84, 7.42] },
+  { code: 'FSM', name: 'Micronesia (FSM)', islandName: 'Yap', coords: [138.12, 9.53] },
+  { code: 'FSM', name: 'Micronesia (FSM)', islandName: 'Kosrae', coords: [162.98, 5.31] },
 
-  // Melanesia
-  { code: 'PNG', name: 'Papúa Nueva Guinea', coords: [143.95, -6.31] },
-  { code: 'SLB', name: 'Islas Salomón', coords: [160.15, -9.64] },
-  { code: 'VUT', name: 'Vanuatu', coords: [168.32, -17.73] },
-  { code: 'NCL', name: 'Nueva Caledonia', coords: [165.61, -20.90], isGeekOnly: true },
-  { code: 'FJI', name: 'Fiyi', coords: [178.06, -17.71] },
+  // Kiribati - 3 Grupos de Islas distribuidos por el Pacífico
+  { code: 'KIR', name: 'Kiribati', islandName: 'Islas Gilbert (Tarawa)', coords: [172.97, 1.45] },
+  { code: 'KIR', name: 'Kiribati', islandName: 'Islas Phoenix (Kanton)', coords: [-171.70, -3.10] },
+  { code: 'KIR', name: 'Kiribati', islandName: 'Islas de la Línea (Kiritimati)', coords: [-157.35, 1.85] },
 
-  // Polinesia
-  { code: 'TUV', name: 'Tuvalu', coords: [177.64, -7.10] },
-  { code: 'WLF', name: 'Wallis y Futuna', coords: [-176.20, -13.30], isGeekOnly: true },
-  { code: 'WSM', name: 'Samoa', coords: [-172.10, -13.75] },
-  { code: 'ASM', name: 'Samoa Americana', coords: [-170.70, -14.27], isGeekOnly: true },
-  { code: 'TON', name: 'Tonga', coords: [-175.19, -21.17] },
-  { code: 'NIU', name: 'Niue', coords: [-169.86, -19.05], isGeekOnly: true },
-  { code: 'COK', name: 'Islas Cook', coords: [-159.77, -21.23], isGeekOnly: true },
-  { code: 'PYF', name: 'Polinesia Francesa', coords: [-149.40, -17.67], isGeekOnly: true },
+  // Islas Marshall - 2 Cadenas
+  { code: 'MHL', name: 'Islas Marshall', islandName: 'Cadena Ratak (Majuro)', coords: [171.37, 7.10] },
+  { code: 'MHL', name: 'Islas Marshall', islandName: 'Cadena Ralik (Kwajalein)', coords: [167.73, 8.71] },
 
-  // Australasia
-  { code: 'AUS', name: 'Australia', coords: [133.77, -25.27] },
-  { code: 'NZL', name: 'Nueva Zelanda', coords: [174.88, -40.90] }
+  // Palaos
+  { code: 'PLW', name: 'Palaos', islandName: 'Babeldaob & Koror', coords: [134.58, 7.51] },
+
+  // Nauru
+  { code: 'NRU', name: 'Nauru', islandName: 'Nauru', coords: [166.93, -0.52] },
+
+  // Tuvalu
+  { code: 'TUV', name: 'Tuvalu', islandName: 'Funafuti', coords: [179.20, -8.52] },
+  { code: 'TUV', name: 'Tuvalu', islandName: 'Islas del Norte (Nanumea)', coords: [177.64, -7.10] },
+
+  // Islas Salomón
+  { code: 'SLB', name: 'Islas Salomón', islandName: 'Guadalcanal', coords: [160.15, -9.64] },
+  { code: 'SLB', name: 'Islas Salomón', islandName: 'Malaita', coords: [160.70, -8.90] },
+  { code: 'SLB', name: 'Islas Salomón', islandName: 'Nueva Georgia', coords: [157.60, -8.20] },
+
+  // Vanuatu
+  { code: 'VUT', name: 'Vanuatu', islandName: 'Éfaté (Port Vila)', coords: [168.32, -17.73] },
+  { code: 'VUT', name: 'Vanuatu', islandName: 'Espiritu Santo', coords: [166.85, -15.35] },
+  { code: 'VUT', name: 'Vanuatu', islandName: 'Malakula & Tanna', coords: [169.35, -19.50] },
+
+  // Fiyi
+  { code: 'FJI', name: 'Fiyi', islandName: 'Viti Levu (Suva)', coords: [178.06, -17.71] },
+  { code: 'FJI', name: 'Fiyi', islandName: 'Vanua Levu', coords: [179.30, -16.60] },
+
+  // Samoa & Samoa Americana
+  { code: 'WSM', name: 'Samoa', islandName: 'Upolu (Apia)', coords: [-171.75, -13.90] },
+  { code: 'WSM', name: 'Samoa', islandName: "Savai'i", coords: [-172.45, -13.55] },
+  { code: 'ASM', name: 'Samoa Americana', islandName: 'Tutuila (Pago Pago)', coords: [-170.70, -14.27], isGeekOnly: true },
+
+  // Tonga
+  { code: 'TON', name: 'Tonga', islandName: "Tongatapu (Nuku'alofa)", coords: [-175.19, -21.17] },
+  { code: 'TON', name: 'Tonga', islandName: "Ha'apai & Vava'u", coords: [-174.15, -19.20] },
+
+  // Polinesia Francesa
+  { code: 'PYF', name: 'Polinesia Francesa', islandName: 'Tahití (Sociedad)', coords: [-149.40, -17.67], isGeekOnly: true },
+  { code: 'PYF', name: 'Polinesia Francesa', islandName: 'Islas Tuamotu', coords: [-140.75, -16.00], isGeekOnly: true },
+  { code: 'PYF', name: 'Polinesia Francesa', islandName: 'Islas Marquesas', coords: [-139.50, -9.00], isGeekOnly: true },
+
+  // Islas Cook & Niue
+  { code: 'COK', name: 'Islas Cook', islandName: 'Rarotonga', coords: [-159.77, -21.23], isGeekOnly: true },
+  { code: 'COK', name: 'Islas Cook', islandName: 'Aitutaki', coords: [-159.78, -18.85], isGeekOnly: true },
+  { code: 'NIU', name: 'Niue', islandName: 'Niue', coords: [-169.86, -19.05], isGeekOnly: true },
+
+  // Tokelau & Wallis y Futuna
+  { code: 'TKL', name: 'Tokelau', islandName: 'Tokelau', coords: [-171.85, -9.20], isGeekOnly: true },
+  { code: 'WLF', name: 'Wallis y Futuna', islandName: 'Wallis & Futuna', coords: [-176.20, -13.30], isGeekOnly: true },
+
+  // Pitcairn & Norfolk
+  { code: 'PCN', name: 'Islas Pitcairn', islandName: 'Pitcairn', coords: [-130.10, -25.07], isGeekOnly: true },
+  { code: 'NFK', name: 'Isla Norfolk', islandName: 'Norfolk', coords: [167.95, -29.04], isGeekOnly: true },
+
+  // Islas Australianas del Océano Índico (¡Antes flotaban sueltas!)
+  { code: 'CXR', name: 'Isla de Navidad', islandName: 'Isla de Navidad (Christmas Island)', coords: [105.69, -10.45], isGeekOnly: true },
+  { code: 'CCK', name: 'Islas Cocos', islandName: 'Islas Cocos (Keeling)', coords: [96.87, -12.16], isGeekOnly: true },
+
+  // Guam & Marianas del Norte
+  { code: 'GUM', name: 'Guam', islandName: 'Guam', coords: [144.79, 13.44], isGeekOnly: true },
+  { code: 'MNP', name: 'Islas Marianas', islandName: 'Saipán & Tinian', coords: [145.75, 15.18], isGeekOnly: true },
+
+  // Nueva Caledonia
+  { code: 'NCL', name: 'Nueva Caledonia', islandName: 'Grande Terre (Nouméa)', coords: [165.61, -20.90], isGeekOnly: true },
+  { code: 'NCL', name: 'Nueva Caledonia', islandName: 'Islas de la Lealtad (Lifou)', coords: [167.25, -20.90], isGeekOnly: true },
+
+  // Papúa Nueva Guinea
+  { code: 'PNG', name: 'Papúa Nueva Guinea', islandName: 'Nueva Guinea', coords: [143.95, -6.31] },
+  { code: 'PNG', name: 'Papúa Nueva Guinea', islandName: 'Nueva Bretaña & Bougainville', coords: [152.50, -5.50] },
+
+  // Australia & Nueva Zelanda
+  { code: 'AUS', name: 'Australia', islandName: 'Australia', coords: [133.77, -25.27] },
+  { code: 'AUS', name: 'Australia', islandName: 'Tasmania', coords: [146.80, -42.00] },
+  { code: 'NZL', name: 'Nueva Zelanda', islandName: 'Isla Norte & Isla Sur', coords: [174.88, -40.90] }
 ];
 
 export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
@@ -75,6 +133,7 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
   onToggleExpand
 }) => {
   const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
+  const [hoveredCountryCode, setHoveredCountryCode] = useState<string | null>(null);
   const [position, setPosition] = useState<{ coordinates: [number, number]; zoom: number }>({
     coordinates: isExpanded ? [175, -8.0] : [170, -8],
     zoom: isExpanded ? 5.5 : 2.7
@@ -115,12 +174,14 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
     const status = countryStatuses[upper];
     const isSelected = selectedCountryCode?.toUpperCase() === upper;
     const isTarget = targetCountryCode?.toUpperCase() === upper;
+    const isHovered = hoveredCountryCode?.toUpperCase() === upper;
 
     if (isPulsing) return { fill: '#EF4444', stroke: '#FEE2E2', strokeWidth: 0.9 };
     if (status === 'correct') return { fill: '#10B981', stroke: '#34D399', strokeWidth: 0.6 };
     if (status === 'wrong') return { fill: '#EF4444', stroke: '#F87171', strokeWidth: 0.6 };
     if (status === 'hint' || isTarget) return { fill: '#F59E0B', stroke: '#FDE047', strokeWidth: 0.7 };
     if (status === 'selected' || isSelected) return { fill: '#8B5CF6', stroke: '#C4B5FD', strokeWidth: 0.8 };
+    if (isHovered) return { fill: '#0284C7', stroke: '#38BDF8', strokeWidth: 0.8 };
 
     return { fill: '#24344D', stroke: '#3B4F6E', strokeWidth: 0.4 };
   };
@@ -207,6 +268,10 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
                     key={geo.rsmKey || geo.id || cca3}
                     geography={geo}
                     onClick={() => handleGeographyClick(geo)}
+                    onMouseEnter={() => {
+                      if (cca3) setHoveredCountryCode(cca3);
+                    }}
+                    onMouseLeave={() => setHoveredCountryCode(null)}
                     style={{
                       default: {
                         fill: styles.fill,
@@ -237,22 +302,24 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
             }
           </Geographies>
 
-          {/* Marcadores Circulares Nítidos e Interactivos para cada Isla / Nación */}
-          {visibleMarkers.map((island) => {
+          {/* Marcadores Circulares Nítidos e Interactivos para TODAS las islas de los Archipiélagos */}
+          {visibleMarkers.map((island, idx) => {
             const styles = getStyleForCode(island.code);
             const isPulsing = pulsingCountryCode?.toUpperCase() === island.code.toUpperCase();
             const isTarget = targetCountryCode?.toUpperCase() === island.code.toUpperCase();
+            const isHovered = hoveredCountryCode?.toUpperCase() === island.code.toUpperCase();
             const isResolved = styles.fill !== '#24344D';
 
-            const dotFill = isPulsing ? '#EF4444' : isResolved ? styles.fill : '#FFFFFF';
-            const dotStroke = isPulsing ? '#FEE2E2' : isResolved ? styles.stroke : '#0F172A';
-            const radius = Math.max(0.4, 1.3 / Math.sqrt(position.zoom));
-            const haloRadius = radius * 1.8;
+            // Al pasar el ratón sobre cualquier punto de un país, TODOS los puntos de ese país se iluminan juntos
+            const dotFill = isPulsing ? '#EF4444' : isHovered ? '#38BDF8' : isResolved ? styles.fill : '#FFFFFF';
+            const dotStroke = isPulsing ? '#FEE2E2' : isHovered ? '#FFFFFF' : isResolved ? styles.stroke : '#0F172A';
+            const radius = Math.max(0.4, (isHovered ? 1.5 : 1.3) / Math.sqrt(position.zoom));
+            const haloRadius = radius * (isHovered ? 2.3 : 1.8);
             const hitRadius = Math.max(1.8, 4.2 / Math.sqrt(position.zoom));
 
             return (
               <Marker
-                key={`pacific_m_${island.code}`}
+                key={`pacific_m_${island.code}_${idx}`}
                 coordinates={island.coords}
               >
                 <g
@@ -260,6 +327,8 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
                     e.stopPropagation();
                     handleCountrySelect(island.code);
                   }}
+                  onMouseEnter={() => setHoveredCountryCode(island.code)}
+                  onMouseLeave={() => setHoveredCountryCode(null)}
                   className="cursor-pointer group"
                 >
                   {/* Radar animado en fallo */}
@@ -271,14 +340,15 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
                     />
                   )}
 
-                  {/* Halo sutil */}
+                  {/* Halo sutil (Resaltado conjunto para todas las islas del mismo país) */}
                   <circle
                     r={haloRadius}
-                    fill={isPulsing ? '#EF4444' : isTarget ? '#F59E0B' : dotFill}
-                    opacity={isPulsing ? 0.9 : isResolved ? 0.4 : 0.2}
+                    fill={isPulsing ? '#EF4444' : isHovered ? '#38BDF8' : isTarget ? '#F59E0B' : dotFill}
+                    opacity={isPulsing ? 0.9 : isHovered ? 0.6 : isResolved ? 0.4 : 0.2}
+                    className="transition-all duration-150"
                   />
 
-                  {/* Punto central */}
+                  {/* Punto central de la isla */}
                   <circle
                     r={radius}
                     fill={dotFill}
