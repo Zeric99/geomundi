@@ -99,15 +99,6 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       highlights: ['Escritura con teclado', 'Tolerancia de tildes', 'Memoria activa']
     },
     {
-      id: 'match-cards',
-      title: 'Emparejar Tarjetas',
-      desc: 'Empareja de 5 en 5 las tarjetas interactivas de países con sus posiciones geográficas en el mapa.',
-      icon: <Layers className="w-6 h-6 text-purple-400" />,
-      accentColor: 'from-purple-500/20 to-pink-600/10',
-      borderGlow: 'hover:border-purple-500/80 hover:shadow-[0_0_30px_rgba(168,85,247,0.25)]',
-      highlights: ['Grupos de 5 tarjetas', 'Agilidad visual', 'Banderas y capitales']
-    },
-    {
       id: 'trivia-curiosities',
       title: 'Trivia y Curiosidades',
       desc: 'Preguntas de récords mundiales, curiosidades insólitas y hechos geográficos únicos para responder sobre el mapa.',

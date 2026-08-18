@@ -5,7 +5,6 @@ import { GameFilters } from './components/game/GameFilters';
 import { GameHeader } from './components/game/GameHeader';
 import { ClickAndFindMode } from './components/game/ClickAndFindMode';
 import { InputWriteMode } from './components/game/InputWriteMode';
-import { MatchCardsMode } from './components/game/MatchCardsMode';
 import { TriviaCuriositiesMode } from './components/game/TriviaCuriositiesMode';
 import { ListSelectMode } from './components/game/ListSelectMode';
 import { FlagSkipChainMode } from './components/game/FlagSkipChainMode';
@@ -287,18 +286,6 @@ export function App() {
                         onUseHint={useHint}
                         activeHint={activeHint}
                         isEvaluating={isEvaluating}
-                        isGeekMode={config.isGeekMode}
-                        onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
-                      />
-                    )}
-
-                    {config.mode === 'match-cards' && (
-                      <MatchCardsMode
-                        questions={questions}
-                        onFinishRound={() => {}}
-                        onSingleMatchSuccess={handleSingleMatchSuccess}
-                        onSingleMatchError={handleSingleMatchError}
-                        lives={lives}
                         isGeekMode={config.isGeekMode}
                         onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
                       />
