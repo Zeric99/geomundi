@@ -155,10 +155,21 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
 
   const handleCountrySelect = (code: string) => {
     if (!onCountryClick) return;
-    const country = countriesService.getCountryByCode(code);
-    if (country) {
-      onCountryClick(country, code);
-    }
+    const country = countriesService.getCountryByCode(code) || {
+      cca3: code,
+      cca2: code.slice(0, 2),
+      nameEs: code,
+      nameEn: code,
+      capital: '',
+      continent: 'Oceania',
+      continentEs: 'Oceanía',
+      population: 0,
+      flagSvg: '',
+      flagEmoji: '🌊',
+      latlng: [0, 0],
+      altSpellings: []
+    } as any;
+    onCountryClick(country, code);
   };
 
   const handleGeographyClick = (geo: any) => {

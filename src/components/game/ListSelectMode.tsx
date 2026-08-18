@@ -166,12 +166,21 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
       return;
     }
 
-    // Si no hay país seleccionado de la lista, NO revelar qué país es ni seleccionarlo automáticamente
+    // Si no hay país seleccionado de la lista, seleccionar automáticamente este país si está pendiente
     if (!selectedCountryCode) {
-      setBannerMessage({
-        text: `👆 Primero selecciona un nombre de país en la lista superior para ubicarlo en el mapa.`,
-        type: 'info'
-      });
+      if (clickedItem && clickedItem.status === 'pending') {
+        setSelectedCountryCode(upperClicked);
+        setPulsingFailedCountryCode(null);
+        setBannerMessage({
+          text: `Has seleccionado: ${clickedCountry.flagEmoji} ${clickedCountry.nameEs}. Ahora ubícalo en el mapa.`,
+          type: 'info'
+        });
+      } else {
+        setBannerMessage({
+          text: `👆 Selecciona un país de la lista superior o pulsa en el mapa/minimapa para ubicarlo.`,
+          type: 'info'
+        });
+      }
       return;
     }
 
