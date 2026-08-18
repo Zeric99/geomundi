@@ -316,9 +316,9 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     return countriesService.getCountryByCode(pulsingCountryCode);
   }, [pulsingCountryCode]);
 
-  // Determinar si mostramos los recuadros Inset (Siempre visibles por defecto en todos los modos y regiones)
-  const showCaribbean = showCaribbeanInset;
-  const showOceania = showOceaniaInset;
+  // Determinar si mostramos los recuadros Inset (Siempre restaurables y expandibles)
+  const showCaribbean = showCaribbeanInset || expandedInset === 'caribbean';
+  const showOceania = showOceaniaInset || expandedInset === 'oceania';
 
   return (
     <div
@@ -618,16 +618,25 @@ export const WorldMap: React.FC<WorldMapProps> = ({
 
         <button
           onClick={() => {
-            setExpandedInset(expandedInset === 'caribbean' ? null : 'caribbean');
+            if (!showCaribbeanInset) {
+              setShowCaribbeanInset(true);
+              setExpandedInset(null);
+            } else if (expandedInset === 'caribbean') {
+              setExpandedInset(null);
+            } else {
+              setExpandedInset('caribbean');
+            }
           }}
           className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
             expandedInset === 'caribbean'
               ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 shadow-glow-emerald ring-2 ring-emerald-300'
+              : !showCaribbeanInset
+              ? 'bg-slate-800/60 hover:bg-slate-700 text-slate-400 border border-slate-700'
               : 'bg-slate-800/90 hover:bg-emerald-950 text-emerald-300 hover:text-white border border-emerald-500/50'
           }`}
         >
           <span>🏝️</span>
-          <span>Zoom Islas del Caribe</span>
+          <span>{!showCaribbeanInset ? 'Mostrar Caribe' : 'Zoom Caribe'}</span>
           {expandedInset === 'caribbean' && (
             <span className="text-[10px] bg-slate-950/50 text-white px-1.5 py-0.2 rounded-full">Activo</span>
           )}
@@ -635,16 +644,25 @@ export const WorldMap: React.FC<WorldMapProps> = ({
 
         <button
           onClick={() => {
-            setExpandedInset(expandedInset === 'oceania' ? null : 'oceania');
+            if (!showOceaniaInset) {
+              setShowOceaniaInset(true);
+              setExpandedInset(null);
+            } else if (expandedInset === 'oceania') {
+              setExpandedInset(null);
+            } else {
+              setExpandedInset('oceania');
+            }
           }}
           className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
             expandedInset === 'oceania'
               ? 'bg-gradient-to-r from-sky-400 to-blue-500 text-slate-950 shadow-glow-sky ring-2 ring-sky-300'
+              : !showOceaniaInset
+              ? 'bg-slate-800/60 hover:bg-slate-700 text-slate-400 border border-slate-700'
               : 'bg-slate-800/90 hover:bg-sky-950 text-sky-300 hover:text-white border border-sky-500/50'
           }`}
         >
           <span>🌊</span>
-          <span>Zoom Islas de Oceanía</span>
+          <span>{!showOceaniaInset ? 'Mostrar Oceanía' : 'Zoom Oceanía'}</span>
           {expandedInset === 'oceania' && (
             <span className="text-[10px] bg-slate-950/50 text-white px-1.5 py-0.2 rounded-full">Activo</span>
           )}
