@@ -321,8 +321,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   }, [pulsingCountryCode]);
 
   // Determinar si mostramos los recuadros Inset
-  const showCaribbean = (continent === 'World' || continent === 'Americas') && showCaribbeanInset;
-  const showOceania = (continent === 'World' || continent === 'Oceania') && showOceaniaInset;
+  const showCaribbean = (!continent || continent === 'World' || continent === 'Americas') && showCaribbeanInset;
+  const showOceania = (!continent || continent === 'World' || continent === 'Oceania') && showOceaniaInset;
 
   return (
     <div
@@ -385,7 +385,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         <div className={`transition-all duration-300 ${
           expandedInset === 'caribbean'
             ? 'absolute inset-2 sm:inset-4 z-40 shadow-2xl rounded-2xl overflow-hidden'
-            : 'absolute bottom-2 sm:bottom-3 left-2 sm:left-3 z-30 w-52 sm:w-64 md:w-72 h-34 sm:h-40 md:h-44 shadow-2xl rounded-2xl overflow-hidden'
+            : 'absolute bottom-2 sm:bottom-3 left-2 sm:left-3 z-30 w-[240px] sm:w-[280px] md:w-[320px] h-[145px] sm:h-[165px] md:h-[185px] shadow-2xl rounded-2xl overflow-hidden'
         }`}>
           <CaribbeanInsetMap
             countryStatuses={countryStatuses}
@@ -414,7 +414,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         <div className={`transition-all duration-300 ${
           expandedInset === 'oceania'
             ? 'absolute inset-2 sm:inset-4 z-40 shadow-2xl rounded-2xl overflow-hidden'
-            : 'absolute bottom-2 sm:bottom-3 right-2 sm:right-3 z-30 w-56 sm:w-72 md:w-80 h-34 sm:h-40 md:h-44 shadow-2xl rounded-2xl overflow-hidden'
+            : 'absolute bottom-2 sm:bottom-3 right-2 sm:right-3 z-30 w-[250px] sm:w-[290px] md:w-[330px] h-[145px] sm:h-[165px] md:h-[185px] shadow-2xl rounded-2xl overflow-hidden'
         }`}>
           <OceaniaInsetMap
             countryStatuses={countryStatuses}
