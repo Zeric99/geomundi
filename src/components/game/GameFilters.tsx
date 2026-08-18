@@ -55,32 +55,29 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     title: string; 
     desc: string; 
     bgEmoji: string;
-    badge?: string; 
     accentColor: string; 
     borderGlow: string;
   }[] = [
     {
       id: 'list-select',
       title: 'Modo Clásico: Adivinar Países',
-      desc: 'Elige un país de la lista superior y encuéntralo en el mapa con código de colores (Verde, Amarillo, Rojo).',
+      desc: 'Elige un país de la lista superior y encuéntralo en el mapa.',
       bgEmoji: '🗺️',
-      badge: '⭐ Modo Clásico',
       accentColor: 'from-emerald-500/20 to-teal-600/10',
       borderGlow: 'hover:border-emerald-500/80 hover:shadow-[0_0_30px_rgba(16,185,129,0.25)]',
     },
     {
       id: 'flag-skip-chain',
       title: 'Adivina la Bandera',
-      desc: 'Descubre el país de cada bandera. Si dudas con alguna puedes saltarla y te volverá a salir en la 2ª ronda.',
+      desc: 'Descubre a qué país pertenece cada bandera en el mapa.',
       bgEmoji: '🚩',
-      badge: 'Con Salto & 2ª Vuelta',
       accentColor: 'from-sky-500/20 to-blue-600/10',
       borderGlow: 'hover:border-sky-500/80 hover:shadow-[0_0_30px_rgba(56,189,248,0.25)]',
     },
     {
       id: 'click-find',
       title: 'Localiza en el Mapa',
-      desc: 'Te damos un país, bandera o capital y debes localizar su posición exacta directamente sobre el mapa.',
+      desc: 'Te damos un país, bandera o capital para ubicarlo en el mapa.',
       bgEmoji: '📍',
       accentColor: 'from-cyan-500/20 to-sky-600/10',
       borderGlow: 'hover:border-cyan-500/80 hover:shadow-[0_0_30px_rgba(6,182,212,0.25)]',
@@ -88,25 +85,23 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     {
       id: 'input-write',
       title: 'Escribir Países',
-      desc: 'El mapa ilumina un país en ámbar y debes escribir su nombre exacto en el teclado con opción de pasar.',
+      desc: 'El mapa ilumina un país y escribes su nombre con teclado.',
       bgEmoji: '⌨️',
-      badge: 'Con Salto & 2ª Vuelta',
       accentColor: 'from-teal-500/20 to-emerald-600/10',
       borderGlow: 'hover:border-teal-500/80 hover:shadow-[0_0_30px_rgba(20,184,166,0.25)]',
     },
     {
       id: 'trivia-curiosities',
       title: 'Trivia y Curiosidades',
-      desc: 'Preguntas de récords mundiales, curiosidades insólitas y hechos geográficos únicos sobre el mapa.',
+      desc: 'Preguntas de récords mundiales y geografía sobre el mapa.',
       bgEmoji: '🏆',
-      badge: 'Trivia',
       accentColor: 'from-indigo-500/20 to-purple-600/10',
       borderGlow: 'hover:border-indigo-500/80 hover:shadow-[0_0_30px_rgba(99,102,241,0.25)]',
     },
     {
       id: 'explore',
       title: 'Modo Explorador',
-      desc: 'Navegación libre por el globo: haz clic en cualquier país o isla para ver su ficha, capital, bandera y fronteras.',
+      desc: 'Navegación libre: consulta datos, banderas y fronteras.',
       bgEmoji: '🧭',
       accentColor: 'from-amber-500/20 to-orange-600/10',
       borderGlow: 'hover:border-amber-500/80 hover:shadow-[0_0_30px_rgba(245,158,11,0.25)]',
@@ -183,40 +178,34 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
         </div>
       </div>
 
-      {/* Grid Principal de Tarjetas de Modos de Juego */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* Grid Principal de Tarjetas de Modos de Juego (Filas con la misma altura uniforme) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
         {modes.map((m) => (
           <div
             key={m.id}
             onClick={() => handleOpenModeConfig(m.id)}
-            className={`cursor-pointer p-6 sm:p-7 rounded-3xl border border-slate-800 bg-gradient-to-b ${m.accentColor} bg-[#111827]/95 backdrop-blur-md transition-all duration-200 transform hover:-translate-y-1 ${m.borderGlow} flex flex-col justify-between group relative overflow-hidden min-h-[220px] shadow-xl`}
+            className={`cursor-pointer p-5 sm:p-6 rounded-3xl border border-slate-800 bg-gradient-to-b ${m.accentColor} bg-[#111827]/95 backdrop-blur-md transition-all duration-200 transform hover:-translate-y-1 ${m.borderGlow} flex flex-col justify-between group relative overflow-hidden min-h-[175px] shadow-xl`}
           >
             {/* Emoji gigante de fondo detrás del texto con márgenes simétricos arriba y a la derecha */}
-            <div className="absolute top-5 right-5 sm:top-6 sm:right-6 text-7xl sm:text-8xl opacity-15 pointer-events-none select-none group-hover:opacity-25 group-hover:scale-110 transition-all duration-300 transform leading-none">
+            <div className="absolute top-4 right-4 sm:top-5 sm:right-5 text-6xl sm:text-7xl opacity-15 pointer-events-none select-none group-hover:opacity-25 group-hover:scale-110 transition-all duration-300 transform leading-none">
               {m.bgEmoji}
             </div>
 
             {/* Contenido Principal con Título Grande y Descripción Limpia */}
-            <div className="relative z-10 space-y-2">
-              {m.badge && (
-                <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm mb-1">
-                  {m.badge}
-                </span>
-              )}
-
-              <h3 className="font-display font-black text-white text-2xl sm:text-3xl tracking-tight leading-tight group-hover:text-cyan-300 transition-colors">
+            <div className="relative z-10 space-y-1.5 pr-8">
+              <h3 className="font-display font-black text-white text-xl sm:text-2xl tracking-tight leading-snug group-hover:text-cyan-300 transition-colors">
                 {m.title}
               </h3>
 
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-[92%]">
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
                 {m.desc}
               </p>
             </div>
 
             {/* Botón Inferior: Configurar y Jugar */}
-            <div className="relative z-10 pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between text-xs sm:text-sm font-bold text-cyan-400 group-hover:text-cyan-300">
+            <div className="relative z-10 pt-3.5 mt-3 border-t border-slate-800/80 flex items-center justify-between text-xs sm:text-sm font-bold text-cyan-400 group-hover:text-cyan-300">
               <span>Configurar y Jugar</span>
-              <div className="p-2 rounded-xl bg-slate-800/90 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all shadow-md">
+              <div className="p-1.5 rounded-xl bg-slate-800/90 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all shadow-md">
                 <ArrowRight className="w-4 h-4" />
               </div>
             </div>
