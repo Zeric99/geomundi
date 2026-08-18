@@ -375,8 +375,8 @@ export function App() {
         />
       )}
 
-      {/* Pie de Página (Oculto durante la partida para maximizar el mapa) */}
-      {!isPlaying && <Footer />}
+      {/* Pie de Página (Línea muy fina mantenida al fondo) */}
+      <Footer isCompact={isPlaying} />
     </div>
   );
 }
