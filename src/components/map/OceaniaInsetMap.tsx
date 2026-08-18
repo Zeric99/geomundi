@@ -32,7 +32,7 @@ interface PacificMarkerDef {
   isGeekOnly?: boolean;
 }
 
-// Coordenadas cartográficas continuas para situar todas las islas del Pacífico a la derecha de Australia
+// Coordenadas geográficas estándar del Pacífico (con proyección centrada en Oceanía rotada en 170°E)
 const PACIFIC_MARKERS: PacificMarkerDef[] = [
   // Micronesia (Estados Federados de Micronesia) - 4 Estados
   { code: 'FSM', name: 'Micronesia (FSM)', islandName: 'Pohnpei', coords: [158.21, 6.92] },
@@ -42,8 +42,8 @@ const PACIFIC_MARKERS: PacificMarkerDef[] = [
 
   // Kiribati - 3 Grupos de Islas (Gilbert, Phoenix, Línea)
   { code: 'KIR', name: 'Kiribati', islandName: 'Islas Gilbert (Tarawa)', coords: [172.97, 1.45] },
-  { code: 'KIR', name: 'Kiribati', islandName: 'Islas Phoenix (Kanton)', coords: [188.30, -3.10] },
-  { code: 'KIR', name: 'Kiribati', islandName: 'Islas de la Línea (Kiritimati)', coords: [202.65, 1.85] },
+  { code: 'KIR', name: 'Kiribati', islandName: 'Islas Phoenix (Kanton)', coords: [-171.70, -3.10] },
+  { code: 'KIR', name: 'Kiribati', islandName: 'Islas de la Línea (Kiritimati)', coords: [-157.36, 1.85] },
 
   // Islas Marshall - 2 Cadenas
   { code: 'MHL', name: 'Islas Marshall', islandName: 'Cadena Ratak (Majuro)', coords: [171.37, 7.10] },
@@ -74,30 +74,30 @@ const PACIFIC_MARKERS: PacificMarkerDef[] = [
   { code: 'FJI', name: 'Fiyi', islandName: 'Vanua Levu', coords: [179.30, -16.60] },
 
   // Samoa & Samoa Americana (Polinesia - Este de Fiyi)
-  { code: 'WSM', name: 'Samoa', islandName: 'Upolu (Apia)', coords: [188.25, -13.90] },
-  { code: 'WSM', name: 'Samoa', islandName: "Savai'i", coords: [187.55, -13.55] },
-  { code: 'ASM', name: 'Samoa Americana', islandName: 'Tutuila (Pago Pago)', coords: [189.30, -14.27], isGeekOnly: true },
+  { code: 'WSM', name: 'Samoa', islandName: 'Upolu (Apia)', coords: [-171.75, -13.90] },
+  { code: 'WSM', name: 'Samoa', islandName: "Savai'i", coords: [-172.45, -13.55] },
+  { code: 'ASM', name: 'Samoa Americana', islandName: 'Tutuila (Pago Pago)', coords: [-170.70, -14.27], isGeekOnly: true },
 
   // Tonga
-  { code: 'TON', name: 'Tonga', islandName: "Tongatapu (Nuku'alofa)", coords: [184.81, -21.17] },
-  { code: 'TON', name: 'Tonga', islandName: "Ha'apai & Vava'u", coords: [185.85, -19.20] },
+  { code: 'TON', name: 'Tonga', islandName: "Tongatapu (Nuku'alofa)", coords: [-175.20, -21.17] },
+  { code: 'TON', name: 'Tonga', islandName: "Ha'apai & Vava'u", coords: [-174.35, -19.20] },
 
   // Polinesia Francesa
-  { code: 'PYF', name: 'Polinesia Francesa', islandName: 'Tahití (Sociedad)', coords: [210.60, -17.67], isGeekOnly: true },
-  { code: 'PYF', name: 'Polinesia Francesa', islandName: 'Islas Tuamotu', coords: [219.25, -16.00], isGeekOnly: true },
-  { code: 'PYF', name: 'Polinesia Francesa', islandName: 'Islas Marquesas', coords: [220.50, -9.00], isGeekOnly: true },
+  { code: 'PYF', name: 'Polinesia Francesa', islandName: 'Tahití (Sociedad)', coords: [-149.40, -17.67], isGeekOnly: true },
+  { code: 'PYF', name: 'Polinesia Francesa', islandName: 'Islas Tuamotu', coords: [-140.75, -16.00], isGeekOnly: true },
+  { code: 'PYF', name: 'Polinesia Francesa', islandName: 'Islas Marquesas', coords: [-139.50, -9.00], isGeekOnly: true },
 
   // Islas Cook & Niue
-  { code: 'COK', name: 'Islas Cook', islandName: 'Rarotonga', coords: [200.23, -21.23], isGeekOnly: true },
-  { code: 'COK', name: 'Islas Cook', islandName: 'Aitutaki', coords: [200.22, -18.85], isGeekOnly: true },
-  { code: 'NIU', name: 'Niue', islandName: 'Niue', coords: [190.14, -19.05], isGeekOnly: true },
+  { code: 'COK', name: 'Islas Cook', islandName: 'Rarotonga', coords: [-159.77, -21.23], isGeekOnly: true },
+  { code: 'COK', name: 'Islas Cook', islandName: 'Aitutaki', coords: [-159.78, -18.85], isGeekOnly: true },
+  { code: 'NIU', name: 'Niue', islandName: 'Niue', coords: [-169.86, -19.05], isGeekOnly: true },
 
   // Tokelau & Wallis y Futuna
-  { code: 'TKL', name: 'Tokelau', islandName: 'Tokelau', coords: [188.15, -9.20], isGeekOnly: true },
-  { code: 'WLF', name: 'Wallis y Futuna', islandName: 'Wallis & Futuna', coords: [183.80, -13.30], isGeekOnly: true },
+  { code: 'TKL', name: 'Tokelau', islandName: 'Tokelau', coords: [-171.85, -9.20], isGeekOnly: true },
+  { code: 'WLF', name: 'Wallis y Futuna', islandName: 'Wallis & Futuna', coords: [-176.20, -13.30], isGeekOnly: true },
 
   // Pitcairn & Norfolk
-  { code: 'PCN', name: 'Islas Pitcairn', islandName: 'Pitcairn', coords: [229.90, -25.07], isGeekOnly: true },
+  { code: 'PCN', name: 'Islas Pitcairn', islandName: 'Pitcairn', coords: [-130.10, -25.07], isGeekOnly: true },
   { code: 'NFK', name: 'Isla Norfolk', islandName: 'Norfolk', coords: [167.95, -29.04], isGeekOnly: true },
 
   // Islas Australianas del Océano Índico
@@ -136,16 +136,16 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
   const [hoveredCountryCode, setHoveredCountryCode] = useState<string | null>(null);
   
   const [position, setPosition] = useState<{ coordinates: [number, number]; zoom: number }>({
-    coordinates: isExpanded ? [172, -14] : [170, -14],
-    zoom: isExpanded ? 5.8 : 3.2
+    coordinates: isExpanded ? [175, -15] : [175, -15],
+    zoom: isExpanded ? 4.5 : 2.6
   });
 
   // Ajustar coordenadas y zoom al expandir o reducir
   useEffect(() => {
     if (isExpanded) {
-      setPosition({ coordinates: [172, -14], zoom: 5.8 });
+      setPosition({ coordinates: [175, -15], zoom: 4.5 });
     } else {
-      setPosition({ coordinates: [170, -14], zoom: 3.2 });
+      setPosition({ coordinates: [175, -15], zoom: 2.6 });
     }
   }, [isExpanded]);
 
@@ -223,7 +223,7 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
           <ZoomOut className="w-4 h-4" />
         </button>
         <button
-          onClick={() => setPosition({ coordinates: [170, -14], zoom: isExpanded ? 5.8 : 3.2 })}
+          onClick={() => setPosition({ coordinates: [175, -15], zoom: isExpanded ? 4.5 : 2.6 })}
           className="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition"
           title="Restablecer vista"
         >
@@ -250,11 +250,12 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
         )}
       </div>
 
-      {/* Mapa Vectorial del Pacífico */}
+      {/* Mapa Vectorial de Oceanía (Centrado en el Pacífico rotado en 170°E para que todas las islas aparezcan juntas) */}
       <ComposableMap
         projection="geoEqualEarth"
         projectionConfig={{
-          scale: 160,
+          rotate: [-170, 0, 0],
+          scale: 175,
         }}
         className="w-full h-full cursor-grab active:cursor-grabbing bg-[#0A101C]"
       >
@@ -262,7 +263,7 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
           zoom={position.zoom}
           center={position.coordinates}
           onMoveEnd={(pos) => setPosition(pos)}
-          minZoom={1.2}
+          minZoom={0.8}
           maxZoom={25}
         >
           {/* Polígonos Geográficos Reales de las Islas del Pacífico y Continentes */}
