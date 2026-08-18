@@ -35,9 +35,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="font-display font-black text-xl sm:text-2xl tracking-tight text-white">
                 Geo<span className="text-cyan-400">Mundi</span>
               </span>
-              <span className="text-[10px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
-                SPA
-              </span>
             </div>
             <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
               Aprende geografía mundial interactiva
