@@ -18,7 +18,7 @@ import {
   Layers,
   MapPin
 } from 'lucide-react';
-import { Country, CountryMapStatus } from '../../types/country';
+import { Continent, Country, CountryMapStatus } from '../../types/country';
 import { GameSummary, GameRoundResult } from '../../types/game';
 import { WorldMap } from '../map/WorldMap';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
@@ -30,6 +30,7 @@ interface InputWriteModeProps {
   onFinishGame: (summary: GameSummary) => void;
   onQuit: () => void;
   isGeekMode?: boolean;
+  continent?: Continent;
   onOpenFlagModal?: (country: Country) => void;
 }
 
@@ -46,6 +47,7 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
   onFinishGame,
   onQuit,
   isGeekMode = false,
+  continent = 'World',
   onOpenFlagModal
 }) => {
   const { playCorrectSound, playWrongSound, playHintSound, playVictorySound } = useAudioFeedback();
@@ -535,14 +537,14 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
       </AnimatePresence>
 
       {/* Mapa Interactivo con el país resaltado en ámbar */}
-      <div className="relative flex-1 min-h-[420px] h-[520px] sm:h-[580px] max-h-[calc(100vh-230px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-230px)] max-h-[calc(100vh-230px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
         <WorldMap
           countryStatuses={{
             ...countryStatuses,
             ...(currentCountry ? { [currentCountry.cca3.toUpperCase()]: 'hint' } : {})
           }}
           targetCountryCode={currentCountry?.cca3}
-          continent="World"
+          continent={continent}
           interactive={false}
           isGeekMode={isGeekMode}
           enableTooltip={false}

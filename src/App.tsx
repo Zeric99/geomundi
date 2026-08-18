@@ -215,6 +215,7 @@ export function App() {
                   return (
                     <FlagSkipChainMode
                       initialCountries={selectedList}
+                      continent={config.continent}
                       onFinishGame={handleGameComplete}
                       onQuit={quitGame}
                       isGeekMode={config.isGeekMode}
@@ -242,6 +243,7 @@ export function App() {
                     lives={lives}
                     score={score}
                     streak={streak}
+                    continent={config.continent}
                     countryStatuses={countryStatuses}
                     isEvaluating={isEvaluating}
                     activeHint={activeHint}
@@ -270,6 +272,7 @@ export function App() {
                   return (
                     <InputWriteMode
                       initialCountries={selectedList}
+                      continent={config.continent}
                       onFinishGame={handleGameComplete}
                       onQuit={quitGame}
                       isGeekMode={config.isGeekMode}

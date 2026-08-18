@@ -130,7 +130,7 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Mapa Interactivo */}
-        <div className={`${selectedCountry ? 'lg:col-span-3' : 'lg:col-span-4'} h-[540px] sm:h-[620px] transition-all`}>
+        <div className={`${selectedCountry ? 'lg:col-span-3' : 'lg:col-span-4'} h-[calc(100vh-190px)] min-h-[420px] transition-all`}>
           <WorldMap
             continent={continent}
             onSelectContinent={onSelectContinent}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Country, CountryMapStatus } from '../../types/country';
+import { Continent, Country, CountryMapStatus } from '../../types/country';
 import { Question } from '../../types/game';
 import { WorldMap } from '../map/WorldMap';
 import { 
@@ -34,6 +34,7 @@ interface TriviaCuriositiesModeProps {
   onQuit: () => void;
   onNextQuestion?: () => void;
   isGeekMode?: boolean;
+  continent?: Continent;
 }
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: any; color: string; bg: string }> = {
@@ -58,7 +59,8 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
   onUseHint,
   onQuit,
   onNextQuestion,
-  isGeekMode = false
+  isGeekMode = false,
+  continent = 'World'
 }) => {
   const [showFactModal, setShowFactModal] = useState<boolean>(false);
   const [lastFactAnswer, setLastFactAnswer] = useState<{ 
@@ -215,15 +217,16 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
       </motion.div>
 
       {/* Mapa Interactivo Principal */}
-      <div className="relative flex-1 min-h-[420px] h-[520px] sm:h-[580px] max-h-[calc(100vh-230px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-250px)] max-h-[calc(100vh-250px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
         <WorldMap
           countryStatuses={countryStatuses}
-          continent="World"
+          continent={continent}
           onCountryClick={onCountrySelect}
           interactive={!isEvaluating}
           enableTooltip={true}
           isGeekMode={isGeekMode}
         />
+      </div>
 
         {/* Modal Flotante de Explicación de la Curiosidad y Revelación Clara del Nombre del País */}
         <AnimatePresence>
@@ -281,6 +284,5 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
           )}
         </AnimatePresence>
       </div>
-    </div>
   );
 };

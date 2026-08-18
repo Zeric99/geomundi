@@ -16,7 +16,7 @@ import {
   Clock,
   Layers
 } from 'lucide-react';
-import { Country, CountryMapStatus } from '../../types/country';
+import { Continent, Country, CountryMapStatus } from '../../types/country';
 import { GameSummary, GameRoundResult, Question } from '../../types/game';
 import { WorldMap } from '../map/WorldMap';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
@@ -27,6 +27,7 @@ interface FlagSkipChainModeProps {
   onFinishGame: (summary: GameSummary) => void;
   onQuit: () => void;
   isGeekMode?: boolean;
+  continent?: Continent;
   onOpenFlagModal?: (country: Country) => void;
 }
 
@@ -43,6 +44,7 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
   onFinishGame,
   onQuit,
   isGeekMode = false,
+  continent = 'World',
   onOpenFlagModal
 }) => {
   const { playCorrectSound, playWrongSound, playHintSound, playVictorySound } = useAudioFeedback();
@@ -434,10 +436,10 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
       </AnimatePresence>
 
       {/* Mapa Interactivo */}
-      <div className="relative flex-1 min-h-[420px] h-[520px] sm:h-[580px] max-h-[calc(100vh-230px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-230px)] max-h-[calc(100vh-230px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
         <WorldMap
           countryStatuses={countryStatuses}
-          continent="World"
+          continent={continent}
           onCountryClick={handleCountryClick}
           interactive={!isEvaluating}
           isGeekMode={isGeekMode}
