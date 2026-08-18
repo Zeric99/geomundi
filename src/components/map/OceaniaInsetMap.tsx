@@ -32,7 +32,7 @@ interface PacificMarkerDef {
   isGeekOnly?: boolean;
 }
 
-// Coordenadas geográficas calibradas para todas las islas y archipiélagos del Pacífico y Oceanía
+// Coordenadas geográficas estándar [lng, lat] para todas las islas de Oceanía y el Pacífico
 const PACIFIC_MARKERS: PacificMarkerDef[] = [
   // Micronesia (Estados Federados de Micronesia) - 4 Estados
   { code: 'FSM', name: 'Micronesia (FSM)', islandName: 'Pohnpei', coords: [158.21, 6.92] },
@@ -73,7 +73,7 @@ const PACIFIC_MARKERS: PacificMarkerDef[] = [
   { code: 'FJI', name: 'Fiyi', islandName: 'Viti Levu (Suva)', coords: [178.06, -17.71] },
   { code: 'FJI', name: 'Fiyi', islandName: 'Vanua Levu', coords: [179.30, -16.60] },
 
-  // Samoa & Samoa Americana
+  // Samoa & Samoa Americana (Polinesia - este de Fiyi)
   { code: 'WSM', name: 'Samoa', islandName: 'Upolu (Apia)', coords: [-171.75, -13.90] },
   { code: 'WSM', name: 'Samoa', islandName: "Savai'i", coords: [-172.45, -13.55] },
   { code: 'ASM', name: 'Samoa Americana', islandName: 'Tutuila (Pago Pago)', coords: [-170.70, -14.27], isGeekOnly: true },
@@ -100,7 +100,7 @@ const PACIFIC_MARKERS: PacificMarkerDef[] = [
   { code: 'PCN', name: 'Islas Pitcairn', islandName: 'Pitcairn', coords: [-130.10, -25.07], isGeekOnly: true },
   { code: 'NFK', name: 'Isla Norfolk', islandName: 'Norfolk', coords: [167.95, -29.04], isGeekOnly: true },
 
-  // Islas Australianas del Océano Índico (¡Antes flotaban sueltas!)
+  // Islas Australianas del Océano Índico
   { code: 'CXR', name: 'Isla de Navidad', islandName: 'Isla de Navidad (Christmas Island)', coords: [105.69, -10.45], isGeekOnly: true },
   { code: 'CCK', name: 'Islas Cocos', islandName: 'Islas Cocos (Keeling)', coords: [96.87, -12.16], isGeekOnly: true },
 
@@ -134,17 +134,19 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
 }) => {
   const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
   const [hoveredCountryCode, setHoveredCountryCode] = useState<string | null>(null);
+  
+  // En proyección centrada en el Pacífico (rotate: [-170, 0, 0]), las coordenadas centradas están cerca de [0, -10]
   const [position, setPosition] = useState<{ coordinates: [number, number]; zoom: number }>({
-    coordinates: isExpanded ? [175, -8.0] : [170, -8],
-    zoom: isExpanded ? 5.5 : 2.7
+    coordinates: isExpanded ? [0, -12] : [0, -12],
+    zoom: isExpanded ? 4.8 : 2.2
   });
 
   // Ajustar coordenadas y zoom al expandir o reducir
   useEffect(() => {
     if (isExpanded) {
-      setPosition({ coordinates: [175, -8.0], zoom: 5.5 });
+      setPosition({ coordinates: [0, -12], zoom: 4.8 });
     } else {
-      setPosition({ coordinates: [170, -8], zoom: 2.7 });
+      setPosition({ coordinates: [0, -12], zoom: 2.2 });
     }
   }, [isExpanded]);
 
@@ -191,7 +193,7 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
       {/* Barra de Título */}
       <div className="absolute top-3 left-3 z-20 flex items-center gap-2 bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-cyan-500/50 text-xs font-bold text-cyan-300 shadow-xl">
         <span className="text-base">🌊</span>
-        <span>Oceanía & Pacífico {isExpanded ? '(Vista Ampliada)' : ''}</span>
+        <span>Oceanía & Pacífico Unificado {isExpanded ? '(Vista Ampliada)' : ''}</span>
       </div>
 
       {/* Controles de Zoom del Inset */}
@@ -211,7 +213,7 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
           <ZoomOut className="w-4 h-4" />
         </button>
         <button
-          onClick={() => setPosition({ coordinates: isExpanded ? [175, -8.0] : [170, -8], zoom: isExpanded ? 5.5 : 2.7 })}
+          onClick={() => setPosition({ coordinates: [0, -12], zoom: isExpanded ? 4.8 : 2.2 })}
           className="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition"
           title="Restablecer vista"
         >
@@ -238,10 +240,11 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
         )}
       </div>
 
-      {/* Mapa Vectorial Interactivo del Pacífico con Geometría 50m Real */}
+      {/* Mapa Vectorial del Pacífico Unificado con Proyección Centrada en 170°E (sin cortes de antimeridiano) */}
       <ComposableMap
         projection="geoEqualEarth"
         projectionConfig={{
+          rotate: [-170, 0, 0],
           scale: 160,
         }}
         className="w-full h-full cursor-grab active:cursor-grabbing bg-[#0A101C]"
@@ -276,7 +279,7 @@ export const OceaniaInsetMap: React.FC<OceaniaInsetMapProps> = ({
                       default: {
                         fill: styles.fill,
                         stroke: styles.stroke,
-                        strokeWidth: styles.strokeWidth / Math.sqrt(position.zoom / 2.7),
+                        strokeWidth: styles.strokeWidth / Math.sqrt(position.zoom / 2.2),
                         outline: 'none',
                         vectorEffect: 'non-scaling-stroke'
                       },
