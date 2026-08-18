@@ -54,69 +54,62 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     id: GameMode; 
     title: string; 
     desc: string; 
-    icon: React.ReactNode; 
+    bgEmoji: string;
     badge?: string; 
     accentColor: string; 
     borderGlow: string;
-    highlights: string[];
   }[] = [
     {
       id: 'list-select',
       title: 'Modo Clásico: Adivinar Países',
-      desc: 'Elige un país de la lista superior y encuéntralo en el mapa. Verde (1º intento), Amarillo (2º intento), Rojo (Fallo).',
-      icon: <ListChecks className="w-6 h-6 text-emerald-400" />,
+      desc: 'Elige un país de la lista superior y encuéntralo en el mapa con código de colores (Verde, Amarillo, Rojo).',
+      bgEmoji: '🗺️',
       badge: '⭐ Modo Clásico',
       accentColor: 'from-emerald-500/20 to-teal-600/10',
       borderGlow: 'hover:border-emerald-500/80 hover:shadow-[0_0_30px_rgba(16,185,129,0.25)]',
-      highlights: ['Lista completa en pantalla', 'Código de colores', 'Ideal para aprender']
     },
     {
       id: 'flag-skip-chain',
       title: 'Adivina la Bandera',
-      desc: 'Descubre el país de cada bandera. Si dudas con alguna puedes saltarla y te volverá a salir en la 2ª ronda hasta completarlas todas.',
-      icon: <Flag className="w-6 h-6 text-sky-400" />,
+      desc: 'Descubre el país de cada bandera. Si dudas con alguna puedes saltarla y te volverá a salir en la 2ª ronda.',
+      bgEmoji: '🚩',
       badge: 'Con Salto & 2ª Vuelta',
       accentColor: 'from-sky-500/20 to-blue-600/10',
       borderGlow: 'hover:border-sky-500/80 hover:shadow-[0_0_30px_rgba(56,189,248,0.25)]',
-      highlights: ['Salto de banderas', 'Segunda vuelta automática', 'Banderas en HD']
     },
     {
       id: 'click-find',
       title: 'Localiza en el Mapa',
       desc: 'Te damos un país, bandera o capital y debes localizar su posición exacta directamente sobre el mapa.',
-      icon: <MapPin className="w-6 h-6 text-cyan-400" />,
+      bgEmoji: '📍',
       accentColor: 'from-cyan-500/20 to-sky-600/10',
       borderGlow: 'hover:border-cyan-500/80 hover:shadow-[0_0_30px_rgba(6,182,212,0.25)]',
-      highlights: ['Nombres, banderas o capitales', 'Duración configurable', 'Pistas de radar']
     },
     {
       id: 'input-write',
       title: 'Escribir Países',
-      desc: 'El mapa ilumina un país en ámbar y debes escribir su nombre exacto en el teclado. Si dudas con alguno, puedes pasarlo y resolverlo en la 2ª ronda.',
-      icon: <Type className="w-6 h-6 text-teal-400" />,
+      desc: 'El mapa ilumina un país en ámbar y debes escribir su nombre exacto en el teclado con opción de pasar.',
+      bgEmoji: '⌨️',
       badge: 'Con Salto & 2ª Vuelta',
       accentColor: 'from-teal-500/20 to-emerald-600/10',
       borderGlow: 'hover:border-teal-500/80 hover:shadow-[0_0_30px_rgba(20,184,166,0.25)]',
-      highlights: ['Escritura con teclado', 'Pasar y 2ª vuelta', 'Tolerancia de tildes']
     },
     {
       id: 'trivia-curiosities',
       title: 'Trivia y Curiosidades',
-      desc: 'Preguntas de récords mundiales, curiosidades insólitas y hechos geográficos únicos para responder sobre el mapa.',
-      icon: <Trophy className="w-6 h-6 text-indigo-400" />,
+      desc: 'Preguntas de récords mundiales, curiosidades insólitas y hechos geográficos únicos sobre el mapa.',
+      bgEmoji: '🏆',
       badge: 'Trivia',
       accentColor: 'from-indigo-500/20 to-purple-600/10',
       borderGlow: 'hover:border-indigo-500/80 hover:shadow-[0_0_30px_rgba(99,102,241,0.25)]',
-      highlights: ['Récords del planeta', 'Cultura e historia', 'Aprende jugando']
     },
     {
       id: 'explore',
       title: 'Modo Explorador',
       desc: 'Navegación libre por el globo: haz clic en cualquier país o isla para ver su ficha, capital, bandera y fronteras.',
-      icon: <Compass className="w-6 h-6 text-amber-400" />,
+      bgEmoji: '🧭',
       accentColor: 'from-amber-500/20 to-orange-600/10',
       borderGlow: 'hover:border-amber-500/80 hover:shadow-[0_0_30px_rgba(245,158,11,0.25)]',
-      highlights: ['Buscador inteligente', 'Inspección de fronteras', 'Sin límites de tiempo']
     },
   ];
 
@@ -191,50 +184,39 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       </div>
 
       {/* Grid Principal de Tarjetas de Modos de Juego */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {modes.map((m) => (
           <div
             key={m.id}
             onClick={() => handleOpenModeConfig(m.id)}
-            className={`cursor-pointer p-5 sm:p-6 rounded-3xl border border-slate-800 bg-gradient-to-b ${m.accentColor} bg-[#111827]/90 backdrop-blur-md transition-all duration-200 transform hover:-translate-y-1 ${m.borderGlow} flex flex-col justify-between group relative overflow-hidden`}
+            className={`cursor-pointer p-6 sm:p-7 rounded-3xl border border-slate-800 bg-gradient-to-b ${m.accentColor} bg-[#111827]/95 backdrop-blur-md transition-all duration-200 transform hover:-translate-y-1 ${m.borderGlow} flex flex-col justify-between group relative overflow-hidden min-h-[220px] shadow-xl`}
           >
-            {/* Badge destacado */}
-            {m.badge && (
-              <span className="absolute top-4 right-4 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full border bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm">
-                {m.badge}
-              </span>
-            )}
+            {/* Emoji gigante de fondo detrás del texto */}
+            <div className="absolute -right-2 -top-2 sm:right-1 sm:top-1 text-7xl sm:text-8xl md:text-9xl opacity-15 pointer-events-none select-none group-hover:opacity-25 group-hover:scale-110 transition-all duration-300 transform leading-none">
+              {m.bgEmoji}
+            </div>
 
-            <div>
-              <div className="p-3 bg-slate-900/80 rounded-2xl w-fit mb-4 border border-slate-700/80 shadow-md group-hover:scale-110 transition-transform">
-                {m.icon}
-              </div>
+            {/* Contenido Principal con Título Grande y Descripción Limpia */}
+            <div className="relative z-10 space-y-2">
+              {m.badge && (
+                <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm mb-1">
+                  {m.badge}
+                </span>
+              )}
 
-              <h3 className="font-display font-black text-white text-lg sm:text-xl mb-1.5 group-hover:text-cyan-300 transition-colors">
+              <h3 className="font-display font-black text-white text-2xl sm:text-3xl tracking-tight leading-tight group-hover:text-cyan-300 transition-colors">
                 {m.title}
               </h3>
 
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-[92%]">
                 {m.desc}
               </p>
-
-              {/* Puntos destacados */}
-              <div className="flex flex-wrap gap-1.5 mb-5">
-                {m.highlights.map((h, i) => (
-                  <span
-                    key={i}
-                    className="text-[10px] font-semibold text-slate-400 bg-slate-900/60 px-2 py-0.5 rounded-lg border border-slate-800"
-                  >
-                    • {h}
-                  </span>
-                ))}
-              </div>
             </div>
 
-            {/* Botón de acción */}
-            <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs font-bold text-cyan-400 group-hover:text-cyan-300">
+            {/* Botón Inferior: Configurar y Jugar */}
+            <div className="relative z-10 pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between text-xs sm:text-sm font-bold text-cyan-400 group-hover:text-cyan-300">
               <span>Configurar y Jugar</span>
-              <div className="p-1.5 rounded-xl bg-slate-800/80 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all">
+              <div className="p-2 rounded-xl bg-slate-800/90 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all shadow-md">
                 <ArrowRight className="w-4 h-4" />
               </div>
             </div>
@@ -277,8 +259,8 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
               {/* Cabecera del Modo */}
               <div className="flex items-center gap-3.5 pr-10">
-                <div className="p-3 bg-slate-900 rounded-2xl border border-slate-700 text-cyan-400">
-                  {activeModeData.icon}
+                <div className="text-3xl p-2.5 bg-slate-900 rounded-2xl border border-slate-700 select-none">
+                  {activeModeData.bgEmoji}
                 </div>
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-wider font-extrabold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
