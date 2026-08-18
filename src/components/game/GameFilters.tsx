@@ -137,35 +137,6 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
-      {/* Banner de Práctica Focalizada (Tutor IA) si hay puntos ciegos */}
-      {blindSpots.length > 0 && (
-        <div className="bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-cyan-500/15 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-amber-500/20 border border-amber-500/40 rounded-xl text-amber-300">
-              <Sparkles className="w-6 h-6 animate-pulse" />
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-display font-bold text-white flex items-center gap-2">
-                Sesión de Refuerzo Personalizada
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-amber-500/30 text-amber-300 rounded-full border border-amber-500/40 font-bold">
-                  {blindSpots.length} Puntos Ciegos
-                </span>
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                Tu tutor IA ha preparado una ronda rápida con tus países con mayor tasa de error.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onStartFocusedPractice}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-sm shadow-glow-amber transition-all transform active:scale-95 flex items-center gap-2"
-          >
-            <Zap className="w-4 h-4 fill-slate-950" />
-            <span>Iniciar Práctica Focalizada</span>
-          </button>
-        </div>
-      )}
-
       {/* Título de Selección de Modalidades */}
       <div className="flex items-center justify-between">
         <div>
@@ -178,8 +149,8 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
         </div>
       </div>
 
-      {/* Grid Principal de Tarjetas de Modos de Juego (Filas con la misma altura uniforme) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
+      {/* Grid Principal de Tarjetas de Modos de Juego (Con espacio amplio entre botones) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
         {modes.map((m) => (
           <div
             key={m.id}
@@ -212,6 +183,35 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
           </div>
         ))}
       </div>
+
+      {/* Banner de Práctica Focalizada (Tutor IA) al final de la página */}
+      {blindSpots.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-cyan-500/15 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap shadow-lg mt-6">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-amber-500/20 border border-amber-500/40 rounded-xl text-amber-300">
+              <Sparkles className="w-6 h-6 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-display font-bold text-white flex items-center gap-2">
+                Sesión de Refuerzo Personalizada
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-amber-500/30 text-amber-300 rounded-full border border-amber-500/40 font-bold">
+                  {blindSpots.length} Puntos Ciegos
+                </span>
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
+                Tu tutor IA ha preparado una ronda rápida con tus países con mayor tasa de error.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onStartFocusedPractice}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-sm shadow-glow-amber transition-all transform active:scale-95 flex items-center gap-2"
+          >
+            <Zap className="w-4 h-4 fill-slate-950" />
+            <span>Iniciar Práctica Focalizada</span>
+          </button>
+        </div>
+      )}
 
       {/* Modal de Configuración Específica del Modo Elegido */}
       <AnimatePresence>
