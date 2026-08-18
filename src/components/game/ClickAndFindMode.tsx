@@ -138,7 +138,7 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
       )}
 
       {/* Mapa Interactivo */}
-      <div className="h-[520px] sm:h-[600px] w-full">
+      <div className="h-[480px] sm:h-[540px] md:h-[580px] max-h-[calc(100vh-230px)] w-full">
         <WorldMap
           countryStatuses={countryStatuses}
           onCountryClick={onCountryClick}

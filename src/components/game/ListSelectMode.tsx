@@ -488,7 +488,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         </div>
 
         {/* Mosaico de Chips de Países y Territorios */}
-        <div className="max-h-44 sm:max-h-52 overflow-y-auto pr-1 flex flex-wrap gap-1.5 custom-scrollbar">
+        <div className="max-h-24 sm:max-h-28 overflow-y-auto pr-1 flex flex-wrap gap-1.5 custom-scrollbar">
           {filteredCountryItems.map((country) => {
             const cca3 = country.cca3.toUpperCase();
             const item = itemsState[cca3];
@@ -536,7 +536,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
       </div>
 
       {/* 4. Mapa Interactivo Principal (Renderiza marcadores de acuerdo al Modo Friki seleccionado antes de empezar) */}
-      <div className="relative flex-1 min-h-[460px] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+      <div className="relative flex-1 min-h-[420px] h-[520px] sm:h-[580px] max-h-[calc(100vh-230px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
         <WorldMap
           countryStatuses={mapCountryStatuses}
           selectedCountryCode={null}

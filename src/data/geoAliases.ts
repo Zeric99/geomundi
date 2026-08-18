@@ -87,7 +87,7 @@ export const MICROSTATE_CODES = new Set([
  * Centros geográficos y niveles de zoom sugeridos por continente y regiones especiales
  */
 export const CONTINENT_VIEWPORTS: Record<string, { center: [number, number]; zoom: number }> = {
-  World: { center: [10, 0], zoom: 1 },
+  World: { center: [10, 10], zoom: 1.08 },
   Europe: { center: [15, 52], zoom: 3.5 },
   Americas: { center: [-75, 10], zoom: 1.6 },
   Africa: { center: [20, 2], zoom: 2.2 },

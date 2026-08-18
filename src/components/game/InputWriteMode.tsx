@@ -172,7 +172,7 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
       </div>
 
       {/* Mapa Resaltando el país a escribir */}
-      <div className="h-[480px] sm:h-[560px] w-full">
+      <div className="h-[480px] sm:h-[540px] md:h-[580px] max-h-[calc(100vh-230px)] w-full">
         <WorldMap
           countryStatuses={{
             ...countryStatuses,
