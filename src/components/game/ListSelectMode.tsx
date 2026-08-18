@@ -311,139 +311,104 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
   }, [baseCountries, itemsState, activeFilter, searchQuery]);
 
   return (
-    <div className="flex flex-col h-full gap-4 max-w-7xl mx-auto w-full px-2 sm:px-4">
-      {/* 1. Barra de Estadísticas y Puntuación */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-slate-800 shadow-xl">
-        {/* Progreso Total y Badge Modo Friki */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">📋</span>
-            <div>
-              <h3 className="text-sm font-bold text-white leading-tight">
-                Modo Lista y Ubicación
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                {isGeekMode ? '🧠 Modo Friki Activo (+40 Territorios Especiales)' : 'Países soberanos del atlas mundial'}
-              </p>
-            </div>
+    <div className="flex flex-col h-full gap-2.5 max-w-7xl mx-auto w-full px-2 sm:px-3">
+      {/* 1. Barra Unificada Compacta: Objetivo Activo + Estadísticas */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-800 shadow-md">
+        {/* Objetivo Activo o Instrucción */}
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-indigo-500/20 border border-indigo-400/30 rounded-xl text-indigo-300 shrink-0">
+            <Target className="w-4 h-4 animate-pulse" />
           </div>
 
-          {/* Badge Informativo de Modo Friki */}
-          {isGeekMode && (
-            <div className="px-3 py-1 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 border border-purple-400 text-white shadow-glow-purple flex items-center gap-1.5">
-              <Brain className="w-3.5 h-3.5 text-purple-200" />
-              <span>Modo Friki Activado</span>
+          {targetCountry ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
+                Objetivo:
+              </span>
+              <span className="text-lg">{targetCountry.flagEmoji}</span>
+              <span className="text-sm sm:text-base font-black text-white">
+                {targetCountry.nameEs}
+              </span>
+              {itemsState[targetCountry.cca3.toUpperCase()]?.attempts === 1 && (
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">
+                  2º Intento
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="text-xs sm:text-sm font-semibold text-slate-300">
+              {counts.completed === counts.total 
+                ? '🎉 ¡Completado con éxito!'
+                : '👆 Selecciona un país de la lista o pulsa en el mapa'}
             </div>
           )}
         </div>
 
-        {/* Resumen de Resultados en vivo */}
-        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+        {/* Resumen de Resultados + Puntos + Salir */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* Verde: 1er intento */}
-          <div className="flex items-center gap-1.5 bg-emerald-950/40 border border-emerald-800/40 px-2.5 py-1 rounded-xl text-emerald-300 text-xs font-bold shadow-sm">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="flex items-center gap-1 bg-emerald-950/50 border border-emerald-800/40 px-2 py-0.5 rounded-lg text-emerald-300 text-xs font-bold shadow-sm">
+            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
             <span>{counts.correct}</span>
-            <span className="text-[10px] opacity-70 hidden sm:inline">1º Intento</span>
+            <span className="text-[9px] opacity-70 hidden sm:inline">1º</span>
           </div>
 
           {/* Amarillo: 2º intento */}
-          <div className="flex items-center gap-1.5 bg-amber-950/40 border border-amber-800/40 px-2.5 py-1 rounded-xl text-amber-300 text-xs font-bold shadow-sm">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+          <div className="flex items-center gap-1 bg-amber-950/50 border border-amber-800/40 px-2 py-0.5 rounded-lg text-amber-300 text-xs font-bold shadow-sm">
+            <AlertTriangle className="w-3 h-3 text-amber-400" />
             <span>{counts.secondTry}</span>
-            <span className="text-[10px] opacity-70 hidden sm:inline">2º Intento</span>
+            <span className="text-[9px] opacity-70 hidden sm:inline">2º</span>
           </div>
 
           {/* Rojo: Fallados */}
-          <div className="flex items-center gap-1.5 bg-rose-950/40 border border-rose-800/40 px-2.5 py-1 rounded-xl text-rose-300 text-xs font-bold shadow-sm">
-            <XCircle className="w-3.5 h-3.5 text-rose-400" />
+          <div className="flex items-center gap-1 bg-rose-950/50 border border-rose-800/40 px-2 py-0.5 rounded-lg text-rose-300 text-xs font-bold shadow-sm">
+            <XCircle className="w-3 h-3 text-rose-400" />
             <span>{counts.wrong}</span>
-            <span className="text-[10px] opacity-70 hidden sm:inline">Fallos</span>
+            <span className="text-[9px] opacity-70 hidden sm:inline">Fallos</span>
           </div>
 
           {/* Racha */}
           {streak > 1 && (
-            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 rounded-xl text-amber-400 font-bold text-xs">
-              <Flame className="w-4 h-4 fill-amber-400 animate-pulse" />
+            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-lg text-amber-400 font-bold text-xs">
+              <Flame className="w-3.5 h-3.5 fill-amber-400 animate-pulse" />
               <span>x{streak}</span>
             </div>
           )}
 
           {/* Puntos */}
           <div className="text-right pl-2 border-l border-slate-800">
-            <span className="text-[9px] uppercase text-slate-400 font-bold tracking-wider block">Puntos</span>
-            <span className="text-base font-black text-emerald-400 font-mono tracking-tight">{score}</span>
+            <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono tracking-tight">{score} pts</span>
           </div>
 
           <button
             onClick={onQuit}
-            className="text-xs text-slate-400 hover:text-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-800 transition"
+            className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-slate-800 transition"
           >
             Salir
           </button>
         </div>
       </div>
 
-      {/* 2. Banner Objetivo Activo */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-indigo-500/30 shadow-lg flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-500/20 border border-indigo-400/30 rounded-xl text-indigo-300">
-            <Target className="w-5 h-5 animate-pulse" />
-          </div>
-
-          {targetCountry ? (
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-400">
-                  Objetivo Actual
-                </span>
-                {itemsState[targetCountry.cca3.toUpperCase()]?.attempts === 1 && (
-                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">
-                    Último Intento
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xl">{targetCountry.flagEmoji}</span>
-                <h2 className="text-lg sm:text-xl font-black text-white">
-                  {targetCountry.nameEs}
-                </h2>
-                <span className="text-xs text-slate-400 hidden sm:inline">
-                  (Capital: {targetCountry.capital})
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <h2 className="text-sm sm:text-base font-bold text-slate-300">
-                {counts.completed === counts.total 
-                  ? '🎉 ¡Enhorabuena! Has completado todos los países y territorios de la lista.'
-                  : '👆 Haz clic en cualquier país de la lista de abajo para seleccionarlo'}
-              </h2>
-            </div>
-          )}
+      {/* Mensaje de retroalimentación temporal */}
+      {bannerMessage && (
+        <div className={`text-xs px-3 py-1 rounded-xl border font-semibold ${
+          bannerMessage.type === 'success' ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300' :
+          bannerMessage.type === 'warning' ? 'bg-amber-950/70 border-amber-500/50 text-amber-300' :
+          bannerMessage.type === 'error' ? 'bg-rose-950/70 border-rose-500/50 text-rose-300' :
+          'bg-indigo-950/70 border-indigo-500/50 text-indigo-300'
+        }`}>
+          {bannerMessage.text}
         </div>
+      )}
 
-        {/* Mensaje de retroalimentación temporal */}
-        {bannerMessage && (
-          <div className={`text-xs px-3 py-1.5 rounded-xl border font-semibold ${
-            bannerMessage.type === 'success' ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-300' :
-            bannerMessage.type === 'warning' ? 'bg-amber-950/50 border-amber-500/50 text-amber-300' :
-            bannerMessage.type === 'error' ? 'bg-rose-950/50 border-rose-500/50 text-rose-300' :
-            'bg-indigo-950/50 border-indigo-500/50 text-indigo-300'
-          }`}>
-            {bannerMessage.text}
-          </div>
-        )}
-      </div>
-
-      {/* 3. Bandeja Superior / Mosaico de Países con Filtros */}
-      <div className="bg-slate-900/90 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl space-y-2.5">
+      {/* 2. Bandeja Compacta de Chips de Países */}
+      <div className="bg-slate-900/90 backdrop-blur-md p-2.5 rounded-2xl border border-slate-800 shadow-md space-y-2">
         {/* Barra de Filtros y Búsqueda */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
-          <div className="flex items-center gap-1.5 overflow-x-auto">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1 overflow-x-auto">
             <button
               onClick={() => setActiveFilter('all')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+              className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition ${
                 activeFilter === 'all'
                   ? 'bg-cyan-500 text-slate-950 font-bold shadow-glow-cyan'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -453,7 +418,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
             </button>
             <button
               onClick={() => setActiveFilter('pending')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+              className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition ${
                 activeFilter === 'pending'
                   ? 'bg-slate-200 text-slate-950 font-bold'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -463,7 +428,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
             </button>
             <button
               onClick={() => setActiveFilter('correct')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+              className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition ${
                 activeFilter === 'correct'
                   ? 'bg-emerald-500 text-slate-950 font-bold'
                   : 'bg-slate-800 text-emerald-400 hover:bg-slate-700'
@@ -473,7 +438,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
             </button>
             <button
               onClick={() => setActiveFilter('wrong')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+              className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition ${
                 activeFilter === 'wrong'
                   ? 'bg-rose-500 text-white font-bold'
                   : 'bg-slate-800 text-rose-400 hover:bg-slate-700'
@@ -484,20 +449,20 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
           </div>
 
           {/* Campo de Búsqueda */}
-          <div className="relative flex-1 sm:max-w-xs min-w-[180px]">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <div className="relative flex-1 sm:max-w-xs min-w-[140px]">
+            <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar país o territorio..."
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-950/70 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
+              placeholder="Buscar país..."
+              className="w-full pl-7 pr-2.5 py-1 bg-slate-950/70 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
             />
           </div>
         </div>
 
         {/* Mosaico de Chips de Países y Territorios */}
-        <div className="max-h-24 sm:max-h-28 overflow-y-auto pr-1 flex flex-wrap gap-1.5 custom-scrollbar">
+        <div className="max-h-20 sm:max-h-24 overflow-y-auto pr-1 flex flex-wrap gap-1 custom-scrollbar">
           {filteredCountryItems.map((country) => {
             const cca3 = country.cca3.toUpperCase();
             const item = itemsState[cca3];
@@ -509,16 +474,16 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
             let icon = null;
 
             if (isSelected) {
-              chipStyle = 'bg-purple-600/30 border-purple-400 text-purple-200 ring-2 ring-purple-500 shadow-glow-purple font-bold';
+              chipStyle = 'bg-purple-600/40 border-purple-400 text-purple-200 ring-2 ring-purple-500 shadow-glow-purple font-bold';
             } else if (status === 'correct') {
               chipStyle = 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300 font-bold';
-              icon = <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />;
+              icon = <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 shrink-0" />;
             } else if (status === 'second_try') {
               chipStyle = 'bg-amber-950/40 border-amber-500/50 text-amber-300 font-bold';
-              icon = <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />;
+              icon = <AlertTriangle className="w-2.5 h-2.5 text-amber-400 shrink-0" />;
             } else if (status === 'wrong') {
               chipStyle = 'bg-rose-950/40 border-rose-600/50 text-rose-400 font-semibold line-through opacity-75';
-              icon = <XCircle className="w-3 h-3 text-rose-400 shrink-0" />;
+              icon = <XCircle className="w-2.5 h-2.5 text-rose-400 shrink-0" />;
             }
 
             return (
@@ -531,7 +496,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
                   }
                 }}
                 disabled={status !== 'pending'}
-                className={`px-2.5 py-1 rounded-xl border text-xs transition-all flex items-center gap-1.5 active:scale-95 ${chipStyle} ${
+                className={`px-2 py-0.5 rounded-lg border text-[11px] transition-all flex items-center gap-1 active:scale-95 ${chipStyle} ${
                   status !== 'pending' ? 'cursor-default' : 'cursor-pointer'
                 }`}
               >
@@ -544,8 +509,8 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         </div>
       </div>
 
-      {/* 4. Mapa Interactivo Principal (Renderiza marcadores de acuerdo al Modo Friki seleccionado antes de empezar) */}
-      <div className="relative flex-1 min-h-[420px] h-[520px] sm:h-[580px] max-h-[calc(100vh-230px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+      {/* 3. Mapa Interactivo Principal */}
+      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-210px)] max-h-[calc(100vh-210px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
         <WorldMap
           countryStatuses={mapCountryStatuses}
           selectedCountryCode={selectedCountryCode}

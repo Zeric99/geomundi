@@ -184,7 +184,7 @@ export function App() {
       />
 
       {/* Contenido Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 sm:pt-8">
+      <main className={`flex-1 max-w-7xl w-full mx-auto ${isPlaying ? 'px-2 sm:px-4 pt-2 sm:pt-3 pb-2' : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-8'}`}>
         {/* PESTAÑA 1: JUGAR */}
         {activeTab === 'game' && (
           <div>
@@ -197,7 +197,7 @@ export function App() {
                 onStartFocusedPractice={() => handleStartFocusedPractice()}
               />
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {/* 1. Modo Adivina la Bandera */}
                 {config.mode === 'flag-skip-chain' && (() => {
                   const fullList = config.isGeekMode
