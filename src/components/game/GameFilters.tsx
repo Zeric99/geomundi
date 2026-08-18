@@ -56,70 +56,70 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     desc: string; 
     icon: React.ReactNode; 
     badge?: string; 
-    accentColor: string;
+    accentColor: string; 
     borderGlow: string;
     highlights: string[];
   }[] = [
     {
-      id: 'flag-skip-chain',
-      title: 'Banderas (Con Salto & 2ª Vuelta)',
-      desc: 'Adivina banderas en el mapa. Si dudas con alguna, puedes saltarla y te volverá a salir en la segunda ronda hasta completarlas todas.',
-      icon: <Flag className="w-6 h-6 text-sky-400" />,
-      badge: '¡Nuevo y Recomendado!',
-      accentColor: 'from-sky-500/20 to-blue-600/10',
-      borderGlow: 'hover:border-sky-500/80 hover:shadow-[0_0_30px_rgba(56,189,248,0.25)]',
-      highlights: ['Salto de banderas', 'Segunda ronda acumulativa', 'Todas las regiones']
-    },
-    {
       id: 'list-select',
-      title: 'Lista & Mapa (Colores)',
-      desc: 'Pulsa el nombre de un país de la lista superior y ubícalo: Verde (1º intento), Amarillo (2º intento), Rojo (Fallo).',
+      title: 'Modo Clásico: Adivinar Países',
+      desc: 'Elige un país de la lista superior y encuéntralo en el mapa. Verde (1º intento), Amarillo (2º intento), Rojo (Fallo).',
       icon: <ListChecks className="w-6 h-6 text-emerald-400" />,
-      badge: 'Popular',
+      badge: '⭐ Modo Clásico',
       accentColor: 'from-emerald-500/20 to-teal-600/10',
       borderGlow: 'hover:border-emerald-500/80 hover:shadow-[0_0_30px_rgba(16,185,129,0.25)]',
-      highlights: ['Pool completo de países', 'Códigos de color', 'Práctica de memoria']
+      highlights: ['Lista completa en pantalla', 'Código de colores', 'Ideal para aprender']
+    },
+    {
+      id: 'flag-skip-chain',
+      title: 'Adivina la Bandera',
+      desc: 'Descubre el país de cada bandera. Si dudas con alguna puedes saltarla y te volverá a salir en la 2ª ronda hasta completarlas todas.',
+      icon: <Flag className="w-6 h-6 text-sky-400" />,
+      badge: 'Con Salto & 2ª Vuelta',
+      accentColor: 'from-sky-500/20 to-blue-600/10',
+      borderGlow: 'hover:border-sky-500/80 hover:shadow-[0_0_30px_rgba(56,189,248,0.25)]',
+      highlights: ['Salto de banderas', 'Segunda vuelta automática', 'Banderas en HD']
+    },
+    {
+      id: 'click-find',
+      title: 'Localiza en el Mapa',
+      desc: 'Te damos un país, bandera o capital y debes localizar su posición exacta directamente sobre el mapa.',
+      icon: <MapPin className="w-6 h-6 text-cyan-400" />,
+      accentColor: 'from-cyan-500/20 to-sky-600/10',
+      borderGlow: 'hover:border-cyan-500/80 hover:shadow-[0_0_30px_rgba(6,182,212,0.25)]',
+      highlights: ['Nombres, banderas o capitales', 'Duración configurable', 'Pistas de radar']
+    },
+    {
+      id: 'input-write',
+      title: 'Escribir Países',
+      desc: 'El mapa ilumina un país en ámbar y debes escribir su nombre exacto en el teclado con tolerancia ortográfica.',
+      icon: <Type className="w-6 h-6 text-teal-400" />,
+      accentColor: 'from-teal-500/20 to-emerald-600/10',
+      borderGlow: 'hover:border-teal-500/80 hover:shadow-[0_0_30px_rgba(20,184,166,0.25)]',
+      highlights: ['Escritura con teclado', 'Tolerancia de tildes', 'Memoria activa']
+    },
+    {
+      id: 'match-cards',
+      title: 'Emparejar Tarjetas',
+      desc: 'Empareja de 5 en 5 las tarjetas interactivas de países con sus posiciones geográficas en el mapa.',
+      icon: <Layers className="w-6 h-6 text-purple-400" />,
+      accentColor: 'from-purple-500/20 to-pink-600/10',
+      borderGlow: 'hover:border-purple-500/80 hover:shadow-[0_0_30px_rgba(168,85,247,0.25)]',
+      highlights: ['Grupos de 5 tarjetas', 'Agilidad visual', 'Banderas y capitales']
     },
     {
       id: 'trivia-curiosities',
       title: 'Trivia y Curiosidades',
-      desc: 'Preguntas de récords mundiales, curiosidades insólitas y hechos geográficos únicos que debes localizar en el mapa.',
+      desc: 'Preguntas de récords mundiales, curiosidades insólitas y hechos geográficos únicos para responder sobre el mapa.',
       icon: <Trophy className="w-6 h-6 text-indigo-400" />,
       badge: 'Trivia',
       accentColor: 'from-indigo-500/20 to-purple-600/10',
       borderGlow: 'hover:border-indigo-500/80 hover:shadow-[0_0_30px_rgba(99,102,241,0.25)]',
-      highlights: ['Récords mundiales', 'Cultura e historia', 'Aprende mientras juegas']
-    },
-    {
-      id: 'click-find',
-      title: 'Click & Find',
-      desc: 'El modo clásico: te damos un país, bandera o capital y tú lo ubicas directamente haciendo clic en el mapa.',
-      icon: <MapPin className="w-6 h-6 text-cyan-400" />,
-      accentColor: 'from-cyan-500/20 to-sky-600/10',
-      borderGlow: 'hover:border-cyan-500/80 hover:shadow-[0_0_30px_rgba(6,182,212,0.25)]',
-      highlights: ['Nombres, banderas o capitales', 'Selección de cantidad', 'Pistas dinámicas']
-    },
-    {
-      id: 'input-write',
-      title: 'Modo Escribir',
-      desc: 'El mapa resalta un país en ámbar y tú debes escribir su nombre exacto con tolerancia a tildes y ortografía.',
-      icon: <Type className="w-6 h-6 text-teal-400" />,
-      accentColor: 'from-teal-500/20 to-emerald-600/10',
-      borderGlow: 'hover:border-teal-500/80 hover:shadow-[0_0_30px_rgba(20,184,166,0.25)]',
-      highlights: ['Escritura activa', 'Tolerancia ortográfica', 'Localización inversa']
-    },
-    {
-      id: 'match-cards',
-      title: 'Match / Emparejar',
-      desc: 'Empareja 5 tarjetas interactivas de países simultáneamente con sus posiciones en el mapa.',
-      icon: <Layers className="w-6 h-6 text-purple-400" />,
-      accentColor: 'from-purple-500/20 to-pink-600/10',
-      borderGlow: 'hover:border-purple-500/80 hover:shadow-[0_0_30px_rgba(168,85,247,0.25)]',
-      highlights: ['Emparejamiento de 5 en 5', 'Agilidad visual', 'Banderas y capitales']
+      highlights: ['Récords del planeta', 'Cultura e historia', 'Aprende jugando']
     },
     {
       id: 'explore',
-      title: 'Modo Explorador Libre',
+      title: 'Modo Explorador',
       desc: 'Navegación libre por el globo: haz clic en cualquier país o isla para ver su ficha, capital, bandera y fronteras.',
       icon: <Compass className="w-6 h-6 text-amber-400" />,
       accentColor: 'from-amber-500/20 to-orange-600/10',
@@ -140,7 +140,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     { count: 10, label: '10 Países', desc: 'Estándar' },
     { count: 20, label: '20 Países', desc: 'Desafío' },
     { count: 50, label: '50 Países', desc: 'Maratón' },
-    { count: 195, label: '🌍 Todos', desc: 'Completo' },
+    { count: 999, label: '🌍 Todos', desc: 'Todos los países' },
   ];
 
   const handleOpenModeConfig = (modeId: GameMode) => {

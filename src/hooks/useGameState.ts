@@ -93,10 +93,11 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
 
     // Barajar Fisher-Yates
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    // Si totalQuestions >= 190 o es maratón completo, jugar TODOS los países del pool
-    const count = (cfg.totalQuestions >= 190 || cfg.isAllCountriesMarathon) 
+    // Si totalQuestions >= 190, 999, 0 o es maratón completo, jugar TODOS los países del pool de la región
+    const isAll = cfg.totalQuestions >= 190 || cfg.totalQuestions === 999 || cfg.totalQuestions === 0 || cfg.isAllCountriesMarathon;
+    const count = isAll 
       ? shuffled.length 
-      : Math.min(cfg.totalQuestions, shuffled.length);
+      : Math.min(cfg.totalQuestions || 10, shuffled.length);
     const selected = shuffled.slice(0, count);
 
     const questionTypes: QuestionType[] = ['name', 'flag', 'capital'];

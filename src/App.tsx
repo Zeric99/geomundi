@@ -199,20 +199,30 @@ export function App() {
               />
             ) : (
               <div className="space-y-4">
-                {/* 1. Modo Banderas (Con Salto & 2ª Ronda) */}
-                {config.mode === 'flag-skip-chain' && (
-                  <FlagSkipChainMode
-                    initialCountries={
-                      config.isGeekMode
-                        ? [...countries, ...GEEK_TERRITORIES]
-                        : countries
-                    }
-                    onFinishGame={handleGameComplete}
-                    onQuit={quitGame}
-                    isGeekMode={config.isGeekMode}
-                    onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
-                  />
-                )}
+                {/* 1. Modo Adivina la Bandera */}
+                {config.mode === 'flag-skip-chain' && (() => {
+                  const fullList = config.isGeekMode
+                    ? [...countries, ...GEEK_TERRITORIES]
+                    : countries;
+                  const continentList = config.continent === 'World'
+                    ? fullList
+                    : fullList.filter(c => c.continent === config.continent);
+                  const isAll = config.totalQuestions >= 190 || config.totalQuestions === 999 || config.totalQuestions === 0;
+                  const count = isAll
+                    ? continentList.length
+                    : Math.min(config.totalQuestions || 10, continentList.length);
+                  const selectedList = [...continentList].sort(() => Math.random() - 0.5).slice(0, count);
+
+                  return (
+                    <FlagSkipChainMode
+                      initialCountries={selectedList}
+                      onFinishGame={handleGameComplete}
+                      onQuit={quitGame}
+                      isGeekMode={config.isGeekMode}
+                      onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
+                    />
+                  );
+                })()}
 
                 {/* 2. Modo Lista & Mapa (Colores) */}
                 {config.mode === 'list-select' && (
