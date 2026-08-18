@@ -23,13 +23,17 @@ interface CountryExplorerProps {
   continent?: Continent;
   onSelectContinent?: (continent: Continent) => void;
   onOpenFlagModal?: (country: Country) => void;
+  onQuit?: () => void;
+  isGeekMode?: boolean;
 }
 
 export const CountryExplorer: React.FC<CountryExplorerProps> = ({
   onStartQuizWithCountry,
   continent = 'World',
   onSelectContinent,
-  onOpenFlagModal
+  onOpenFlagModal,
+  onQuit,
+  isGeekMode = false
 }) => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -69,68 +73,80 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Banner Superior de Instrucción y Buscador */}
-      <div className="bg-[#131C2E]/90 backdrop-blur-md border border-amber-500/30 rounded-2xl p-4 sm:p-5 shadow-xl flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-amber-500/20 border border-amber-500/40 rounded-xl text-amber-300">
-            <Compass className="w-6 h-6" />
+    <div className="flex flex-col h-full min-h-0 gap-2 w-full overflow-hidden">
+      {/* Banner Superior de Instrucción, Buscador y Salir */}
+      <div className="bg-[#131C2E]/90 backdrop-blur-md border border-amber-500/30 rounded-2xl p-3 sm:p-4 shadow-xl flex items-center justify-between gap-3 flex-wrap shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-amber-500/20 border border-amber-500/40 rounded-xl text-amber-300">
+            <Compass className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-display font-bold text-white text-base sm:text-lg">
+            <h3 className="font-display font-bold text-white text-sm sm:text-base">
               Modo Explorador Libre
             </h3>
-            <p className="text-xs text-slate-300">
-              Haz clic en cualquier país o isla del mapa para inspeccionar sus datos, bandera, capital y fronteras.
+            <p className="text-[11px] text-slate-300">
+              Haz clic en cualquier país o isla del mapa para inspeccionar sus datos, bandera y capital.
             </p>
           </div>
         </div>
 
-        {/* Buscador Rápido de Países */}
-        <div className="relative w-full sm:w-72">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar país o capital..."
-              className="w-full bg-slate-900/90 border border-slate-700 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+        <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
+          {/* Buscador Rápido de Países */}
+          <div className="relative w-full sm:w-64">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar país o capital..."
+                className="w-full bg-slate-900/90 border border-slate-700 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 outline-none transition"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Resultados flotantes de búsqueda */}
+            {searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-cyan-500/40 rounded-xl shadow-2xl z-40 max-h-52 overflow-y-auto divide-y divide-slate-800">
+                {searchResults.map((c) => (
+                  <button
+                    key={c.cca3}
+                    onClick={() => handleSelectSearchResult(c)}
+                    className="w-full px-3 py-1.5 text-left hover:bg-cyan-500/20 flex items-center justify-between text-xs transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{c.flagEmoji}</span>
+                      <span className="font-bold text-white">{c.nameEs}</span>
+                    </div>
+                    <span className="text-slate-400 font-mono text-[10px]">{c.capital}</span>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Resultados flotantes de búsqueda */}
-          {searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1.5 bg-slate-900 border border-cyan-500/40 rounded-xl shadow-2xl z-40 max-h-56 overflow-y-auto divide-y divide-slate-800">
-              {searchResults.map((c) => (
-                <button
-                  key={c.cca3}
-                  onClick={() => handleSelectSearchResult(c)}
-                  className="w-full px-3 py-2 text-left hover:bg-cyan-500/20 flex items-center justify-between text-xs transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">{c.flagEmoji}</span>
-                    <span className="font-bold text-white">{c.nameEs}</span>
-                  </div>
-                  <span className="text-slate-400 font-mono text-[11px]">{c.capital}</span>
-                </button>
-              ))}
-            </div>
+          {/* Botón Salir si se ejecuta en modo partida */}
+          {onQuit && (
+            <button
+              onClick={onQuit}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 hover:text-white rounded-xl border border-slate-700 transition active:scale-95 shrink-0"
+            >
+              Salir
+            </button>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 flex-1 min-h-0 overflow-hidden">
         {/* Mapa Interactivo */}
-        <div className={`${selectedCountry ? 'lg:col-span-3' : 'lg:col-span-4'} h-[calc(100vh-190px)] min-h-[420px] transition-all`}>
+        <div className={`${selectedCountry ? 'lg:col-span-3' : 'lg:col-span-4'} h-full min-h-0 transition-all rounded-2xl overflow-hidden shadow-2xl border border-slate-800`}>
           <WorldMap
             continent={continent}
             onSelectContinent={onSelectContinent}
@@ -138,6 +154,7 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
             selectedCountryCode={selectedCountry?.cca3 || null}
             interactive={true}
             enableTooltip={true}
+            isGeekMode={isGeekMode}
           />
         </div>
 

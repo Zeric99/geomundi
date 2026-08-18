@@ -309,6 +309,18 @@ export function App() {
                     />
                   </>
                 )}
+
+                {/* 6. Modo Explorador Libre */}
+                {config.mode === 'explore' && (
+                  <CountryExplorer
+                    continent={config.continent}
+                    onSelectContinent={(c) => updateConfig({ continent: c })}
+                    onStartQuizWithCountry={handleStartQuizWithCountry}
+                    onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
+                    onQuit={quitGame}
+                    isGeekMode={config.isGeekMode}
+                  />
+                )}
               </div>
             )}
           </div>
