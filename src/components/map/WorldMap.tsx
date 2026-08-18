@@ -297,17 +297,13 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   };
 
   // Microestados a renderizar en el mapa global (excluyendo Caribe y Pacífico para que no se solapen con las ventanas Inset)
+  // Microestados e islas pequeñas (renderizados como marcadores nítidos e interactivos)
   const microstateCountries = useMemo(() => {
     const all = isGeekMode ? [...FALLBACK_COUNTRIES, ...GEEK_TERRITORIES] : FALLBACK_COUNTRIES;
     return all.filter(c => {
       const upper = c.cca3.toUpperCase();
       const isMicro = MICROSTATE_CODES.has(upper);
       if (!isMicro) return false;
-      
-      // Si estamos en vista Mundial o en América/Oceanía, las islas del Caribe y Pacífico se gestionan en las ventanas Inset
-      if (INSET_CARIBBEAN_CODES.has(upper) || INSET_PACIFIC_CODES.has(upper)) {
-        return false;
-      }
 
       if (continent === 'World') return true;
       return c.continent === continent;
