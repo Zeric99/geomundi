@@ -598,29 +598,58 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         </div>
       )}
 
-      {/* 6. Botones para restaurar los recuadros si se cerraron */}
-      {(!showCaribbeanInset || !showOceaniaInset) && (
-        <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl pointer-events-auto">
-          {!showCaribbeanInset && (
-            <button
-              onClick={() => setShowCaribbeanInset(true)}
-              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 rounded-lg flex items-center gap-1 border border-slate-600"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Ver Caribe</span>
-            </button>
+      {/* 6. PESTAÑAS FLOTANTES INFERIORES: ZOOM DIRECTO A ISLAS Y MAPA */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-[#0A101C]/95 backdrop-blur-md px-3 py-2 rounded-2xl border border-cyan-500/60 shadow-[0_10px_35px_rgba(0,0,0,0.9)] pointer-events-auto">
+        <button
+          onClick={() => {
+            setExpandedInset(null);
+            const targetVp = CONTINENT_VIEWPORTS[continent] || CONTINENT_VIEWPORTS.World;
+            setPosition({ coordinates: targetVp.center, zoom: targetVp.zoom });
+          }}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+            expandedInset === null
+              ? 'bg-gradient-to-r from-cyan-500 to-sky-500 text-slate-950 shadow-glow-cyan'
+              : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700'
+          }`}
+        >
+          <span>🌍</span>
+          <span>Mapa Mundial</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setExpandedInset(expandedInset === 'caribbean' ? null : 'caribbean');
+          }}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+            expandedInset === 'caribbean'
+              ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 shadow-glow-emerald ring-2 ring-emerald-300'
+              : 'bg-slate-800/90 hover:bg-emerald-950 text-emerald-300 hover:text-white border border-emerald-500/50'
+          }`}
+        >
+          <span>🏝️</span>
+          <span>Zoom Islas del Caribe</span>
+          {expandedInset === 'caribbean' && (
+            <span className="text-[10px] bg-slate-950/50 text-white px-1.5 py-0.2 rounded-full">Activo</span>
           )}
-          {!showOceaniaInset && (
-            <button
-              onClick={() => setShowOceaniaInset(true)}
-              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 rounded-lg flex items-center gap-1 border border-slate-600"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Ver Oceanía</span>
-            </button>
+        </button>
+
+        <button
+          onClick={() => {
+            setExpandedInset(expandedInset === 'oceania' ? null : 'oceania');
+          }}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+            expandedInset === 'oceania'
+              ? 'bg-gradient-to-r from-sky-400 to-blue-500 text-slate-950 shadow-glow-sky ring-2 ring-sky-300'
+              : 'bg-slate-800/90 hover:bg-sky-950 text-sky-300 hover:text-white border border-sky-500/50'
+          }`}
+        >
+          <span>🌊</span>
+          <span>Zoom Islas de Oceanía</span>
+          {expandedInset === 'oceania' && (
+            <span className="text-[10px] bg-slate-950/50 text-white px-1.5 py-0.2 rounded-full">Activo</span>
           )}
-        </div>
-      )}
+        </button>
+      </div>
 
       {/* 7. Tooltip con información del país al pasar el cursor */}
       {enableTooltip && tooltipsEnabled && !isDraggingRef.current && (
