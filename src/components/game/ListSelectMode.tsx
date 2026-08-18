@@ -166,21 +166,12 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
       return;
     }
 
-    // Si no hay país seleccionado de la lista, seleccionar automáticamente este país si está pendiente
+    // Si no hay país seleccionado de la lista, NO revelar qué país es ni seleccionarlo automáticamente
     if (!selectedCountryCode) {
-      if (clickedItem && clickedItem.status === 'pending') {
-        setSelectedCountryCode(upperClicked);
-        setPulsingFailedCountryCode(null);
-        setBannerMessage({
-          text: `Has seleccionado: ${clickedCountry.flagEmoji} ${clickedCountry.nameEs}. Ahora ubícalo en el mapa.`,
-          type: 'info'
-        });
-      } else {
-        setBannerMessage({
-          text: `👆 Selecciona un país de la lista superior o pulsa en el mapa/minimapa para ubicarlo.`,
-          type: 'info'
-        });
-      }
+      setBannerMessage({
+        text: `👆 Primero selecciona un nombre de país en la lista superior para ubicarlo en el mapa.`,
+        type: 'info'
+      });
       return;
     }
 
@@ -513,7 +504,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
       <div className="relative flex-1 min-h-[360px] h-[calc(100vh-210px)] max-h-[calc(100vh-210px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
         <WorldMap
           countryStatuses={mapCountryStatuses}
-          selectedCountryCode={selectedCountryCode}
+          selectedCountryCode={null}
           targetCountryCode={null}
           pulsingCountryCode={pulsingFailedCountryCode}
           continent={continent}
