@@ -320,9 +320,9 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     return countriesService.getCountryByCode(pulsingCountryCode);
   }, [pulsingCountryCode]);
 
-  // Determinar si mostramos los recuadros Inset
-  const showCaribbean = (!continent || continent === 'World' || continent === 'Americas') && showCaribbeanInset;
-  const showOceania = (!continent || continent === 'World' || continent === 'Oceania') && showOceaniaInset;
+  // Determinar si mostramos los recuadros Inset (Siempre visibles por defecto en todos los modos y regiones)
+  const showCaribbean = showCaribbeanInset;
+  const showOceania = showOceaniaInset;
 
   return (
     <div
