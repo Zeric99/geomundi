@@ -1,6 +1,6 @@
 import React from 'react';
 import { Lightbulb, HelpCircle, MapPin, Flag, Landmark, ZoomIn } from 'lucide-react';
-import { Country, CountryMapStatus } from '../../types/country';
+import { Continent, Country, CountryMapStatus } from '../../types/country';
 import { Question } from '../../types/game';
 import { WorldMap } from '../map/WorldMap';
 
@@ -12,6 +12,7 @@ interface ClickAndFindModeProps {
   activeHint: string | null;
   isEvaluating: boolean;
   isGeekMode?: boolean;
+  continent?: Continent;
   onOpenFlagModal?: (country: Country) => void;
 }
 
@@ -23,6 +24,7 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
   activeHint,
   isEvaluating,
   isGeekMode = false,
+  continent = 'World',
   onOpenFlagModal
 }) => {
   const { country, questionType } = question;
@@ -142,7 +144,7 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
         <WorldMap
           countryStatuses={countryStatuses}
           onCountryClick={onCountryClick}
-          continent={country.continent}
+          continent={continent}
           targetCountryCode={question.hintUsed ? country.cca3 : null}
           interactive={!isEvaluating}
           isGeekMode={isGeekMode}

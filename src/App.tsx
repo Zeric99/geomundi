@@ -297,6 +297,7 @@ export function App() {
                       activeHint={activeHint}
                       isEvaluating={isEvaluating}
                       isGeekMode={config.isGeekMode}
+                      continent={config.continent}
                       onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
                     />
                   </>
