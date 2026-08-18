@@ -302,9 +302,9 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
   }, [baseCountries, itemsState, activeFilter, searchQuery]);
 
   return (
-    <div className="flex flex-col h-full gap-2.5 max-w-7xl mx-auto w-full px-2 sm:px-3">
+    <div className="flex flex-col h-full min-h-0 gap-1.5 max-w-7xl mx-auto w-full px-1 sm:px-2 overflow-hidden">
       {/* 1. Barra Unificada Compacta: Objetivo Activo + Estadísticas */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-800 shadow-md">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 shadow-md shrink-0">
         {/* Objetivo Activo o Instrucción */}
         <div className="flex items-center gap-2.5">
           <div className="p-2 bg-indigo-500/20 border border-indigo-400/30 rounded-xl text-indigo-300 shrink-0">
@@ -500,8 +500,8 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         </div>
       </div>
 
-      {/* 3. Mapa Interactivo Principal */}
-      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-210px)] max-h-[calc(100vh-210px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+      {/* 3. Mapa Interactivo Principal (Ajuste automático a la pantalla) */}
+      <div className="relative flex-1 min-h-0 w-full rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
         <WorldMap
           countryStatuses={mapCountryStatuses}
           selectedCountryCode={null}

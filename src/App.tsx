@@ -165,7 +165,9 @@ export function App() {
     : null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0B0F19] text-slate-100 selection:bg-cyan-500 selection:text-slate-950">
+    <div className={`flex flex-col bg-[#0B0F19] text-slate-100 selection:bg-cyan-500 selection:text-slate-950 ${
+      isPlaying ? 'h-screen max-h-screen overflow-hidden' : 'min-h-screen'
+    }`}>
       {/* Barra de Navegación */}
       <Navbar
         activeTab={activeTab}
@@ -184,10 +186,12 @@ export function App() {
       />
 
       {/* Contenido Principal */}
-      <main className={`flex-1 max-w-7xl w-full mx-auto ${isPlaying ? 'px-2 sm:px-4 pt-2 sm:pt-3 pb-2' : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-8'}`}>
+      <main className={`flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col ${
+        isPlaying ? 'px-2 sm:px-3 py-1.5 overflow-hidden' : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-8'
+      }`}>
         {/* PESTAÑA 1: JUGAR */}
         {activeTab === 'game' && (
-          <div>
+          <div className={isPlaying ? 'h-full flex flex-col min-h-0 overflow-hidden' : ''}>
             {!isPlaying ? (
               <GameFilters
                 config={config}
@@ -197,7 +201,7 @@ export function App() {
                 onStartFocusedPractice={() => handleStartFocusedPractice()}
               />
             ) : (
-              <div className="space-y-2.5">
+              <div className="h-full flex flex-col min-h-0 overflow-hidden space-y-1.5">
                 {/* 1. Modo Adivina la Bandera */}
                 {config.mode === 'flag-skip-chain' && (() => {
                   const fullList = config.isGeekMode

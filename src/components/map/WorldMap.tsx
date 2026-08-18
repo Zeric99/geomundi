@@ -322,7 +322,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
 
   return (
     <div
-      className={`relative w-full h-full min-h-[440px] bg-gradient-to-b from-[#090D16] via-[#0D1524] to-[#0A101C] rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl select-none ${className}`}
+      className={`relative w-full h-full min-h-0 bg-gradient-to-b from-[#090D16] via-[#0D1524] to-[#0A101C] rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl select-none ${className}`}
       onMouseDown={handlePointerDown}
       onMouseMove={handlePointerMove}
       onMouseUp={handlePointerUp}
@@ -544,8 +544,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       {showCaribbean && expandedInset !== 'oceania' && (
         <div className={`transition-all duration-300 pointer-events-auto ${
           expandedInset === 'caribbean'
-            ? 'absolute inset-2 sm:inset-4 z-40 shadow-[0_0_50px_rgba(6,182,212,0.4)] rounded-2xl overflow-hidden'
-            : 'absolute bottom-3 sm:bottom-4 left-3 sm:left-4 z-30 w-[260px] sm:w-[300px] md:w-[340px] h-[155px] sm:h-[175px] md:h-[195px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] rounded-2xl overflow-hidden border-2 border-cyan-500/80 bg-[#0B1220]'
+            ? 'absolute inset-2 sm:inset-3 z-40 shadow-[0_0_50px_rgba(6,182,212,0.4)] rounded-2xl overflow-hidden'
+            : 'absolute bottom-2 sm:bottom-3 left-2 sm:left-3 z-30 w-[190px] sm:w-[230px] md:w-[270px] h-[110px] sm:h-[130px] md:h-[155px] max-h-[38%] max-w-[36%] shadow-[0_10px_30px_rgba(0,0,0,0.8)] rounded-2xl overflow-hidden border-2 border-cyan-500/80 bg-[#0B1220]'
         }`}>
           <CaribbeanInsetMap
             countryStatuses={countryStatuses}
@@ -560,7 +560,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           {expandedInset !== 'caribbean' && (
             <button
               onClick={() => setShowCaribbeanInset(false)}
-              className="absolute top-1.5 right-1.5 p-1 bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors z-40"
+              className="absolute top-1 right-1 p-1 bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors z-40"
               title="Minimizar recuadro del Caribe"
             >
               <EyeOff className="w-3.5 h-3.5" />
@@ -573,8 +573,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       {showOceania && expandedInset !== 'caribbean' && (
         <div className={`transition-all duration-300 pointer-events-auto ${
           expandedInset === 'oceania'
-            ? 'absolute inset-2 sm:inset-4 z-40 shadow-[0_0_50px_rgba(6,182,212,0.4)] rounded-2xl overflow-hidden'
-            : 'absolute bottom-3 sm:bottom-4 right-3 sm:right-4 z-30 w-[270px] sm:w-[310px] md:w-[350px] h-[155px] sm:h-[175px] md:h-[195px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] rounded-2xl overflow-hidden border-2 border-cyan-500/80 bg-[#0B1220]'
+            ? 'absolute inset-2 sm:inset-3 z-40 shadow-[0_0_50px_rgba(6,182,212,0.4)] rounded-2xl overflow-hidden'
+            : 'absolute bottom-2 sm:bottom-3 right-2 sm:right-3 z-30 w-[200px] sm:w-[240px] md:w-[280px] h-[110px] sm:h-[130px] md:h-[155px] max-h-[38%] max-w-[36%] shadow-[0_10px_30px_rgba(0,0,0,0.8)] rounded-2xl overflow-hidden border-2 border-cyan-500/80 bg-[#0B1220]'
         }`}>
           <OceaniaInsetMap
             countryStatuses={countryStatuses}
@@ -589,7 +589,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           {expandedInset !== 'oceania' && (
             <button
               onClick={() => setShowOceaniaInset(false)}
-              className="absolute top-1.5 right-1.5 p-1 bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors z-40"
+              className="absolute top-1 right-1 p-1 bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors z-40"
               title="Minimizar recuadro de Oceanía"
             >
               <EyeOff className="w-3.5 h-3.5" />
@@ -599,14 +599,14 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       )}
 
       {/* 6. PESTAÑAS FLOTANTES INFERIORES: ZOOM DIRECTO A ISLAS Y MAPA */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-[#0A101C]/95 backdrop-blur-md px-3 py-2 rounded-2xl border border-cyan-500/60 shadow-[0_10px_35px_rgba(0,0,0,0.9)] pointer-events-auto">
+      <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 sm:gap-2 bg-[#0A101C]/95 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl border border-cyan-500/60 shadow-[0_10px_35px_rgba(0,0,0,0.9)] pointer-events-auto max-w-[95%] overflow-x-auto">
         <button
           onClick={() => {
             setExpandedInset(null);
             const targetVp = CONTINENT_VIEWPORTS[continent] || CONTINENT_VIEWPORTS.World;
             setPosition({ coordinates: targetVp.center, zoom: targetVp.zoom });
           }}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+          className={`px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 shadow-sm active:scale-95 shrink-0 ${
             expandedInset === null
               ? 'bg-gradient-to-r from-cyan-500 to-sky-500 text-slate-950 shadow-glow-cyan'
               : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700'
@@ -627,7 +627,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
               setExpandedInset('caribbean');
             }
           }}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+          className={`px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 shadow-sm active:scale-95 shrink-0 ${
             expandedInset === 'caribbean'
               ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 shadow-glow-emerald ring-2 ring-emerald-300'
               : !showCaribbeanInset
@@ -638,7 +638,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           <span>🏝️</span>
           <span>{!showCaribbeanInset ? 'Mostrar Caribe' : 'Zoom Caribe'}</span>
           {expandedInset === 'caribbean' && (
-            <span className="text-[10px] bg-slate-950/50 text-white px-1.5 py-0.2 rounded-full">Activo</span>
+            <span className="text-[9px] sm:text-[10px] bg-slate-950/50 text-white px-1.5 py-0.2 rounded-full">Activo</span>
           )}
         </button>
 
@@ -653,7 +653,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
               setExpandedInset('oceania');
             }
           }}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+          className={`px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 shadow-sm active:scale-95 shrink-0 ${
             expandedInset === 'oceania'
               ? 'bg-gradient-to-r from-sky-400 to-blue-500 text-slate-950 shadow-glow-sky ring-2 ring-sky-300'
               : !showOceaniaInset
@@ -664,7 +664,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           <span>🌊</span>
           <span>{!showOceaniaInset ? 'Mostrar Oceanía' : 'Zoom Oceanía'}</span>
           {expandedInset === 'oceania' && (
-            <span className="text-[10px] bg-slate-950/50 text-white px-1.5 py-0.2 rounded-full">Activo</span>
+            <span className="text-[9px] sm:text-[10px] bg-slate-950/50 text-white px-1.5 py-0.2 rounded-full">Activo</span>
           )}
         </button>
       </div>
