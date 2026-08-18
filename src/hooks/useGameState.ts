@@ -248,10 +248,11 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
       const updatedResults = [...roundResults, result];
       setRoundResults(updatedResults);
 
-      const delayMs = config.mode === 'trivia-curiosities' ? 4200 : 1000;
-      advanceTimerRef.current = setTimeout(() => {
-        advanceToNextQuestion(updatedResults, newScore, newMaxStreak);
-      }, delayMs);
+      if (config.mode !== 'trivia-curiosities') {
+        advanceTimerRef.current = setTimeout(() => {
+          advanceToNextQuestion(updatedResults, newScore, newMaxStreak);
+        }, 1000);
+      }
     } else {
       // Fallo
       playWrongSound();
@@ -289,10 +290,11 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
         const updatedResults = [...roundResults, result];
         setRoundResults(updatedResults);
 
-        const delayWrongMs = config.mode === 'trivia-curiosities' ? 5000 : 1800;
-        advanceTimerRef.current = setTimeout(() => {
-          advanceToNextQuestion(updatedResults, score, maxStreak);
-        }, delayWrongMs);
+        if (config.mode !== 'trivia-curiosities') {
+          advanceTimerRef.current = setTimeout(() => {
+            advanceToNextQuestion(updatedResults, score, maxStreak);
+          }, 1800);
+        }
       } else {
         // Oportunidad de segundo intento con pista
         advanceTimerRef.current = setTimeout(() => {
