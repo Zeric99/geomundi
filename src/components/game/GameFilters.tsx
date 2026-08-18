@@ -191,8 +191,8 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
             onClick={() => handleOpenModeConfig(m.id)}
             className={`cursor-pointer p-6 sm:p-7 rounded-3xl border border-slate-800 bg-gradient-to-b ${m.accentColor} bg-[#111827]/95 backdrop-blur-md transition-all duration-200 transform hover:-translate-y-1 ${m.borderGlow} flex flex-col justify-between group relative overflow-hidden min-h-[220px] shadow-xl`}
           >
-            {/* Emoji gigante de fondo detrás del texto */}
-            <div className="absolute -right-2 -top-2 sm:right-1 sm:top-1 text-7xl sm:text-8xl md:text-9xl opacity-15 pointer-events-none select-none group-hover:opacity-25 group-hover:scale-110 transition-all duration-300 transform leading-none">
+            {/* Emoji gigante de fondo detrás del texto con márgenes simétricos arriba y a la derecha */}
+            <div className="absolute top-5 right-5 sm:top-6 sm:right-6 text-7xl sm:text-8xl opacity-15 pointer-events-none select-none group-hover:opacity-25 group-hover:scale-110 transition-all duration-300 transform leading-none">
               {m.bgEmoji}
             </div>
 
