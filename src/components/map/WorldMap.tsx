@@ -548,8 +548,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       {showCaribbean && expandedInset !== 'oceania' && (
         <div className={`transition-all duration-300 pointer-events-auto ${
           expandedInset === 'caribbean'
-            ? 'absolute inset-2 sm:inset-4 z-40 shadow-2xl rounded-2xl overflow-hidden'
-            : 'absolute bottom-2 sm:bottom-3 left-2 sm:left-3 z-30 w-[240px] sm:w-[280px] md:w-[320px] h-[145px] sm:h-[165px] md:h-[185px] shadow-2xl rounded-2xl overflow-hidden'
+            ? 'absolute inset-2 sm:inset-4 z-40 shadow-[0_0_50px_rgba(6,182,212,0.4)] rounded-2xl overflow-hidden'
+            : 'absolute bottom-3 sm:bottom-4 left-3 sm:left-4 z-30 w-[260px] sm:w-[300px] md:w-[340px] h-[155px] sm:h-[175px] md:h-[195px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] rounded-2xl overflow-hidden border-2 border-cyan-500/80 bg-[#0B1220]'
         }`}>
           <CaribbeanInsetMap
             countryStatuses={countryStatuses}
@@ -564,7 +564,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           {expandedInset !== 'caribbean' && (
             <button
               onClick={() => setShowCaribbeanInset(false)}
-              className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors z-30"
+              className="absolute top-1.5 right-1.5 p-1 bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors z-40"
               title="Minimizar recuadro del Caribe"
             >
               <EyeOff className="w-3.5 h-3.5" />
@@ -577,8 +577,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       {showOceania && expandedInset !== 'caribbean' && (
         <div className={`transition-all duration-300 pointer-events-auto ${
           expandedInset === 'oceania'
-            ? 'absolute inset-2 sm:inset-4 z-40 shadow-2xl rounded-2xl overflow-hidden'
-            : 'absolute bottom-2 sm:bottom-3 right-2 sm:right-3 z-30 w-[250px] sm:w-[290px] md:w-[330px] h-[145px] sm:h-[165px] md:h-[185px] shadow-2xl rounded-2xl overflow-hidden'
+            ? 'absolute inset-2 sm:inset-4 z-40 shadow-[0_0_50px_rgba(6,182,212,0.4)] rounded-2xl overflow-hidden'
+            : 'absolute bottom-3 sm:bottom-4 right-3 sm:right-4 z-30 w-[270px] sm:w-[310px] md:w-[350px] h-[155px] sm:h-[175px] md:h-[195px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] rounded-2xl overflow-hidden border-2 border-cyan-500/80 bg-[#0B1220]'
         }`}>
           <OceaniaInsetMap
             countryStatuses={countryStatuses}
@@ -593,7 +593,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           {expandedInset !== 'oceania' && (
             <button
               onClick={() => setShowOceaniaInset(false)}
-              className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors z-30"
+              className="absolute top-1.5 right-1.5 p-1 bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition-colors z-40"
               title="Minimizar recuadro de Oceanía"
             >
               <EyeOff className="w-3.5 h-3.5" />
