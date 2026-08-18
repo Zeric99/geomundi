@@ -253,8 +253,33 @@ export function App() {
                   />
                 )}
 
-                {/* 4. Modos Estándar (con cabecera genérica) */}
-                {config.mode !== 'trivia-curiosities' && config.mode !== 'list-select' && config.mode !== 'flag-skip-chain' && (
+                {/* 4. Modo Escribir Países (Con Salto & 2ª Ronda) */}
+                {config.mode === 'input-write' && (() => {
+                  const fullList = config.isGeekMode
+                    ? [...countries, ...GEEK_TERRITORIES]
+                    : countries;
+                  const continentList = config.continent === 'World'
+                    ? fullList
+                    : fullList.filter(c => c.continent === config.continent);
+                  const isAll = config.totalQuestions >= 190 || config.totalQuestions === 999 || config.totalQuestions === 0;
+                  const count = isAll
+                    ? continentList.length
+                    : Math.min(config.totalQuestions || 10, continentList.length);
+                  const selectedList = [...continentList].sort(() => Math.random() - 0.5).slice(0, count);
+
+                  return (
+                    <InputWriteMode
+                      initialCountries={selectedList}
+                      onFinishGame={handleGameComplete}
+                      onQuit={quitGame}
+                      isGeekMode={config.isGeekMode}
+                      onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
+                    />
+                  );
+                })()}
+
+                {/* 5. Modo Localiza en el Mapa (Click & Find) */}
+                {config.mode === 'click-find' && currentQuestion && (
                   <>
                     <GameHeader
                       currentIndex={currentIndex}
@@ -264,32 +289,16 @@ export function App() {
                       streak={streak}
                       onQuit={quitGame}
                     />
-
-                    {config.mode === 'click-find' && currentQuestion && (
-                      <ClickAndFindMode
-                        question={currentQuestion}
-                        countryStatuses={countryStatuses}
-                        onCountryClick={submitAnswer}
-                        onUseHint={useHint}
-                        activeHint={activeHint}
-                        isEvaluating={isEvaluating}
-                        isGeekMode={config.isGeekMode}
-                        onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
-                      />
-                    )}
-
-                    {config.mode === 'input-write' && currentQuestion && (
-                      <InputWriteMode
-                        question={currentQuestion}
-                        countryStatuses={countryStatuses}
-                        onSubmitAnswer={submitAnswer}
-                        onUseHint={useHint}
-                        activeHint={activeHint}
-                        isEvaluating={isEvaluating}
-                        isGeekMode={config.isGeekMode}
-                        onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
-                      />
-                    )}
+                    <ClickAndFindMode
+                      question={currentQuestion}
+                      countryStatuses={countryStatuses}
+                      onCountryClick={submitAnswer}
+                      onUseHint={useHint}
+                      activeHint={activeHint}
+                      isEvaluating={isEvaluating}
+                      isGeekMode={config.isGeekMode}
+                      onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
+                    />
                   </>
                 )}
               </div>

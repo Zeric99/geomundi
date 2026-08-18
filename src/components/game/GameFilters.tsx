@@ -92,11 +92,12 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     {
       id: 'input-write',
       title: 'Escribir Países',
-      desc: 'El mapa ilumina un país en ámbar y debes escribir su nombre exacto en el teclado con tolerancia ortográfica.',
+      desc: 'El mapa ilumina un país en ámbar y debes escribir su nombre exacto en el teclado. Si dudas con alguno, puedes pasarlo y resolverlo en la 2ª ronda.',
       icon: <Type className="w-6 h-6 text-teal-400" />,
+      badge: 'Con Salto & 2ª Vuelta',
       accentColor: 'from-teal-500/20 to-emerald-600/10',
       borderGlow: 'hover:border-teal-500/80 hover:shadow-[0_0_30px_rgba(20,184,166,0.25)]',
-      highlights: ['Escritura con teclado', 'Tolerancia de tildes', 'Memoria activa']
+      highlights: ['Escritura con teclado', 'Pasar y 2ª vuelta', 'Tolerancia de tildes']
     },
     {
       id: 'trivia-curiosities',
