@@ -345,6 +345,39 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                 </div>
               )}
 
+              {/* OPCIÓN: CANTIDAD DE CURIOSIDADES (10, 25 o 50) */}
+              {activeConfigMode === 'trivia-curiosities' && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+                    2. Número de Curiosidades en la Partida
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { count: 10, label: '10 Curiosidades', desc: 'Partida Rápida' },
+                      { count: 25, label: '25 Curiosidades', desc: 'Partida Estándar' },
+                      { count: 50, label: '50 Curiosidades', desc: 'Gran Desafío' },
+                    ].map((item) => {
+                      const isSelected = (config.totalQuestions || 10) === item.count;
+                      return (
+                        <button
+                          key={item.count}
+                          type="button"
+                          onClick={() => onChangeConfig({ totalQuestions: item.count })}
+                          className={`p-3.5 rounded-2xl border text-center transition-all ${
+                            isSelected
+                              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400 shadow-glow-purple font-bold scale-[1.02]'
+                              : 'bg-slate-900/80 hover:bg-slate-800 border-slate-800 text-slate-300'
+                          }`}
+                        >
+                          <div className="text-xs sm:text-sm font-black">{item.label}</div>
+                          <div className="text-[11px] opacity-80 mt-0.5">{item.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* OPCIÓN 4: MODO FRIKI (Para todos los modos excepto Trivia) */}
               {activeConfigMode !== 'trivia-curiosities' && activeConfigMode !== 'explore' && (
                 <div className="bg-slate-900/90 border border-purple-500/40 rounded-2xl p-4 flex items-center justify-between gap-4 flex-wrap shadow-md">
