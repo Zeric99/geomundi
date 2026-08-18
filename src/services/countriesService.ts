@@ -181,6 +181,13 @@ class CountriesService {
   }
 
   /**
+   * Obtiene todos los países
+   */
+  getAllCountries(): Country[] {
+    return this.getCountriesByContinent('World');
+  }
+
+  /**
    * Filtra países por continente
    */
   getCountriesByContinent(continent: Continent): Country[] {

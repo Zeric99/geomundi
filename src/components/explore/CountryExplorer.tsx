@@ -16,7 +16,7 @@ import {
 import { Continent, Country } from '../../types/country';
 import { WorldMap } from '../map/WorldMap';
 import { countriesService } from '../../services/countriesService';
-import { FALLBACK_COUNTRIES } from '../../data/fallbackCountries';
+import { FALLBACK_COUNTRIES, GEEK_TERRITORIES } from '../../data/fallbackCountries';
 
 interface CountryExplorerProps {
   onStartQuizWithCountry?: (country: Country) => void;
@@ -26,6 +26,9 @@ interface CountryExplorerProps {
   onQuit?: () => void;
   isGeekMode?: boolean;
 }
+
+const normalize = (str: string) => 
+  (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 export const CountryExplorer: React.FC<CountryExplorerProps> = ({
   onStartQuizWithCountry,
@@ -38,23 +41,29 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const allCountries = useMemo(() => {
-    return countriesService.getCountriesByContinent(continent);
-  }, [continent]);
+  // Todos los países y territorios disponibles en el sistema para búsqueda global
+  const allCountriesList = useMemo(() => {
+    const list = countriesService.getAllCountries();
+    const base = list.length > 0 ? list : FALLBACK_COUNTRIES;
+    return isGeekMode ? [...base, ...GEEK_TERRITORIES] : base;
+  }, [isGeekMode]);
 
-  // Búsqueda rápida de países
+  // Búsqueda inteligente, insensible a acentos en nombre (ES/EN), capital y código
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase().trim();
-    return allCountries
-      .filter(c => 
-        c.nameEs.toLowerCase().includes(q) || 
-        c.nameEn.toLowerCase().includes(q) || 
-        c.capital.toLowerCase().includes(q) ||
-        c.cca3.toLowerCase().includes(q)
-      )
-      .slice(0, 8);
-  }, [allCountries, searchQuery]);
+    const q = normalize(searchQuery);
+    return allCountriesList
+      .filter((c: Country) => {
+        const nameEs = normalize(c.nameEs);
+        const nameEn = normalize(c.nameEn);
+        const capital = normalize(c.capital);
+        const cca3 = normalize(c.cca3);
+        const official = normalize(c.officialNameEs || '');
+        const alt = (c.altSpellings || []).some((a: string) => normalize(a).includes(q));
+        return nameEs.includes(q) || nameEn.includes(q) || capital.includes(q) || cca3.includes(q) || official.includes(q) || alt;
+      })
+      .slice(0, 12);
+  }, [allCountriesList, searchQuery]);
 
   const handleCountryClick = (country: Country) => {
     setSelectedCountry(country);
@@ -70,12 +79,15 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
   const handleSelectSearchResult = (c: Country) => {
     setSelectedCountry(c);
     setSearchQuery('');
+    if (onSelectContinent && continent !== 'World' && c.continent !== continent) {
+      onSelectContinent(c.continent);
+    }
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 gap-2 w-full overflow-hidden">
-      {/* Banner Superior de Instrucción, Buscador y Salir */}
-      <div className="bg-[#131C2E]/90 backdrop-blur-md border border-amber-500/30 rounded-2xl p-3 sm:p-4 shadow-xl flex items-center justify-between gap-3 flex-wrap shrink-0">
+    <div className="flex flex-col h-full min-h-0 gap-2 w-full">
+      {/* Banner Superior de Instrucción, Buscador y Salir (z-50 para que el dropdown flote por encima del mapa) */}
+      <div className="relative z-50 bg-[#131C2E]/95 backdrop-blur-md border border-amber-500/30 rounded-2xl p-3 sm:p-4 shadow-xl flex items-center justify-between gap-3 flex-wrap shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="p-2 bg-amber-500/20 border border-amber-500/40 rounded-xl text-amber-300">
             <Compass className="w-5 h-5" />
@@ -91,16 +103,16 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
-          {/* Buscador Rápido de Países */}
-          <div className="relative w-full sm:w-64">
+          {/* Buscador Rápido de Países y Capitales */}
+          <div className="relative w-full sm:w-72">
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar país o capital..."
-                className="w-full bg-slate-900/90 border border-slate-700 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 outline-none transition"
+                placeholder="Buscar cualquier país, capital..."
+                className="w-full bg-slate-900/95 border border-slate-700 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 outline-none transition"
               />
               {searchQuery && (
                 <button
@@ -112,20 +124,29 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
               )}
             </div>
 
-            {/* Resultados flotantes de búsqueda */}
+            {/* Resultados flotantes de búsqueda (Siempre al frente con z-50) */}
             {searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-cyan-500/40 rounded-xl shadow-2xl z-40 max-h-52 overflow-y-auto divide-y divide-slate-800">
-                {searchResults.map((c) => (
+              <div className="absolute top-full right-0 sm:left-auto mt-1.5 w-[280px] sm:w-[320px] bg-[#0F172A]/98 backdrop-blur-2xl border border-cyan-500/60 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] z-50 max-h-60 overflow-y-auto divide-y divide-slate-800 custom-scrollbar">
+                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cyan-400/80 bg-slate-900/90 border-b border-slate-800 flex justify-between items-center">
+                  <span>{searchResults.length} resultados</span>
+                  <span className="text-slate-500 text-[9px] font-normal">Búsqueda mundial</span>
+                </div>
+                {searchResults.map((c: Country) => (
                   <button
                     key={c.cca3}
                     onClick={() => handleSelectSearchResult(c)}
-                    className="w-full px-3 py-1.5 text-left hover:bg-cyan-500/20 flex items-center justify-between text-xs transition-colors"
+                    className="w-full px-3.5 py-2 text-left hover:bg-cyan-500/20 flex items-center justify-between text-xs transition-colors group"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{c.flagEmoji}</span>
-                      <span className="font-bold text-white">{c.nameEs}</span>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-base shrink-0">{c.flagEmoji}</span>
+                      <div className="truncate">
+                        <span className="font-bold text-white group-hover:text-cyan-200 block truncate">{c.nameEs}</span>
+                        <span className="text-[11px] text-slate-400 group-hover:text-slate-300 block truncate">Cap: {c.capital || 'N/A'}</span>
+                      </div>
                     </div>
-                    <span className="text-slate-400 font-mono text-[10px]">{c.capital}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-cyan-500/30 shrink-0 ml-2">
+                      {c.continentEs || c.continent}
+                    </span>
                   </button>
                 ))}
               </div>
