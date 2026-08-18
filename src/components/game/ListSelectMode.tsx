@@ -392,10 +392,10 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         </div>
       )}
 
-      {/* 2. Bandeja Compacta de Chips de Países */}
-      <div className="bg-slate-900/90 backdrop-blur-md p-2.5 rounded-2xl border border-slate-800 shadow-md space-y-2">
+      {/* 2. Bandeja Compacta de Chips de Países (Optimizada para maximizar el mapa) */}
+      <div className="bg-slate-900/90 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-slate-800 shadow-md space-y-1.5 shrink-0">
         {/* Barra de Filtros y Búsqueda */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-1.5">
           <div className="flex items-center gap-1 overflow-x-auto">
             <button
               onClick={() => setActiveFilter('all')}
@@ -440,20 +440,20 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
           </div>
 
           {/* Campo de Búsqueda */}
-          <div className="relative flex-1 sm:max-w-xs min-w-[140px]">
+          <div className="relative flex-1 sm:max-w-xs min-w-[130px]">
             <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar país..."
-              className="w-full pl-7 pr-2.5 py-1 bg-slate-950/70 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
+              className="w-full pl-7 pr-2.5 py-0.5 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
             />
           </div>
         </div>
 
-        {/* Mosaico de Chips de Países y Territorios */}
-        <div className="max-h-20 sm:max-h-24 overflow-y-auto pr-1 flex flex-wrap gap-1 custom-scrollbar">
+        {/* Mosaico de Chips de Países y Territorios (Reducido para ganar altura para el mapa) */}
+        <div className="max-h-[50px] sm:max-h-[56px] overflow-y-auto pr-1 flex flex-wrap gap-1 custom-scrollbar">
           {filteredCountryItems.map((country) => {
             const cca3 = country.cca3.toUpperCase();
             const item = itemsState[cca3];

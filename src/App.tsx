@@ -187,7 +187,7 @@ export function App() {
 
       {/* Contenido Principal */}
       <main className={`flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col ${
-        isPlaying ? 'px-2 sm:px-3 py-1.5 overflow-hidden' : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-8'
+        isPlaying ? 'px-1 sm:px-2 pt-1 pb-1 overflow-hidden' : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-8'
       }`}>
         {/* PESTAÑA 1: JUGAR */}
         {activeTab === 'game' && (
@@ -363,8 +363,8 @@ export function App() {
         />
       )}
 
-      {/* Pie de Página */}
-      <Footer />
+      {/* Pie de Página (Oculto durante la partida para maximizar el mapa) */}
+      {!isPlaying && <Footer />}
     </div>
   );
 }
