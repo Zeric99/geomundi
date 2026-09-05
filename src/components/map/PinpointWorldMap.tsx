@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { geoOrthographic, geoEqualEarth, geoPath, geoGraticule10, geoDistance } from 'd3-geo';
 import { feature } from 'topojson-client';
-import { Crosshair, Globe, Map as MapIcon, RotateCcw, ZoomIn, ZoomOut, Navigation, CheckCircle2 } from 'lucide-react';
+import { Crosshair, Globe, Map as MapIcon, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import topoData from '../../data/world-110m.json';
 
 interface PinpointWorldMapProps {
@@ -30,9 +30,6 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
   // Modo de visualización: 'globe' (Esfera 3D) o 'flat' (Mapa Plano)
   const [mapMode, setMapMode] = useState<'globe' | 'flat'>('globe');
 
-  // Marcador temporal colocado por el usuario antes de confirmar
-  const [pendingPin, setPendingPin] = useState<[number, number] | null>(clickedCoords);
-
   // Estado de Rotación y Zoom
   const rotationRef = useRef<[number, number]>([0, -15]); // [rotX (lng), rotY (lat)]
   const targetRotationRef = useRef<[number, number]>([0, -15]);
@@ -46,28 +43,22 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
   const totalDragDistRef = useRef<number>(0);
   const [isDraggingState, setIsDraggingState] = useState<boolean>(false);
 
-  // Sincronizar marcador exterior con marcador local
-  useEffect(() => {
-    setPendingPin(clickedCoords);
-  }, [clickedCoords]);
-
   // Centrar cámara suavemente en el objetivo cuando se evalúa la ronda
   useEffect(() => {
     if (isEvaluated && targetCoords) {
-      const activePin = pendingPin || clickedCoords;
-      if (activePin) {
-        // Rotar hacia el punto medio entre la baliza colocada y la ciudad objetivo
-        let midLng = (activePin[0] + targetCoords[0]) / 2;
-        if (Math.abs(activePin[0] - targetCoords[0]) > 180) {
+      if (clickedCoords) {
+        // Rotar hacia el punto medio entre el clic del usuario y la ciudad objetivo
+        let midLng = (clickedCoords[0] + targetCoords[0]) / 2;
+        if (Math.abs(clickedCoords[0] - targetCoords[0]) > 180) {
           midLng = midLng + 180;
         }
-        const midLat = (activePin[1] + targetCoords[1]) / 2;
+        const midLat = (clickedCoords[1] + targetCoords[1]) / 2;
         targetRotationRef.current = [-midLng, -midLat];
       } else {
         targetRotationRef.current = [-targetCoords[0], -targetCoords[1]];
       }
     }
-  }, [isEvaluated, targetCoords, clickedCoords, pendingPin]);
+  }, [isEvaluated, targetCoords, clickedCoords]);
 
   // Controles de Zoom manual
   const handleZoomIn = () => {
@@ -111,8 +102,8 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     }
 
     const sensitivity = 0.35 / zoomScaleRef.current;
-    // Movimiento natural 3D estilo globo terráqueo:
-    // Arrastrar abajo (dy > 0) tira de la bola hacia abajo, mostrando la parte superior (Norte).
+    // Movimiento físico natural del globo:
+    // Arrastrar hacia abajo (dy > 0) desplaza la superficie hacia abajo (viendo el Hemisferio Norte).
     const newRotX = rotationStartRef.current[0] + dx * sensitivity;
     const newRotY = Math.max(-85, Math.min(85, rotationStartRef.current[1] - dy * sensitivity));
 
@@ -167,18 +158,11 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
           if (distAngle > Math.PI / 2 + 0.05) return; // Detrás de la Tierra
         }
 
-        // Colocar o actualizar la marca del usuario
-        setPendingPin([coords[0], coords[1]]);
+        // Ejecutar tiro directo al hacer clic en el mapa / esfera sin confirmación previa
+        onMapClick([coords[0], coords[1]]);
       }
     }
-  }, [isEvaluated, mapMode]);
-
-  // Confirmar la ubicación elegida
-  const handleConfirmLocation = () => {
-    if (pendingPin && !isEvaluated) {
-      onMapClick(pendingPin);
-    }
-  };
+  }, [isEvaluated, mapMode, onMapClick]);
 
   // Bucle de Animación y Renderizado del Canvas 2D
   useEffect(() => {
@@ -298,15 +282,13 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
         return geoDistance(coords, center) < Math.PI / 2 - 0.02;
       };
 
-      const activePin = pendingPin || clickedCoords;
-
       // 4. Línea de Arco Conector entre Clic del Usuario y Destino
-      if (isEvaluated && activePin && targetCoords) {
+      if (isEvaluated && clickedCoords && targetCoords) {
         const arcGeoJson: any = {
           type: 'Feature',
           geometry: {
             type: 'LineString',
-            coordinates: [activePin, targetCoords]
+            coordinates: [clickedCoords, targetCoords]
           }
         };
 
@@ -323,8 +305,8 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       }
 
       // 5. Marcador del Clic del Usuario (Crosshair Táctico)
-      if (activePin && isVisibleOnFront(activePin)) {
-        const pt = projection(activePin);
+      if (clickedCoords && isVisibleOnFront(clickedCoords)) {
+        const pt = projection(clickedCoords);
         if (pt) {
           const [px, py] = pt;
 
@@ -393,7 +375,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
 
     animFrameId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animFrameId);
-  }, [mapMode, isEvaluated, clickedCoords, pendingPin, targetCoords]);
+  }, [mapMode, isEvaluated, clickedCoords, targetCoords]);
 
   return (
     <div
@@ -418,27 +400,11 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
         <span>
           {isEvaluated
             ? 'Resultado evaluado. Haz clic en "Siguiente Ciudad" para continuar.'
-            : pendingPin
-            ? 'Marca colocada. Puedes ajustarla o hacer clic en "Confirmar Puntería".'
             : mapMode === 'globe'
-            ? 'Arrastra para girar el globo 3D y haz clic sobre la ubicación exacta.'
-            : 'Haz clic en el mapa plano donde crees que se sitúa la ciudad.'}
+            ? 'Arrastra para girar el globo 3D y haz clic directo sobre la ubicación exacta.'
+            : 'Haz clic directo en el mapa plano sobre la ciudad.'}
         </span>
       </div>
-
-      {/* Botón Flotante para Confirmar Ubicación */}
-      {pendingPin && !isEvaluated && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 animate-in zoom-in-95 duration-200">
-          <button
-            type="button"
-            onClick={handleConfirmLocation}
-            className="px-6 py-3 bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-zinc-950 font-display font-extrabold text-sm sm:text-base rounded-2xl shadow-[0_0_25px_rgba(6,182,212,0.6)] border border-cyan-300 transition-all transform active:scale-95 flex items-center gap-2"
-          >
-            <CheckCircle2 className="w-5 h-5 text-zinc-950" />
-            <span>🎯 CONFIRMAR PUNTERÍA</span>
-          </button>
-        </div>
-      )}
 
       {/* Selector de Modo (Esfera 3D / Mapa Plano) + Controles de Zoom */}
       <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
