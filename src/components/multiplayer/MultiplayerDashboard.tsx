@@ -94,7 +94,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-200">
       {/* Tarjeta de Rango ELO y Perfil del Jugador con Nivel y XP */}
-      <div className={`p-6 sm:p-8 rounded-3xl border ${playerProfile.rank.border} ${playerProfile.rank.bg} relative overflow-hidden shadow-2xl`}>
+      <div className={`p-6 sm:p-8 rounded-3xl border ${playerProfile.rank.border} bg-[#18181B] ${playerProfile.rank.bg} relative overflow-hidden shadow-2xl`}>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-zinc-900/90 border border-zinc-700/80 flex items-center justify-center text-4xl shadow-md shrink-0">
@@ -192,7 +192,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
                   className={`p-5 rounded-2xl border cursor-pointer transition-all ${
                     selectedDuelMode === mode.id
                       ? `${mode.color} shadow-lg ring-1 ring-cyan-500/40`
-                      : 'bg-[#121214] border-zinc-800/90 hover:border-zinc-700 opacity-80'
+                      : 'bg-[#121214] border-zinc-800 hover:border-zinc-700'
                   }`}
                 >
                   <div className="flex items-start gap-3">

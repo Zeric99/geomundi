@@ -14,7 +14,7 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ onStartD
   const todayRecord = streakState.history[todayDateStr];
 
   return (
-    <div className="bg-gradient-to-r from-indigo-950/70 via-zinc-950/90 to-purple-950/70 backdrop-blur-sm border border-indigo-500/40 rounded-2xl p-5 sm:p-6 shadow-lg relative overflow-hidden group">
+    <div className="bg-gradient-to-r from-indigo-950/90 via-[#18181B] to-purple-950/90 border border-indigo-500/40 rounded-2xl p-5 sm:p-6 shadow-lg relative overflow-hidden group">
       {/* Fondo con destello visual */}
       <div className="absolute -top-12 -right-12 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 

@@ -18,7 +18,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ stats }) => {
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-200">
       {/* CABECERA */}
-      <div className="bg-zinc-950/80 backdrop-blur-sm border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-card-subtle flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-card-subtle flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <div className="p-3.5 bg-amber-500/15 border border-amber-500/30 rounded-xl text-amber-400 shrink-0">
             <Trophy className="w-8 h-8" />
@@ -50,7 +50,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ stats }) => {
       </div>
 
       {/* SELECTOR DE PESTAÑAS */}
-      <div className="flex items-center bg-zinc-950/80 backdrop-blur-sm p-1.5 rounded-xl border border-zinc-800/80 gap-1">
+      <div className="flex items-center bg-[#18181B] p-1.5 rounded-xl border border-zinc-800 gap-1">
         <button
           onClick={() => setActiveTab('daily')}
           className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
@@ -90,7 +90,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ stats }) => {
 
       {/* CONTENIDO PESTAÑA 1: RANKING DIARIO (HOY) */}
       {activeTab === 'daily' && (
-        <div className="bg-zinc-950/80 backdrop-blur-sm border border-zinc-800/80 rounded-2xl p-5 shadow-card-subtle space-y-4">
+        <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-5 shadow-card-subtle space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-mono font-bold text-zinc-200 uppercase tracking-wider">
@@ -160,7 +160,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ stats }) => {
 
       {/* CONTENIDO PESTAÑA 2: RANKING MUNDIAL ACUMULADO */}
       {activeTab === 'global' && (
-        <div className="bg-zinc-950/80 backdrop-blur-sm border border-zinc-800/80 rounded-2xl p-5 shadow-card-subtle space-y-4">
+        <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-5 shadow-card-subtle space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-mono font-bold text-zinc-200 uppercase tracking-wider">
@@ -229,7 +229,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ stats }) => {
 
       {/* CONTENIDO PESTAÑA 3: HISTORIAL & RACHAS */}
       {activeTab === 'history' && (
-        <div className="bg-zinc-950/80 backdrop-blur-sm border border-zinc-800/80 rounded-2xl p-5 shadow-card-subtle space-y-4">
+        <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-5 shadow-card-subtle space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="bg-[#121214] border border-zinc-800 p-3 rounded-xl text-center">
               <span className="text-[10px] font-mono uppercase text-zinc-500 block">Racha Actual</span>
