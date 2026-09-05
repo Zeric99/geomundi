@@ -151,8 +151,8 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
   const markersGroupRef = useRef<THREE.Group | null>(null);
 
   // Rotación y Zoom target (yaw: rotación Y, pitch: inclinación X)
-  const rotationRef = useRef<{ yaw: number; pitch: number }>({ yaw: 0, pitch: -0.2 });
-  const targetRotationRef = useRef<{ yaw: number; pitch: number }>({ yaw: 0, pitch: -0.2 });
+  const rotationRef = useRef<{ yaw: number; pitch: number }>({ yaw: 0, pitch: 0 });
+  const targetRotationRef = useRef<{ yaw: number; pitch: number }>({ yaw: 0, pitch: 0 });
   const zoomScaleRef = useRef<number>(1.0);
   const targetZoomScaleRef = useRef<number>(1.0);
 
@@ -386,7 +386,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       const midLat = (lastPin.clickedCoords[1] + lastPin.targetCoords[1]) / 2;
 
       const rotY = - (midLng + 90) * (Math.PI / 180);
-      const rotX = - midLat * (Math.PI / 180);
+      const rotX = midLat * (Math.PI / 180);
       targetRotationRef.current = { yaw: rotY, pitch: rotX };
     }
 
@@ -402,7 +402,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       const midLat = (clickedCoords[1] + targetCoords[1]) / 2;
 
       const rotY = - (midLng + 90) * (Math.PI / 180);
-      const rotX = - midLat * (Math.PI / 180);
+      const rotX = midLat * (Math.PI / 180);
       targetRotationRef.current = { yaw: rotY, pitch: rotX };
     } else if (clickedCoords && !isEvaluated) {
       // Tiro individual en progreso
@@ -428,7 +428,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
   };
 
   const handleResetView = () => {
-    targetRotationRef.current = { yaw: 0, pitch: -0.2 };
+    targetRotationRef.current = { yaw: 0, pitch: 0 };
     targetZoomScaleRef.current = 1.0;
   };
 
@@ -438,7 +438,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     targetZoomScaleRef.current = Math.max(0.6, Math.min(4.0, targetZoomScaleRef.current * delta));
   };
 
-  // Arrastre físico natural en 3D
+  // Arrastre físico exacto 1:1 de MapTap.gg
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     isPointerDownRef.current = true;
     pointerStartRef.current = { x: e.clientX, y: e.clientY };
@@ -458,11 +458,13 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       setIsDragging(true);
     }
 
-    const sensitivity = 0.005 / zoomScaleRef.current;
+    const sensitivity = 0.0045 / zoomScaleRef.current;
     
-    // Movimiento físico natural:
-    const newYaw = rotationStartRef.current.yaw + dx * sensitivity;
-    const newPitch = Math.max(-1.3, Math.min(1.3, rotationStartRef.current.pitch - dy * sensitivity));
+    // Arrastre 1:1 idéntico a MapTap.gg:
+    // Mover ratón a la derecha (dx > 0) desplaza la superficie bajo el cursor a la derecha.
+    // Mover ratón hacia abajo (dy > 0) desplaza la superficie bajo el cursor hacia abajo.
+    const newYaw = rotationStartRef.current.yaw - dx * sensitivity;
+    const newPitch = Math.max(-1.4, Math.min(1.4, rotationStartRef.current.pitch + dy * sensitivity));
 
     rotationRef.current = { yaw: newYaw, pitch: newPitch };
     targetRotationRef.current = { yaw: newYaw, pitch: newPitch };
