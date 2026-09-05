@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
+import { feature as topoFeature } from 'topojson-client';
+import topoData from '../../data/world-110m.json';
 import { Crosshair, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+
+// Pre-computar masas terrestres a nivel de módulo (una sola vez, sin coste en render)
+const landFeatures: any = topoFeature(topoData as any, (topoData as any).objects.land as any);
 
 export interface PinHistoryItem {
   clickedCoords: [number, number];
@@ -107,34 +112,121 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     dirLight.position.set(5, 3, 5);
     scene.add(dirLight);
 
-    // 5. Textura Satelital NASA (topo + batimetría, 5400x2700)
-    //    offset.x = 0.25 corrige el desfase equirrectangular de Three.js con nuestro sistema lngLatToVector3
-    const textureLoader = new THREE.TextureLoader();
+    // 5. Textura procedurada ultra-realista desde TopoJSON (100% fiable, sin rutas externas)
+    const texCanvas = document.createElement('canvas');
+    texCanvas.width = 4096;
+    texCanvas.height = 2048;
+    const ctx = texCanvas.getContext('2d')!;
+
+    // Océano con gradiente de profundidad realista
+    const oceanGrad = ctx.createLinearGradient(0, 0, 0, 2048);
+    oceanGrad.addColorStop(0,    '#041e3a'); // océano ártico
+    oceanGrad.addColorStop(0.15, '#062d56');
+    oceanGrad.addColorStop(0.35, '#0a3d6b');
+    oceanGrad.addColorStop(0.5,  '#0d4880');
+    oceanGrad.addColorStop(0.65, '#0a3d6b');
+    oceanGrad.addColorStop(0.85, '#062d56');
+    oceanGrad.addColorStop(1,    '#020f1e'); // océano antártico
+    ctx.fillStyle = oceanGrad;
+    ctx.fillRect(0, 0, 4096, 2048);
+
+    // Masas terrestres con biomas realistas
+    if (landFeatures?.features) {
+      const W = 4096, H = 2048;
+
+      (landFeatures.features as any[]).forEach((feat: any) => {
+        const geom = feat.geometry;
+        if (!geom) return;
+
+        const drawRing = (ring: number[][]): void => {
+          if (!ring || ring.length < 3) return;
+          ctx.beginPath();
+          ring.forEach(([lng, lat]: number[], i: number) => {
+            const x = (lng + 180) / 360 * W;
+            const y = (90 - lat) / 180 * H;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          });
+          ctx.closePath();
+        };
+
+        const fillGeom = (polys: any[]): void => {
+          polys.forEach((poly: any) => {
+            const outer: number[][] = Array.isArray(poly[0]?.[0]) ? poly[0] : poly;
+            if (!outer || outer.length < 3) return;
+
+            // Calcular centroide para asignar bioma
+            let sumLat = 0, sumLng = 0;
+            outer.forEach(([lng, lat]: number[]) => { sumLng += lng; sumLat += lat; });
+            const avgLat = sumLat / outer.length;
+            const avgLng = sumLng / outer.length;
+            const absLat = Math.abs(avgLat);
+
+            let color: string;
+            if (absLat > 67) {
+              color = '#dde8f0'; // tundra / hielo polar
+            } else if (absLat > 55) {
+              color = '#6b8f6e'; // taiga boreal
+            } else if (avgLat > 20 && avgLat < 38 && avgLng > -18 && avgLng < 60) {
+              color = '#c8a855'; // Sahara / Oriente Medio
+            } else if (avgLat > 15 && avgLat < 38 && avgLng > 60 && avgLng < 110) {
+              color = '#b89a50'; // Gobi / Asia central árida
+            } else if (avgLat > -35 && avgLat < -18 && avgLng > 110 && avgLng < 155) {
+              color = '#c27a45'; // Outback australiano
+            } else if (avgLat > -25 && avgLat < 25 && avgLng > -85 && avgLng < -34) {
+              color = '#1a5c25'; // Amazonía tropical
+            } else if (avgLat > -10 && avgLat < 10 && avgLng > 8 && avgLng < 35) {
+              color = '#1d6328'; // Congo
+            } else if (absLat < 15) {
+              color = '#226b2e'; // Trópicos / selva
+            } else if (absLat >= 15 && absLat < 30) {
+              color = '#7a9e5a'; // sabana / subtropical
+            } else if (absLat >= 30 && absLat < 55) {
+              color = '#4a7a42'; // templado
+            } else {
+              color = '#5a8a50'; // genérico
+            }
+
+            ctx.fillStyle = color;
+            drawRing(outer);
+            ctx.fill();
+
+            // Borde costero sutil
+            ctx.strokeStyle = 'rgba(20, 80, 120, 0.35)';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+          });
+        };
+
+        if (geom.type === 'Polygon') fillGeom([geom.coordinates]);
+        else if (geom.type === 'MultiPolygon') fillGeom(geom.coordinates);
+      });
+    }
+
+    // Casquetes polares
+    const northIce = ctx.createLinearGradient(0, 0, 0, 200);
+    northIce.addColorStop(0, '#f0f4f8');
+    northIce.addColorStop(1, 'rgba(240,244,248,0)');
+    ctx.fillStyle = northIce;
+    ctx.fillRect(0, 0, 4096, 200);
+
+    const southIce = ctx.createLinearGradient(0, 1850, 0, 2048);
+    southIce.addColorStop(0, 'rgba(240,244,248,0)');
+    southIce.addColorStop(1, '#f0f4f8');
+    ctx.fillStyle = southIce;
+    ctx.fillRect(0, 1850, 4096, 198);
+
+    const earthTexture = new THREE.CanvasTexture(texCanvas);
+    earthTexture.colorSpace = THREE.SRGBColorSpace;
+
     const sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
     const sphereMaterial = new THREE.MeshStandardMaterial({
-      roughness: 0.7,
-      metalness: 0.1
+      map: earthTexture,
+      roughness: 0.75,
+      metalness: 0.05
     });
     const earthMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
     earthMeshRef.current = earthMesh;
     scene.add(earthMesh);
-
-    textureLoader.load(
-      '/earth_texture.jpg',
-      (earthTexture) => {
-        earthTexture.colorSpace = THREE.SRGBColorSpace;
-        earthTexture.wrapS = THREE.RepeatWrapping;
-        earthTexture.offset.x = 0.25; // Alinea lng=0 (Meridiano Greenwich) correctamente
-        sphereMaterial.map = earthTexture;
-        sphereMaterial.needsUpdate = true;
-      },
-      undefined,
-      (err) => {
-        console.warn('NASA texture failed to load, using fallback color:', err);
-        sphereMaterial.color.set(0x1a5276);
-        sphereMaterial.needsUpdate = true;
-      }
-    );
 
     // 7. Resplandor atmosférico
     const atmosGeometry = new THREE.SphereGeometry(1.03, 64, 64);
