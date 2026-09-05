@@ -32,6 +32,7 @@ import { GameConfig, GameSummary } from './types/game';
 import { TutorAdvice } from './types/stats';
 import { Achievement } from './types/achievements';
 import { CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile } from './types/multiplayer';
+import { DailyArchiveModal } from './components/daily/DailyArchiveModal';
 import { GEEK_TERRITORIES } from './data/fallbackCountries';
 import { achievementService } from './services/achievementService';
 import { dailyChallengeService, DailyStageQuestion } from './services/dailyChallengeService';
@@ -49,7 +50,9 @@ export function App() {
   const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState<boolean>(false);
   const [isDonateModalOpen, setIsDonateModalOpen] = useState<boolean>(false);
   const [isDailyChallengeActive, setIsDailyChallengeActive] = useState<boolean>(false);
+  const [isDailyArchiveOpen, setIsDailyArchiveOpen] = useState<boolean>(false);
   const [activeDailyQuestions, setActiveDailyQuestions] = useState<DailyStageQuestion[]>([]);
+  const [activeDailyDateStr, setActiveDailyDateStr] = useState<string>('');
 
   // Estado del Modo Multijugador y Ranked ELO
   const [playerProfile, setPlayerProfile] = useState<PlayerProfile>(() => multiplayerService.getPlayerProfile());
@@ -158,21 +161,23 @@ export function App() {
   }, [getFocusedPracticeCountries, startGame]);
 
   // Iniciar Desafío Diario
-  const handleStartDailyChallenge = useCallback(() => {
+  const handleStartDailyChallenge = useCallback((dateStr?: string) => {
     if (countries.length === 0) return;
-    const dailyQuestions = dailyChallengeService.generateDailyQuestions(countries);
+    const dailyQuestions = dailyChallengeService.generateDailyQuestions(countries, dateStr);
     setActiveDailyQuestions(dailyQuestions);
+    setActiveDailyDateStr(dateStr || '');
     setIsDailyChallengeActive(true);
     setActiveTab('singleplayer');
   }, [countries]);
 
   // Finalizar Desafío Diario y mostrar leaderboard
   const handleFinishDailyChallenge = useCallback((score: number, accuracy: number, durationSeconds: number) => {
-    dailyChallengeService.recordDailyCompletion(score, accuracy, durationSeconds);
+    dailyChallengeService.recordDailyCompletion(score, accuracy, durationSeconds, activeDailyDateStr || undefined);
     setIsDailyChallengeActive(false);
     setActiveDailyQuestions([]);
+    setActiveDailyDateStr('');
     setActiveTab('leaderboard');
-  }, []);
+  }, [activeDailyDateStr]);
 
   // Detectar Reto recibido por URL (?challenge=...)
   useEffect(() => {
@@ -379,6 +384,7 @@ export function App() {
                 onStartFocusedPractice={() => handleStartFocusedPractice()}
                 onGoToTutor={() => setActiveTab('tutor')}
                 onStartDaily={handleStartDailyChallenge}
+                onOpenDailyArchive={() => setIsDailyArchiveOpen(true)}
               />
             ) : (
               <div className="h-full flex flex-col min-h-0 overflow-hidden space-y-1.5">
@@ -497,6 +503,7 @@ export function App() {
                 {config.mode === 'city-pinpoint' && (
                   <CityPinpointMode
                     continent={config.continent}
+                    themeCategory={config.cityTheme || 'all'}
                     onFinishGame={handleGameComplete}
                     onReturnToMenu={quitGame}
                   />
@@ -626,6 +633,16 @@ export function App() {
       <DonateModal
         isOpen={isDonateModalOpen}
         onClose={() => setIsDonateModalOpen(false)}
+      />
+
+      {/* Modal de Calendario de Desafíos Diarios Anteriores */}
+      <DailyArchiveModal
+        isOpen={isDailyArchiveOpen}
+        onClose={() => setIsDailyArchiveOpen(false)}
+        onSelectDateToPlay={(dateStr) => {
+          setIsDailyArchiveOpen(false);
+          handleStartDailyChallenge(dateStr);
+        }}
       />
 
       {/* Pie de Página */}

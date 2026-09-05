@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Swords, Trophy, Crown, Flame, Target, Flag, Landmark, Users, Sparkles, ArrowRight, Clock, Globe, Shield, Key } from 'lucide-react';
-import { CustomRoomConfig, DuelMode, MultiplayerType, PlayerProfile } from '../../types/multiplayer';
+import { CustomRoomConfig, DuelMode, DuelState, MultiplayerType, PlayerProfile } from '../../types/multiplayer';
 import { multiplayerService } from '../../services/multiplayerService';
 import { Continent } from '../../types/country';
 
@@ -13,8 +13,9 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
   playerProfile,
   onStartDuel
 }) => {
-  const [activeTab, setActiveTab] = useState<'ranked' | 'custom'>('ranked');
+  const [activeTab, setActiveTab] = useState<'ranked' | 'custom' | 'history'>('ranked');
   const [selectedDuelMode, setSelectedDuelMode] = useState<DuelMode>('pinpoint');
+  const [duelHistory] = useState<DuelState[]>(() => multiplayerService.getDuelHistory());
 
   // Estado para la creación de sala personalizada
   const [customMode, setCustomMode] = useState<DuelMode>('pinpoint');
@@ -133,7 +134,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
       </div>
 
       {/* Navegación de Pestañas Simplificada */}
-      <div className="flex items-center gap-2 border-b border-zinc-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-zinc-800 pb-2 flex-wrap">
         <button
           onClick={() => setActiveTab('ranked')}
           className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all flex items-center gap-2 ${
@@ -156,6 +157,18 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
         >
           <Users className="w-4 h-4 text-indigo-400" />
           <span>🏠 Salas Personalizadas (Custom Rooms)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all flex items-center gap-2 ${
+            activeTab === 'history'
+              ? 'bg-cyan-950/40 text-cyan-300 border border-cyan-800/60 shadow-sm'
+              : 'text-zinc-400 hover:bg-zinc-900'
+          }`}
+        >
+          <Clock className="w-4 h-4 text-cyan-400" />
+          <span>📜 Historial de Duelos</span>
         </button>
       </div>
 
@@ -330,6 +343,72 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
+        </div>
+      )}
+
+      {/* PESTAÑA 3: HISTORIAL DE DUELOS RECIENTES */}
+      {activeTab === 'history' && (
+        <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-6 space-y-4">
+          <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-cyan-400" />
+            <span>Últimos Duelos Jugados</span>
+          </h3>
+
+          {duelHistory.length === 0 ? (
+            <div className="p-8 text-center border border-dashed border-zinc-800 rounded-xl space-y-2">
+              <p className="text-sm text-zinc-400">Todavía no has jugado partidas clasificatorias o salas en esta sesión.</p>
+              <p className="text-xs text-zinc-500">¡Juega una partida Ranked para ver tu progreso aquí!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {duelHistory.map((duel, idx) => {
+                const isWinner = duel.winner === 'player';
+                const isTie = duel.winner === 'tie';
+                return (
+                  <div
+                    key={duel.id || idx}
+                    className="bg-zinc-900/80 border border-zinc-800 p-4 rounded-xl flex items-center justify-between gap-4 flex-wrap hover:border-zinc-700 transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl shrink-0">
+                        {duel.rival?.avatar || '👤'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-zinc-100">VS {duel.rival?.name || 'Rival'}</span>
+                          <span className="text-[10px] font-mono text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded uppercase">
+                            {duel.duelMode === 'pinpoint' ? '🎯 Puntería' : duel.duelMode === 'flags' ? '🚩 Banderas' : duel.duelMode === 'capitals' ? '🏛️ Capitales' : '🗺️ Países'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 font-mono mt-0.5">
+                          Tú: <strong className="text-emerald-400">{duel.playerScore} pts</strong> · Rival: <strong className="text-amber-400">{duel.rivalScore} pts</strong>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="text-right">
+                        <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded border inline-block ${
+                          isWinner
+                            ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+                            : isTie
+                            ? 'bg-amber-950/80 text-amber-300 border-amber-700/60'
+                            : 'bg-rose-950/80 text-rose-300 border-rose-700/60'
+                        }`}>
+                          {isWinner ? '¡Victoria!' : isTie ? 'Empate' : 'Derrota'}
+                        </span>
+                        {duel.eloChange !== 0 && (
+                          <span className={`block text-xs font-mono font-bold mt-1 ${duel.eloChange > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {duel.eloChange > 0 ? `+${duel.eloChange}` : duel.eloChange} ELO
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

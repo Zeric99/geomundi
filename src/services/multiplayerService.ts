@@ -1,8 +1,9 @@
 import { Country } from '../types/country';
 import { QuestionType } from '../types/game';
-import { DuelMode, DuelQuestion, PlayerProfile, PlayerRoundResult, RankInfo, RankTier } from '../types/multiplayer';
+import { DuelMode, DuelQuestion, DuelState, PlayerProfile, PlayerRoundResult, RankInfo, RankTier } from '../types/multiplayer';
 
 const MULTIPLAYER_PROFILE_KEY = 'GEOMUNDI_MULTIPLAYER_PROFILE_V1';
+const MULTIPLAYER_HISTORY_KEY = 'GEOMUNDI_MULTIPLAYER_HISTORY_V1';
 
 export const RANKS: Record<RankTier, RankInfo> = {
   bronce: {
@@ -218,6 +219,28 @@ export class MultiplayerService {
         points
       };
     });
+  }
+
+  /**
+   * Obtiene el historial de duelos recientes (últimas 10 partidas)
+   */
+  getDuelHistory(): DuelState[] {
+    try {
+      const stored = localStorage.getItem(MULTIPLAYER_HISTORY_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return [];
+  }
+
+  /**
+   * Guarda un duelo finalizado en el historial local
+   */
+  saveDuelToHistory(duel: DuelState): void {
+    try {
+      const history = this.getDuelHistory();
+      const updated = [duel, ...history].slice(0, 10);
+      localStorage.setItem(MULTIPLAYER_HISTORY_KEY, JSON.stringify(updated));
+    } catch (e) {}
   }
 
   /**

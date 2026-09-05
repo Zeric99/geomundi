@@ -4,16 +4,17 @@ import { dailyChallengeService } from '../../services/dailyChallengeService';
 
 interface DailyChallengeCardProps {
   onStartDaily: () => void;
+  onOpenArchive?: () => void;
 }
 
-export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ onStartDaily }) => {
+export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ onStartDaily, onOpenArchive }) => {
   const isCompleted = dailyChallengeService.isTodayCompleted();
   const streakState = dailyChallengeService.getStreakState();
   const todayDateStr = dailyChallengeService.getTodayDateString();
   const todayRecord = streakState.history[todayDateStr];
 
   return (
-    <div className="bg-gradient-to-r from-indigo-950/80 via-[#18181B] to-purple-950/80 border border-indigo-500/40 rounded-2xl p-5 sm:p-6 shadow-lg relative overflow-hidden group">
+    <div className="bg-gradient-to-r from-indigo-950/70 via-zinc-950/90 to-purple-950/70 backdrop-blur-sm border border-indigo-500/40 rounded-2xl p-5 sm:p-6 shadow-lg relative overflow-hidden group">
       {/* Fondo con destello visual */}
       <div className="absolute -top-12 -right-12 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -41,12 +42,22 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ onStartD
               Desafío Mundial del Día
             </h3>
             <p className="text-xs sm:text-sm text-zinc-400 mt-0.5 max-w-lg font-sans">
-              10 países aleatorios iguales para todo el mundo. ¡Pon a prueba tu geografía hoy!
+              Desafío oficial del día. ¡Pon a prueba tu geografía o recupera días pasados!
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {onOpenArchive && (
+            <button
+              onClick={onOpenArchive}
+              className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-xs border border-zinc-700 transition flex items-center gap-1.5"
+            >
+              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+              <span>📅 Calendario Archivo</span>
+            </button>
+          )}
+
           {isCompleted ? (
             <div className="flex items-center gap-3 bg-emerald-950/50 border border-emerald-500/40 px-4 py-2.5 rounded-xl">
               <CheckCircle2 className="w-5 h-5 text-emerald-400" />

@@ -171,20 +171,21 @@ export class DailyChallengeService {
   }
 
   /**
-   * Registra el resultado del reto diario de hoy y actualiza racha
+   * Registra el resultado del reto diario para la fecha dada (hoy o día pasado)
    */
-  recordDailyCompletion(score: number, accuracy: number, durationSeconds: number): DailyStreakState {
+  recordDailyCompletion(score: number, accuracy: number, durationSeconds: number, targetDateStr: string = this.getTodayDateString()): DailyStreakState {
     const state = this.getStreakState();
     const today = this.getTodayDateString();
+    const activeDate = targetDateStr || today;
 
     const yesterdayDate = new Date();
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
     const yesterdayStr = `${yesterdayDate.getFullYear()}-${String(yesterdayDate.getMonth() + 1).padStart(2, '0')}-${String(yesterdayDate.getDate()).padStart(2, '0')}`;
 
     let newStreak = state.currentStreak;
-    if (state.lastCompletedDate === yesterdayStr) {
+    if (state.lastCompletedDate === yesterdayStr && activeDate === today) {
       newStreak += 1;
-    } else if (state.lastCompletedDate !== today) {
+    } else if (state.lastCompletedDate !== today && activeDate === today) {
       newStreak = 1;
     }
 
@@ -193,11 +194,11 @@ export class DailyChallengeService {
     const updatedState: DailyStreakState = {
       currentStreak: newStreak,
       bestStreak: newBestStreak,
-      lastCompletedDate: today,
+      lastCompletedDate: activeDate === today ? today : (state.lastCompletedDate || today),
       history: {
         ...state.history,
-        [today]: {
-          dateStr: today,
+        [activeDate]: {
+          dateStr: activeDate,
           completed: true,
           score,
           accuracy,

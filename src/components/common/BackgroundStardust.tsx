@@ -8,6 +8,7 @@ interface Particle {
   radius: number;
   baseOpacity: number;
   pulseSpeed: number;
+  glow: number;
 }
 
 export const BackgroundStardust: React.FC = () => {
@@ -24,15 +25,16 @@ export const BackgroundStardust: React.FC = () => {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    // 120 partículas de polvo estelar distribuidas por TODA la pantalla
-    const particles: Particle[] = Array.from({ length: 130 }, () => ({
+    // 170 partículas de polvo estelar distribuidas por toda la pantalla
+    const particles: Particle[] = Array.from({ length: 170 }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.25, // Velocidad de deriva visible y suave
-      vy: (Math.random() - 0.5) * 0.25,
-      radius: Math.random() * 1.8 + 0.8, // Radio claro y visible
-      baseOpacity: Math.random() * 0.5 + 0.25, // Opacidad limpia y visible
-      pulseSpeed: Math.random() * 0.003 + 0.001
+      vx: (Math.random() - 0.5) * 0.35, // Velocidad de deriva claramente visible pero suave
+      vy: (Math.random() - 0.5) * 0.35,
+      radius: Math.random() * 2.2 + 0.9, // Tamaño visible y nítido
+      baseOpacity: Math.random() * 0.5 + 0.35, // Brillo suficiente para destacar sobre negro puro
+      pulseSpeed: Math.random() * 0.003 + 0.0015,
+      glow: Math.random() * 4 + 2
     }));
 
     let lastTime = performance.now();
@@ -52,24 +54,23 @@ export const BackgroundStardust: React.FC = () => {
       ctx.clearRect(0, 0, width, height);
 
       particles.forEach((p) => {
-        // Movimiento continuo suave
         p.x += p.vx * (delta / 16);
         p.y += p.vy * (delta / 16);
 
-        // Reaparición fluida en los extremos opuestos de la pantalla
+        // Reaparición fluida si sale de los límites de la ventana
         if (p.x < -10) p.x = width + 10;
         if (p.x > width + 10) p.x = -10;
         if (p.y < -10) p.y = height + 10;
         if (p.y > height + 10) p.y = -10;
 
         const pulse = Math.sin(time * p.pulseSpeed) * 0.2;
-        const opacity = Math.max(0.1, Math.min(0.85, p.baseOpacity + pulse));
+        const opacity = Math.max(0.15, Math.min(0.9, p.baseOpacity + pulse));
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255, 255, 255, ${opacity.toFixed(3)})`;
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
-        ctx.shadowBlur = 4;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.7)';
+        ctx.shadowBlur = p.glow;
         ctx.fill();
         ctx.shadowBlur = 0;
       });
@@ -101,7 +102,7 @@ export const BackgroundStardust: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0 select-none opacity-90"
+      className="fixed inset-0 pointer-events-none z-[1] select-none"
     />
   );
 };

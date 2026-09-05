@@ -1,4 +1,5 @@
 import { Continent, Country } from './country';
+import { CityThemeCategory } from '../data/citiesData';
 
 export type GameMode = 'click-find' | 'input-write' | 'match-cards' | 'trivia-curiosities' | 'list-select' | 'explore' | 'flag-skip-chain' | 'city-pinpoint';
 
@@ -46,6 +47,7 @@ export interface GameConfig {
   focusedPracticeCodes?: string[]; // If playing a targeted session on blind spots
   isAllCountriesMarathon?: boolean;
   isGeekMode?: boolean;         // Si incluye más de 40 territorios especiales y estados de facto
+  cityTheme?: CityThemeCategory;
 }
 
 export interface Question {

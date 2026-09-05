@@ -34,6 +34,7 @@ interface GameFiltersProps {
   onStartFocusedPractice: () => void;
   onGoToTutor: () => void;
   onStartDaily: () => void;
+  onOpenDailyArchive?: () => void;
 }
 
 export const GameFilters: React.FC<GameFiltersProps> = ({
@@ -43,7 +44,8 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   blindSpots,
   onStartFocusedPractice,
   onGoToTutor,
-  onStartDaily
+  onStartDaily,
+  onOpenDailyArchive
 }) => {
   // Modal de configuración del modo seleccionado
   const [activeConfigMode, setActiveConfigMode] = useState<GameMode | null>(null);
@@ -74,7 +76,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       title: '🎯 Puntería Geográfica (MapTap)',
       desc: 'Te damos una ciudad y debes hacer clic lo más cerca posible para ganar hasta 1,000 pts.',
       bgEmoji: '🎯',
-      cardGradient: 'from-cyan-950/50 via-[#18181B] to-[#18181B]',
+      cardGradient: 'from-cyan-950/50 via-zinc-950/80 to-black/90 backdrop-blur-sm',
       borderColor: 'border-cyan-700/60',
       hoverBorder: 'hover:border-cyan-400',
       tagStyle: 'bg-cyan-950/80 text-cyan-300 border-cyan-700/60',
@@ -86,7 +88,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       title: 'Modo Clásico: Adivinar Países',
       desc: 'Elige un país de la lista superior y encuéntralo en el mapa.',
       bgEmoji: '🗺️',
-      cardGradient: 'from-emerald-950/40 via-[#18181B] to-[#18181B]',
+      cardGradient: 'from-emerald-950/40 via-zinc-950/80 to-black/90 backdrop-blur-sm',
       borderColor: 'border-emerald-800/50',
       hoverBorder: 'hover:border-emerald-500/70',
       tagStyle: 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60',
@@ -98,7 +100,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       title: 'Adivina la Bandera',
       desc: 'Descubre a qué país pertenece cada bandera en el mapa.',
       bgEmoji: '🚩',
-      cardGradient: 'from-rose-950/40 via-[#18181B] to-[#18181B]',
+      cardGradient: 'from-rose-950/40 via-zinc-950/80 to-black/90 backdrop-blur-sm',
       borderColor: 'border-rose-800/50',
       hoverBorder: 'hover:border-rose-500/70',
       tagStyle: 'bg-rose-950/80 text-rose-300 border-rose-700/60',
@@ -110,7 +112,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       title: 'Localiza en el Mapa',
       desc: 'Te damos un país, bandera o capital para ubicarlo en el mapa.',
       bgEmoji: '📍',
-      cardGradient: 'from-indigo-950/40 via-[#18181B] to-[#18181B]',
+      cardGradient: 'from-indigo-950/40 via-zinc-950/80 to-black/90 backdrop-blur-sm',
       borderColor: 'border-indigo-800/50',
       hoverBorder: 'hover:border-indigo-500/70',
       tagStyle: 'bg-indigo-950/80 text-indigo-300 border-indigo-700/60',
@@ -122,7 +124,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       title: 'Escribir Países',
       desc: 'El mapa ilumina un país y escribes su nombre con teclado.',
       bgEmoji: '⌨️',
-      cardGradient: 'from-teal-950/40 via-[#18181B] to-[#18181B]',
+      cardGradient: 'from-teal-950/40 via-zinc-950/80 to-black/90 backdrop-blur-sm',
       borderColor: 'border-teal-800/50',
       hoverBorder: 'hover:border-teal-500/70',
       tagStyle: 'bg-teal-950/80 text-teal-300 border-teal-700/60',
@@ -134,7 +136,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       title: 'Trivia y Curiosidades',
       desc: 'Preguntas de récords mundiales y geografía sobre el mapa.',
       bgEmoji: '🏆',
-      cardGradient: 'from-amber-950/40 via-[#18181B] to-[#18181B]',
+      cardGradient: 'from-amber-950/40 via-zinc-950/80 to-black/90 backdrop-blur-sm',
       borderColor: 'border-amber-800/50',
       hoverBorder: 'hover:border-amber-500/70',
       tagStyle: 'bg-amber-950/80 text-amber-300 border-amber-700/60',
@@ -146,7 +148,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       title: 'Modo Explorador',
       desc: 'Navegación libre: consulta datos, banderas y fronteras.',
       bgEmoji: '🧭',
-      cardGradient: 'from-sky-950/40 via-[#18181B] to-[#18181B]',
+      cardGradient: 'from-sky-950/40 via-zinc-950/80 to-black/90 backdrop-blur-sm',
       borderColor: 'border-sky-800/50',
       hoverBorder: 'hover:border-sky-500/70',
       tagStyle: 'bg-sky-950/80 text-sky-300 border-sky-700/60',
@@ -186,7 +188,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     <div className="relative w-full max-w-6xl mx-auto space-y-6 overflow-visible">
       {/* Tarjeta Destacada: Desafío Diario */}
       <div className="relative z-10">
-        <DailyChallengeCard onStartDaily={onStartDaily} />
+        <DailyChallengeCard onStartDaily={onStartDaily} onOpenArchive={onOpenDailyArchive} />
       </div>
 
       {/* Título de Selección de Modalidades */}
@@ -227,7 +229,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
             {/* Botón Inferior: Configurar y Jugar */}
             <div className="relative z-10 pt-3.5 mt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs font-sans font-medium text-zinc-300 group-hover:text-white">
-              <span>Configurar y Jugar</span>
+              <span>{m.id === 'city-pinpoint' ? '¡Jugar Ahora!' : 'Configurar y Jugar'}</span>
               <div className={`p-1.5 rounded-lg bg-zinc-800 transition-all ${m.btnHover}`}>
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>
@@ -388,6 +390,42 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                         >
                           <div className="text-xs font-bold truncate">{item.label}</div>
                           <div className="text-[10px] opacity-70 truncate">{item.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* OPCIÓN: PACK TEMÁTICO DE CIUDADES (City Pinpoint) */}
+              {activeConfigMode === 'city-pinpoint' && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2.5">
+                    2. Pack Temático de Ciudades (Opcional)
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {[
+                      { id: 'all', label: '🌐 Mundo Entero', desc: 'Normal (Todas las ciudades)' },
+                      { id: 'megacities', label: '🏙️ Megaciudades', desc: '> 5M habitantes' },
+                      { id: 'historic', label: '🏛️ Históricas', desc: 'Atenas, Roma, Cuzco...' },
+                      { id: 'islands_coastal', label: '🏝️ Islas & Costas', desc: 'Destinos turísticos' },
+                      { id: 'usa', label: '🇺🇸 Solo EE. UU.', desc: 'Ciudades de EE. UU.' },
+                      { id: 'europe', label: '🏰 Solo Europa', desc: 'Ciudades europeas' },
+                    ].map((item) => {
+                      const isSelected = (config.cityTheme || 'all') === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => onChangeConfig({ cityTheme: item.id as any })}
+                          className={`p-3 rounded-xl border text-left transition-all ${
+                            isSelected
+                              ? 'bg-cyan-600 text-white border-cyan-500 font-bold shadow-sm'
+                              : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
+                          }`}
+                        >
+                          <div className="text-xs font-bold">{item.label}</div>
+                          <div className="text-[10px] opacity-75 mt-0.5">{item.desc}</div>
                         </button>
                       );
                     })}

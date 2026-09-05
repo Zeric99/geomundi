@@ -1,25 +1,28 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Target, MapPin, Award, Compass, ArrowRight, RotateCcw, Sparkles, Trophy, Globe, Info, Zap, Navigation } from 'lucide-react';
+import { Target, MapPin, Award, Compass, ArrowRight, RotateCcw, Sparkles, Trophy, Globe, Info, Zap, Navigation, Share2, Check, Layers } from 'lucide-react';
 import { Continent } from '../../types/country';
 import { CityTarget, PinpointResult, GameSummary } from '../../types/game';
-import { getRandomCities } from '../../data/citiesData';
+import { getRandomCities, CityThemeCategory } from '../../data/citiesData';
 import { calculateHaversineDistance, calculatePinpointScore, checkCountryAndContinentMatch } from '../../utils/haversineScoring';
 import { PinpointWorldMap } from '../map/PinpointWorldMap';
+import { generateShareText, copyToClipboard } from '../../utils/shareUtils';
 import confetti from 'canvas-confetti';
 
 interface CityPinpointModeProps {
   continent?: Continent;
+  themeCategory?: CityThemeCategory;
   onFinishGame?: (summary: GameSummary) => void;
   onReturnToMenu?: () => void;
 }
 
 export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
   continent = 'World',
+  themeCategory = 'all',
   onFinishGame,
   onReturnToMenu
 }) => {
   // Inicializar conjunto de 5 ciudades para la partida
-  const [citiesList, setCitiesList] = useState<CityTarget[]>(() => getRandomCities(5, continent));
+  const [citiesList, setCitiesList] = useState<CityTarget[]>(() => getRandomCities(5, continent, themeCategory));
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   
   const [clickedCoords, setClickedCoords] = useState<[number, number] | null>(null);
@@ -28,12 +31,13 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
   const [resultsHistory, setResultsHistory] = useState<PinpointResult[]>([]);
   const [totalScore, setTotalScore] = useState<number>(0);
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
+  const [copiedShare, setCopiedShare] = useState<boolean>(false);
 
   const currentCity = citiesList[currentIndex];
 
   // Reiniciar partida
   const handleRestartGame = useCallback(() => {
-    const newCities = getRandomCities(5, continent);
+    const newCities = getRandomCities(5, continent, themeCategory);
     setCitiesList(newCities);
     setCurrentIndex(0);
     setClickedCoords(null);
@@ -42,7 +46,8 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
     setResultsHistory([]);
     setTotalScore(0);
     setIsGameOver(false);
-  }, [continent]);
+    setCopiedShare(false);
+  }, [continent, themeCategory]);
 
   // Manejar el clic en el mapa
   const handleMapClick = useCallback((coords: [number, number]) => {
@@ -106,6 +111,23 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
       setIsGameOver(true);
     }
   }, [currentIndex, currentResult, resultsHistory, citiesList.length]);
+
+  const handleShareScore = async () => {
+    const totalDist = resultsHistory.reduce((acc, r) => acc + r.distanceKm, 0);
+    const text = generateShareText({
+      score: totalScore,
+      maxScore: citiesList.length * 1000,
+      gameTitle: 'Puntería Geográfica',
+      results: resultsHistory,
+      totalDistanceKm: totalDist
+    });
+
+    const success = await copyToClipboard(text);
+    if (success) {
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2500);
+    }
+  };
 
   // Renderizar la pantalla de fin de partida (Game Over Summary)
   if (isGameOver) {
@@ -178,10 +200,22 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
             </div>
           </div>
 
-          {/* Acciones */}
+          {/* Acciones con Botón de Compartir Emojis */}
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <button
-              onClick={handleRestartGame}
+              onClick={handleShareScore}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 border ${
+                copiedShare
+                  ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
+                  : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200'
+              }`}
+            >
+              {copiedShare ? <Check className="w-5 h-5 text-emerald-400" /> : <Share2 className="w-5 h-5 text-cyan-400" />}
+              <span>{copiedShare ? '¡Puntuación Copiada!' : '📋 Compartir Resultado'}</span>
+            </button>
+
+            <button
+              onClick={() => handleRestartGame()}
               className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-semibold rounded-xl shadow-lg transition-all active:scale-95 flex items-center gap-2"
             >
               <RotateCcw className="w-5 h-5" />
@@ -233,14 +267,16 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
         </div>
 
         {/* Puntuación Acumulada */}
-        <div className="flex items-center gap-3 bg-zinc-900/90 border border-zinc-800 px-4 py-2.5 rounded-xl shadow-inner">
-          <Award className="w-5 h-5 text-amber-400" />
-          <div>
-            <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
-              Puntos Acumulados
-            </div>
-            <div className="text-xl font-bold text-amber-300 font-mono">
-              {totalScore.toLocaleString()} <span className="text-xs text-zinc-500 font-normal">pts</span>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-3 bg-zinc-900/90 border border-zinc-800 px-4 py-2 rounded-xl shadow-inner">
+            <Award className="w-5 h-5 text-amber-400" />
+            <div>
+              <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
+                Puntos Acumulados
+              </div>
+              <div className="text-xl font-bold text-amber-300 font-mono">
+                {totalScore.toLocaleString()} <span className="text-xs text-zinc-500 font-normal">pts</span>
+              </div>
             </div>
           </div>
         </div>
