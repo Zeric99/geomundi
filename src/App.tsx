@@ -22,6 +22,7 @@ import { Duel1v1Mode } from './components/multiplayer/Duel1v1Mode';
 import { DuelResultModal } from './components/multiplayer/DuelResultModal';
 import { GameOverModal } from './components/game/GameOverModal';
 import { FlagModal } from './components/common/FlagModal';
+import { WireframeGlobe } from './components/common/WireframeGlobe';
 import { useCountriesData } from './hooks/useCountriesData';
 import { useStatsManager } from './hooks/useStatsManager';
 import { useGameState } from './hooks/useGameState';
@@ -314,9 +315,16 @@ export function App() {
     : null;
 
   return (
-    <div className={`flex flex-col bg-black text-slate-100 selection:bg-cyan-500 selection:text-slate-950 ${
+    <div className={`relative flex flex-col bg-black text-slate-100 selection:bg-cyan-500 selection:text-slate-950 ${
       isPlaying ? 'h-screen max-h-screen overflow-hidden' : 'min-h-screen'
     }`}>
+      {/* Globo Terráqueo 3D Wireframe en el Lateral Derecho (Fondo Global) */}
+      {!isPlaying && (
+        <div className="fixed -top-12 -right-36 sm:-right-28 md:-right-20 lg:-right-10 pointer-events-none z-0 opacity-90 overflow-visible select-none">
+          <WireframeGlobe size={680} />
+        </div>
+      )}
+
       {/* Barra de Navegación */}
       <Navbar
         activeTab={activeTab}
