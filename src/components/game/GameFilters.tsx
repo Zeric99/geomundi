@@ -17,13 +17,10 @@ import {
   X,
   ArrowRight,
   SlidersHorizontal,
-  CheckCircle2
-} from 'lucide-react';
+  } from 'lucide-react';
 import { Continent } from '../../types/country';
 import { GameConfig, GameMode, QuestionType } from '../../types/game';
 import { BlindSpotItem } from '../../types/stats';
-import { WireframeGlobe } from '../common/WireframeGlobe';
-
 import { DailyChallengeCard } from '../daily/DailyChallengeCard';
 
 interface GameFiltersProps {
