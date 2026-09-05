@@ -12,8 +12,10 @@ import { CountryExplorer } from './components/explore/CountryExplorer';
 import { TutorDashboard } from './components/tutor/TutorDashboard';
 import { LeaderboardView } from './components/leaderboard/LeaderboardView';
 import { AchievementToast } from './components/achievements/AchievementToast';
-import { AchievementsModal } from './components/achievements/AchievementsModal';
-import { DonateModal } from './components/common/DonateModal';
+import { MultiplayerDashboard } from './components/multiplayer/MultiplayerDashboard';
+import { MatchmakingModal } from './components/multiplayer/MatchmakingModal';
+import { Duel1v1Mode } from './components/multiplayer/Duel1v1Mode';
+import { DuelResultModal } from './components/multiplayer/DuelResultModal';
 import { GameOverModal } from './components/game/GameOverModal';
 import { FlagModal } from './components/common/FlagModal';
 import { useCountriesData } from './hooks/useCountriesData';
@@ -23,14 +25,16 @@ import { Country } from './types/country';
 import { GameConfig, GameSummary } from './types/game';
 import { TutorAdvice } from './types/stats';
 import { Achievement } from './types/achievements';
+import { DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile } from './types/multiplayer';
 import { GEEK_TERRITORIES } from './data/fallbackCountries';
 import { achievementService } from './services/achievementService';
 import { dailyChallengeService } from './services/dailyChallengeService';
 import { challengeService } from './services/challengeService';
+import { multiplayerService } from './services/multiplayerService';
 import { Loader2 } from 'lucide-react';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('game');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('singleplayer');
   const [explorerContinent, setExplorerContinent] = useState<any>('World');
   const [previewFlagCountry, setPreviewFlagCountry] = useState<Country | null>(null);
 
@@ -39,6 +43,16 @@ export function App() {
   const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState<boolean>(false);
   const [isDonateModalOpen, setIsDonateModalOpen] = useState<boolean>(false);
   const [isDailyChallengeActive, setIsDailyChallengeActive] = useState<boolean>(false);
+
+  // Estado del Modo Multijugador y Ranked ELO
+  const [playerProfile, setPlayerProfile] = useState<PlayerProfile>(() => multiplayerService.getPlayerProfile());
+  const [isMatchmakingOpen, setIsMatchmakingOpen] = useState<boolean>(false);
+  const [matchmakingType, setMatchmakingType] = useState<MultiplayerType>('ranked');
+  const [matchmakingMode, setMatchmakingMode] = useState<DuelMode>('countries');
+  const [activeDuelQuestions, setActiveDuelQuestions] = useState<DuelQuestion[]>([]);
+  const [activeRivalProfile, setActiveRivalProfile] = useState<PlayerProfile | null>(null);
+  const [activeDuelState, setActiveDuelState] = useState<DuelState | null>(null);
+  const [finishedDuelResult, setFinishedDuelResult] = useState<DuelState | null>(null);
 
   // Carga de Países
   const { countries, isLoading } = useCountriesData();
@@ -66,14 +80,13 @@ export function App() {
     const newAchievements = achievementService.evaluateAchievements(stats, {
       accuracy: summary.accuracy,
       maxStreak: summary.maxStreak,
-      isGeekMode: config.isGeekMode,
       isDaily: isDailyChallengeActive
     });
 
     if (newAchievements.length > 0) {
       setUnlockedAchievement(newAchievements[0]);
     }
-  }, [recordGame, isDailyChallengeActive, stats, config.isGeekMode]);
+  }, [recordGame, isDailyChallengeActive, stats]);
 
   const {
     isPlaying,
@@ -175,7 +188,28 @@ export function App() {
         });
       }
     }
-  }, [countries, startGame]);
+  // Iniciar búsqueda de duelo 1v1
+  const handleStartDuel = useCallback((type: MultiplayerType, duelMode: DuelMode) => {
+    setMatchmakingType(type);
+    setMatchmakingMode(duelMode);
+    setIsMatchmakingOpen(true);
+  }, []);
+
+  // Oponente encontrado -> Iniciar Duelo 1v1
+  const handleMatchFound = useCallback((rival: PlayerProfile) => {
+    const duelQuestions = multiplayerService.generateDuelQuestions(countries, matchmakingMode);
+    setActiveDuelQuestions(duelQuestions);
+    setActiveRivalProfile(rival);
+    setIsMatchmakingOpen(false);
+  }, [countries, matchmakingMode]);
+
+  // Finalizar Duelo 1v1 y mostrar resultados
+  const handleFinishDuel = useCallback((duelState: DuelState) => {
+    setActiveDuelQuestions([]);
+    setActiveRivalProfile(null);
+    setFinishedDuelResult(duelState);
+    setPlayerProfile(duelState.player);
+  }, []);
 
   // Manejar acción desde tarjeta del Tutor
   const handleAdviceAction = useCallback((advice: TutorAdvice) => {
@@ -269,23 +303,29 @@ export function App() {
         }}
         totalScore={stats.totalScore}
         bestStreak={stats.bestStreak}
+        onOpenAchievements={() => setIsAchievementsModalOpen(true)}
+        onOpenDonate={() => setIsDonateModalOpen(true)}
       />
 
       {/* Contenido Principal */}
       <main className={`flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col ${
         isPlaying ? 'px-1 sm:px-2 pt-1 pb-1 overflow-hidden' : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-8'
       }`}>
-        {/* PESTAÑA 1: JUGAR */}
-        {activeTab === 'game' && (
+        {/* PESTAÑA 1: UN JUGADOR (SINGLEPLAYER) */}
+        {(activeTab === 'game' || activeTab === 'singleplayer') && (
           <div className={isPlaying ? 'h-full flex flex-col min-h-0 overflow-hidden' : ''}>
             {!isPlaying ? (
               <GameFilters
                 config={config}
                 onChangeConfig={(newCfg) => updateConfig(newCfg)}
-                onStartGame={(overrideCfg) => startGame(overrideCfg)}
+                onStartGame={(overrideCfg) => {
+                  setIsDailyChallengeActive(false);
+                  startGame(overrideCfg);
+                }}
                 blindSpots={blindSpots}
                 onStartFocusedPractice={() => handleStartFocusedPractice()}
                 onGoToTutor={() => setActiveTab('tutor')}
+                onStartDaily={handleStartDailyChallenge}
               />
             ) : (
               <div className="h-full flex flex-col min-h-0 overflow-hidden space-y-1.5">
@@ -404,7 +444,32 @@ export function App() {
           </div>
         )}
 
-        {/* PESTAÑA 2: EXPLORAR */}
+        {/* PESTAÑA 2: MULTIJUGADOR ⚔️ (RANKED & AMISTOSO) */}
+        {activeTab === 'multiplayer' && (
+          <div className="h-full flex flex-col min-h-0 overflow-hidden">
+            {activeDuelQuestions.length > 0 && activeRivalProfile ? (
+              <Duel1v1Mode
+                questions={activeDuelQuestions}
+                playerProfile={playerProfile}
+                rivalProfile={activeRivalProfile}
+                duelMode={matchmakingMode}
+                isRanked={matchmakingType === 'ranked'}
+                onFinishDuel={handleFinishDuel}
+                onQuit={() => {
+                  setActiveDuelQuestions([]);
+                  setActiveRivalProfile(null);
+                }}
+              />
+            ) : (
+              <MultiplayerDashboard
+                playerProfile={playerProfile}
+                onStartDuel={handleStartDuel}
+              />
+            )}
+          </div>
+        )}
+
+        {/* PESTAÑA 3: EXPLORAR */}
         {activeTab === 'explore' && (
           <CountryExplorer
             continent={explorerContinent}
@@ -414,7 +479,7 @@ export function App() {
           />
         )}
 
-        {/* PESTAÑA 3: TUTOR IA & ESTADÍSTICAS */}
+        {/* PESTAÑA 4: TUTOR IA & ESTADÍSTICAS */}
         {activeTab === 'tutor' && (
           <TutorDashboard
             stats={stats}
@@ -426,6 +491,11 @@ export function App() {
             onResetStats={resetStats}
           />
         )}
+
+        {/* PESTAÑA 5: RÉCORDS & CLASIFICACIÓN */}
+        {activeTab === 'leaderboard' && (
+          <LeaderboardView stats={stats} />
+        )}
       </main>
 
       {/* Modal de Ampliación de Bandera en Alta Definición */}
@@ -433,17 +503,41 @@ export function App() {
         country={previewFlagCountry}
         isOpen={Boolean(previewFlagCountry)}
         onClose={() => setPreviewFlagCountry(null)}
-        hideDetails={activeTab === 'game'}
+        hideDetails={activeTab === 'game' || activeTab === 'singleplayer'}
       />
 
-      {/* Modal de Fin de Partida */}
+      {/* Modal de Matchmaking VS 1v1 */}
+      <MatchmakingModal
+        isOpen={isMatchmakingOpen}
+        type={matchmakingType}
+        duelMode={matchmakingMode}
+        playerProfile={playerProfile}
+        onMatchFound={handleMatchFound}
+        onCancel={() => setIsMatchmakingOpen(false)}
+      />
+
+      {/* Modal de Resultado de Duelo 1v1 */}
+      {finishedDuelResult && (
+        <DuelResultModal
+          duelState={finishedDuelResult}
+          onPlayAgain={() => {
+            const res = finishedDuelResult;
+            setFinishedDuelResult(null);
+            handleStartDuel(res.type, res.duelMode);
+          }}
+          onReturnToMenu={() => setFinishedDuelResult(null)}
+        />
+      )}
+
+      {/* Modal de Fin de Partida Singleplayer */}
       {isGameOver && lastGameSummary && (
         <GameOverModal
           summary={lastGameSummary}
+          isDailyChallenge={isDailyChallengeActive}
           onPlayAgain={() => startGame()}
           onReturnToMenu={() => {
             quitGame();
-            setActiveTab('game');
+            setActiveTab('singleplayer');
           }}
           onGoToTutor={() => {
             quitGame();
@@ -453,8 +547,27 @@ export function App() {
         />
       )}
 
-      {/* Pie de Página (Línea muy fina mantenida al fondo) */}
-      <Footer isCompact={isPlaying} />
+      {/* Toast de Logro Desbloqueado */}
+      <AchievementToast
+        achievement={unlockedAchievement}
+        onClose={() => setUnlockedAchievement(null)}
+      />
+
+      {/* Modal de Galería de Logros */}
+      <AchievementsModal
+        isOpen={isAchievementsModalOpen}
+        onClose={() => setIsAchievementsModalOpen(false)}
+        stats={stats}
+      />
+
+      {/* Modal de Donación y Apoyo al Proyecto */}
+      <DonateModal
+        isOpen={isDonateModalOpen}
+        onClose={() => setIsDonateModalOpen(false)}
+      />
+
+      {/* Pie de Página */}
+      <Footer isCompact={isPlaying || activeDuelQuestions.length > 0} />
     </div>
   );
 }

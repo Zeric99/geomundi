@@ -1,8 +1,8 @@
 import React from 'react';
-import { Globe2, Brain, Compass, Gamepad2, Volume2, VolumeX, Trophy, Award, Coffee } from 'lucide-react';
+import { Globe2, Brain, Compass, Gamepad2, Volume2, VolumeX, Trophy, Award, Coffee, Swords, User } from 'lucide-react';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 
-export type ActiveTab = 'game' | 'explore' | 'tutor' | 'leaderboard';
+export type ActiveTab = 'game' | 'singleplayer' | 'multiplayer' | 'explore' | 'tutor' | 'leaderboard';
 
 interface NavbarProps {
   activeTab: ActiveTab;
@@ -22,13 +22,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenDonate
 }) => {
   const { soundEnabled, toggleSound } = useAudioFeedback();
+  const isSingle = activeTab === 'game' || activeTab === 'singleplayer';
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#121214]/95 backdrop-blur-md border-b border-zinc-800/80 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-3">
         {/* Logo & Marca */}
         <div
-          onClick={() => onChangeTab('game')}
+          onClick={() => onChangeTab('singleplayer')}
           className="flex items-center gap-3 cursor-pointer group shrink-0"
         >
           <div className="p-2 sm:p-2.5 rounded-xl bg-zinc-800/80 border border-zinc-700/60 text-indigo-400 group-hover:border-zinc-500 transition-all">
@@ -47,34 +48,50 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Selector de Pestañas Principales */}
-        <nav className="flex items-center bg-[#18181B] p-1 rounded-xl border border-zinc-800">
+        <nav className="flex items-center bg-[#18181B] p-1 rounded-xl border border-zinc-800 overflow-x-auto">
+          {/* Pestaña Un Jugador */}
           <button
-            onClick={() => onChangeTab('game')}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
-              activeTab === 'game'
+            onClick={() => onChangeTab('singleplayer')}
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+              isSingle
                 ? 'bg-zinc-100 text-zinc-950 shadow-sm font-bold'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
             }`}
           >
-            <Gamepad2 className="w-4 h-4" />
-            <span>Jugar</span>
+            <User className="w-4 h-4" />
+            <span>Un Jugador</span>
           </button>
 
+          {/* Pestaña Multijugador */}
+          <button
+            onClick={() => onChangeTab('multiplayer')}
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+              activeTab === 'multiplayer'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-zinc-950 shadow-sm font-bold'
+                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+            }`}
+          >
+            <Swords className="w-4 h-4 text-amber-400" />
+            <span>Multijugador ⚔️</span>
+          </button>
+
+          {/* Explorar */}
           <button
             onClick={() => onChangeTab('explore')}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
               activeTab === 'explore'
                 ? 'bg-zinc-100 text-zinc-950 shadow-sm font-bold'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
             }`}
           >
             <Compass className="w-4 h-4" />
-            <span>Explorar</span>
+            <span className="hidden sm:inline">Explorar</span>
           </button>
 
+          {/* Tutor */}
           <button
             onClick={() => onChangeTab('tutor')}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
               activeTab === 'tutor'
                 ? 'bg-indigo-600 text-white shadow-sm font-bold'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
@@ -84,16 +101,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>Tutor</span>
           </button>
 
+          {/* Récords */}
           <button
             onClick={() => onChangeTab('leaderboard')}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
               activeTab === 'leaderboard'
                 ? 'bg-amber-500 text-zinc-950 shadow-sm font-bold'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
             }`}
           >
             <Trophy className="w-4 h-4 text-amber-400" />
-            <span className="hidden sm:inline">Récords</span>
+            <span className="hidden md:inline">Récords</span>
           </button>
         </nav>
 
