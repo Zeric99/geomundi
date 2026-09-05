@@ -111,9 +111,10 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     }
 
     const sensitivity = 0.35 / zoomScaleRef.current;
-    // dy positivo desplaza el globo en inclinación vertical natural
+    // Movimiento natural 3D estilo globo terráqueo:
+    // Arrastrar abajo (dy > 0) tira de la bola hacia abajo, mostrando la parte superior (Norte).
     const newRotX = rotationStartRef.current[0] + dx * sensitivity;
-    const newRotY = Math.max(-85, Math.min(85, rotationStartRef.current[1] + dy * sensitivity));
+    const newRotY = Math.max(-85, Math.min(85, rotationStartRef.current[1] - dy * sensitivity));
 
     rotationRef.current = [newRotX, newRotY];
     targetRotationRef.current = [newRotX, newRotY];
