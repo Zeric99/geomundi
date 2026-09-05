@@ -12,6 +12,8 @@ import { CountryExplorer } from './components/explore/CountryExplorer';
 import { TutorDashboard } from './components/tutor/TutorDashboard';
 import { LeaderboardView } from './components/leaderboard/LeaderboardView';
 import { AchievementToast } from './components/achievements/AchievementToast';
+import { AchievementsModal } from './components/achievements/AchievementsModal';
+import { DonateModal } from './components/common/DonateModal';
 import { MultiplayerDashboard } from './components/multiplayer/MultiplayerDashboard';
 import { MatchmakingModal } from './components/multiplayer/MatchmakingModal';
 import { Duel1v1Mode } from './components/multiplayer/Duel1v1Mode';
@@ -188,6 +190,8 @@ export function App() {
         });
       }
     }
+  }, [countries, startGame]);
+
   // Iniciar búsqueda de duelo 1v1
   const handleStartDuel = useCallback((type: MultiplayerType, duelMode: DuelMode) => {
     setMatchmakingType(type);
