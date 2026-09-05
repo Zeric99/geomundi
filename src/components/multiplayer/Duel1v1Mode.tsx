@@ -4,6 +4,8 @@ import { Swords, Clock, Trophy, CheckCircle2, XCircle, Flame, ArrowRight, Zap, T
 import { Country, CountryMapStatus } from '../../types/country';
 import { DuelMode, DuelQuestion, DuelState, PlayerProfile, PlayerRoundResult } from '../../types/multiplayer';
 import { WorldMap } from '../map/WorldMap';
+import { PinpointWorldMap } from '../map/PinpointWorldMap';
+import { calculateHaversineDistance, calculatePinpointScore } from '../../utils/haversineScoring';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { multiplayerService } from '../../services/multiplayerService';
 import confetti from 'canvas-confetti';
@@ -37,10 +39,10 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
   const [streak, setStreak] = useState<number>(0);
   const [countryStatuses, setCountryStatuses] = useState<Record<string, CountryMapStatus>>({});
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
-  const [timeLeft, setTimeLeft] = useState<number>(15);
+  const [timeLeft, setTimeLeft] = useState<number>(isRanked ? 25 : 15);
+  const [lastPinpointClick, setLastPinpointClick] = useState<[number, number] | null>(null);
 
   const questionStartTimeRef = useRef<number>(Date.now());
-  const matchStartTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<any>(null);
 
   // Generar las respuestas simuladas del rival al inicio del duelo
@@ -54,28 +56,64 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
 
   const currentQuestion = questions[currentIndex] || null;
 
-  // Temporizador regresivo de 15 segundos por pregunta
+  // Temporizador regresivo: 25s TOTALES para modo Ranked, 15s POR PREGUNTA para modo Amistoso
   useEffect(() => {
-    setTimeLeft(15);
     questionStartTimeRef.current = Date.now();
 
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          handleTimeOut();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    if (isRanked) {
+      if (currentIndex === 0) {
+        setTimeLeft(25);
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = setInterval(() => {
+          setTimeLeft(prev => {
+            if (prev <= 1) {
+              clearInterval(timerRef.current);
+              handleRankedTimeOut();
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
+    } else {
+      setTimeLeft(15);
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            handleTimeOut();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (!isRanked && timerRef.current) clearInterval(timerRef.current);
     };
-  }, [currentIndex]);
+  }, [currentIndex, isRanked]);
 
-  // Manejar tiempo agotado en una pregunta
+  // Manejar agotamiento total del tiempo en modo Ranked (25 segundos finalizados)
+  const handleRankedTimeOut = () => {
+    playWrongSound();
+    setPlayerResults(prevResults => {
+      const finalResults = [...prevResults];
+      for (let i = finalResults.length; i < questions.length; i++) {
+        finalResults.push({
+          questionIndex: i,
+          userSuccess: false,
+          timeSpentMs: 5000,
+          points: 0
+        });
+      }
+      finishDuel(finalResults);
+      return finalResults;
+    });
+  };
+
+  // Manejar tiempo agotado en una pregunta individual (Modo Amistoso)
   const handleTimeOut = () => {
     if (isEvaluating) return;
     setIsEvaluating(true);
@@ -95,70 +133,101 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
 
     setTimeout(() => {
       advanceNext(updatedResults);
-    }, 1200);
+    }, 1000);
   };
 
-  // Clic en país del mapa
-  const handleCountryClick = (clickedCountry: Country) => {
+  // Clic en el globo 3D (Modo Puntería)
+  const handlePinpointClick = (coords: [number, number]) => {
     if (!currentQuestion || isEvaluating) return;
 
-    if (timerRef.current) clearInterval(timerRef.current);
-    setIsEvaluating(true);
+    setLastPinpointClick(coords);
+    const targetCoords: [number, number] = currentQuestion.cityTarget?.coordinates || [currentQuestion.country.latlng[1], currentQuestion.country.latlng[0]];
+    const distanceKm = calculateHaversineDistance(coords, targetCoords);
+    const { score } = calculatePinpointScore(distanceKm, false, false);
+
+    const timeSpentMs = Date.now() - questionStartTimeRef.current;
+    playCorrectSound();
+
+    const newScore = playerScore + score;
+    setScore(newScore);
+
+    const newResult: PlayerRoundResult = {
+      questionIndex: currentIndex,
+      userSuccess: score > 300,
+      timeSpentMs,
+      points: score,
+      distanceKm
+    };
+
+    const updatedResults = [...playerResults, newResult];
+    setPlayerResults(updatedResults);
+
+    // Avance inmediato en Ranked / Puntería sin delay ("nada más pulsar ya te sale el siguiente")
+    const nextIdx = currentIndex + 1;
+    if (nextIdx < questions.length) {
+      setCurrentIndex(nextIdx);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      finishDuel(updatedResults);
+    }
+  };
+
+  // Clic en país del mapa 2D (Modos Banderas, Capitales, Países)
+  const handleCountryClick = (clickedCountry: Country) => {
+    if (!currentQuestion || isEvaluating) return;
 
     const timeSpentMs = Date.now() - questionStartTimeRef.current;
     const isCorrect = clickedCountry.cca3.toUpperCase() === currentQuestion.country.cca3.toUpperCase();
 
+    let points = 0;
     if (isCorrect) {
       playCorrectSound();
       const speedBonus = Math.max(0, Math.round(100 - (timeSpentMs / 1000) * 5));
-      const points = 100 + speedBonus;
-      const newScore = playerScore + points;
-      const newStreak = streak + 1;
-
-      setScore(newScore);
-      setStreak(newStreak);
-
-      setCountryStatuses(prev => ({
-        ...prev,
-        [clickedCountry.cca3.toUpperCase()]: 'correct'
-      }));
-
-      const newResult: PlayerRoundResult = {
-        questionIndex: currentIndex,
-        userSuccess: true,
-        timeSpentMs,
-        points
-      };
-
-      const updatedResults = [...playerResults, newResult];
-      setPlayerResults(updatedResults);
-
-      setTimeout(() => {
-        advanceNext(updatedResults);
-      }, 1000);
+      points = 100 + speedBonus;
+      setScore(prev => prev + points);
+      setStreak(prev => prev + 1);
     } else {
       playWrongSound();
       setStreak(0);
+    }
 
-      setCountryStatuses(prev => ({
-        ...prev,
-        [clickedCountry.cca3.toUpperCase()]: 'wrong',
-        [currentQuestion.country.cca3.toUpperCase()]: 'hint'
-      }));
+    const newResult: PlayerRoundResult = {
+      questionIndex: currentIndex,
+      userSuccess: isCorrect,
+      timeSpentMs,
+      points
+    };
 
-      const newResult: PlayerRoundResult = {
-        questionIndex: currentIndex,
-        userSuccess: false,
-        timeSpentMs,
-        points: 0
-      };
+    const updatedResults = [...playerResults, newResult];
+    setPlayerResults(updatedResults);
 
-      const updatedResults = [...playerResults, newResult];
-      setPlayerResults(updatedResults);
+    if (isRanked) {
+      // Avance inmediato en Ranked
+      const nextIdx = currentIndex + 1;
+      if (nextIdx < questions.length) {
+        setCurrentIndex(nextIdx);
+      } else {
+        if (timerRef.current) clearInterval(timerRef.current);
+        finishDuel(updatedResults);
+      }
+    } else {
+      // Modo casual con breve feedback de color
+      setIsEvaluating(true);
+      setCountryStatuses({
+        [clickedCountry.cca3.toUpperCase()]: isCorrect ? 'correct' : 'wrong',
+        ...(isCorrect ? {} : { [currentQuestion.country.cca3.toUpperCase()]: 'hint' })
+      });
 
       setTimeout(() => {
-        advanceNext(updatedResults);
-      }, 1500);
+        setIsEvaluating(false);
+        setCountryStatuses({});
+        const nextIdx = currentIndex + 1;
+        if (nextIdx < questions.length) {
+          setCurrentIndex(nextIdx);
+        } else {
+          finishDuel(updatedResults);
+        }
+      }, 1000);
     }
   };
 
@@ -171,12 +240,15 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     if (nextIdx < questions.length) {
       setCurrentIndex(nextIdx);
     } else {
+      if (timerRef.current) clearInterval(timerRef.current);
       finishDuel(currentResults);
     }
   };
 
   // Finalizar duelo y procesar ELO
   const finishDuel = (finalResults: PlayerRoundResult[]) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
     const playerTotalScore = finalResults.reduce((acc, r) => acc + r.points, 0);
     const playerTotalTime = finalResults.reduce((acc, r) => acc + r.timeSpentMs, 0);
     const rivalTotalScore = rivalResults.reduce((acc, r) => acc + r.points, 0);
@@ -220,6 +292,14 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
 
   if (!currentQuestion) return null;
 
+  // Estilos del temporizador según el tiempo restante (Normal > 10s | Amarillo <= 10s | Rojo <= 3s)
+  let timerBadgeStyle = 'bg-zinc-900 border-zinc-700 text-cyan-300';
+  if (timeLeft <= 3) {
+    timerBadgeStyle = 'bg-rose-950/90 border-rose-600 text-red-500 animate-pulse';
+  } else if (timeLeft <= 10) {
+    timerBadgeStyle = 'bg-amber-950/80 border-amber-500 text-yellow-400';
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0 gap-3 max-w-7xl mx-auto w-full px-1 sm:px-2 overflow-hidden select-none">
       {/* 1. Marcador Comparativo 1v1 Superior */}
@@ -245,13 +325,11 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
         {/* Centro: Reloj y Pregunta */}
         <div className="flex items-center gap-3">
           <div className="px-3 py-1 bg-zinc-900 rounded-xl border border-zinc-800 font-mono text-xs font-bold text-zinc-300">
-            Pregunta <span className="text-indigo-400 text-sm">{currentIndex + 1}</span> / {questions.length}
+            Ubicación <span className="text-indigo-400 text-sm">{currentIndex + 1}</span> / {questions.length}
           </div>
 
-          <div className={`px-3 py-1 rounded-xl border font-mono text-sm font-bold flex items-center gap-1.5 ${
-            timeLeft <= 5 ? 'bg-rose-950/80 border-rose-600 text-rose-300 animate-pulse' : 'bg-zinc-900 border-zinc-700 text-amber-300'
-          }`}>
-            <Clock className="w-4 h-4 text-amber-400" />
+          <div className={`px-3 py-1 rounded-xl border font-mono text-sm font-bold flex items-center gap-1.5 ${timerBadgeStyle}`}>
+            <Clock className="w-4 h-4" />
             <span>{timeLeft}s</span>
           </div>
         </div>
@@ -306,16 +384,25 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
         </button>
       </div>
 
-      {/* 3. Mapa Interactivo Principal */}
+      {/* 3. Mapa Interactivo Principal (Globo 3D para Pinpoint, Mapa 2D para Países/Banderas) */}
       <div className="relative flex-1 min-h-[360px] h-[calc(100vh-250px)] max-h-[calc(100vh-250px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
-        <WorldMap
-          countryStatuses={countryStatuses}
-          continent="World"
-          onCountryClick={handleCountryClick}
-          interactive={!isEvaluating}
-          isGeekMode={isGeekMode}
-          enableTooltip={true}
-        />
+        {duelMode === 'pinpoint' ? (
+          <PinpointWorldMap
+            clickedCoords={lastPinpointClick}
+            targetCoords={currentQuestion.cityTarget?.coordinates || [currentQuestion.country.latlng[1], currentQuestion.country.latlng[0]]}
+            onMapClick={handlePinpointClick}
+            isEvaluated={false}
+          />
+        ) : (
+          <WorldMap
+            countryStatuses={countryStatuses}
+            continent="World"
+            onCountryClick={handleCountryClick}
+            interactive={!isEvaluating}
+            isGeekMode={isGeekMode}
+            enableTooltip={true}
+          />
+        )}
       </div>
     </div>
   );

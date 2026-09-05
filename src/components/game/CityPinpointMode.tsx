@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Target, MapPin, Award, Compass, ArrowRight, RotateCcw, Sparkles, Trophy, Globe, Info, Zap, Navigation, Share2, Check, Layers } from 'lucide-react';
 import { Continent } from '../../types/country';
 import { CityTarget, PinpointResult, GameSummary } from '../../types/game';
@@ -92,14 +92,26 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
         });
       } catch (e) {}
     }
-  }, [currentCity, isEvaluated, isGameOver]);
 
-  // Pasar a la siguiente ciudad
-  const handleNextCity = useCallback(() => {
-    if (!currentResult) return;
+    // Ref para temporizador de avance automático
+    if (nextTimerRef.current) clearTimeout(nextTimerRef.current);
+    nextTimerRef.current = setTimeout(() => {
+      handleNextCity(result);
+    }, 1400);
+  }, [currentCity, isEvaluated, isGameOver, currentIndex, citiesList.length]);
 
-    const nextHistory = [...resultsHistory, currentResult];
-    setResultsHistory(nextHistory);
+  const nextTimerRef = useRef<any>(null);
+
+  const handleNextCity = (resultToSave?: PinpointResult) => {
+    if (nextTimerRef.current) clearTimeout(nextTimerRef.current);
+    const res = resultToSave || currentResult;
+    if (!res) return;
+
+    setResultsHistory(prev => {
+      // Evitar duplicados si ya se guardó
+      if (prev.length > currentIndex) return prev;
+      return [...prev, res];
+    });
 
     if (currentIndex + 1 < citiesList.length) {
       setCurrentIndex(prev => prev + 1);
@@ -107,10 +119,9 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
       setIsEvaluated(false);
       setCurrentResult(null);
     } else {
-      // Fin de la partida
       setIsGameOver(true);
     }
-  }, [currentIndex, currentResult, resultsHistory, citiesList.length]);
+  };
 
   const handleShareScore = async () => {
     const totalDist = resultsHistory.reduce((acc, r) => acc + r.distanceKm, 0);
@@ -339,7 +350,7 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
 
             {/* Botón Siguiente */}
             <button
-              onClick={handleNextCity}
+              onClick={() => handleNextCity()}
               className="w-full py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
             >
               <span>{currentIndex + 1 < citiesList.length ? 'Siguiente Ciudad' : 'Ver Resultados Finales'}</span>
