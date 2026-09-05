@@ -184,11 +184,6 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
   return (
     <div className="relative w-full max-w-6xl mx-auto space-y-6 overflow-visible">
-      {/* Globo Terráqueo 3D de Malla Vectorial (Wireframe) en el lateral derecho de fondo */}
-      <div className="absolute -top-16 -right-28 sm:-right-20 lg:-right-12 pointer-events-none z-0 opacity-75 overflow-visible select-none hidden sm:block">
-        <WireframeGlobe size={620} />
-      </div>
-
       {/* Tarjeta Destacada: Desafío Diario */}
       <div className="relative z-10">
         <DailyChallengeCard onStartDaily={onStartDaily} />

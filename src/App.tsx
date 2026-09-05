@@ -314,13 +314,15 @@ export function App() {
       }
     : null;
 
+  const showGlobeInMainMenu = !isPlaying && (activeTab === 'singleplayer' || activeTab === 'game' || activeTab === 'multiplayer');
+
   return (
     <div className={`relative flex flex-col bg-black text-slate-100 selection:bg-cyan-500 selection:text-slate-950 ${
       isPlaying ? 'h-screen max-h-screen overflow-hidden' : 'min-h-screen'
     }`}>
-      {/* Globo Terráqueo 3D Wireframe en el Lateral Derecho (Fondo Global) */}
-      {!isPlaying && (
-        <div className="fixed -top-12 -right-36 sm:-right-28 md:-right-20 lg:-right-10 pointer-events-none z-0 opacity-90 overflow-visible select-none">
+      {/* Globo Terráqueo 3D Wireframe en el Lateral Derecho (Solo en menús principales Un Jugador y Multijugador) */}
+      {showGlobeInMainMenu && (
+        <div className="fixed -top-12 -right-36 sm:-right-28 md:-right-20 lg:-right-10 pointer-events-none z-0 opacity-95 overflow-visible select-none">
           <WireframeGlobe size={680} />
         </div>
       )}
