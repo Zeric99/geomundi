@@ -4,7 +4,7 @@ import { Swords, Clock, Trophy, CheckCircle2, XCircle, Flame, ArrowRight, Zap, T
 import { Country, CountryMapStatus } from '../../types/country';
 import { DuelMode, DuelQuestion, DuelState, PlayerProfile, PlayerRoundResult } from '../../types/multiplayer';
 import { WorldMap } from '../map/WorldMap';
-import { PinpointWorldMap } from '../map/PinpointWorldMap';
+import { PinpointWorldMap, PinHistoryItem } from '../map/PinpointWorldMap';
 import { calculateHaversineDistance, calculatePinpointScore } from '../../utils/haversineScoring';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { multiplayerService } from '../../services/multiplayerService';
@@ -41,6 +41,15 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number>(isRanked ? 25 : 15);
   const [lastPinpointClick, setLastPinpointClick] = useState<[number, number] | null>(null);
+
+  // Historial de pines 3D y notificación del último resultado para el jugador en Ranked
+  const [pinHistory, setPinHistory] = useState<PinHistoryItem[]>([]);
+  const [lastResultToast, setLastResultToast] = useState<{
+    cityName: string;
+    score: number;
+    distanceKm?: number;
+    badgeTitle: string;
+  } | null>(null);
 
   const questionStartTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<any>(null);
@@ -141,15 +150,38 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     if (!currentQuestion || isEvaluating) return;
 
     setLastPinpointClick(coords);
-    const targetCoords: [number, number] = currentQuestion.cityTarget?.coordinates || [currentQuestion.country.latlng[1], currentQuestion.country.latlng[0]];
+    const targetCoords: [number, number] = currentQuestion.cityTarget?.coordinates || [
+      currentQuestion.country.latlng[1],
+      currentQuestion.country.latlng[0]
+    ];
     const distanceKm = calculateHaversineDistance(coords, targetCoords);
-    const { score } = calculatePinpointScore(distanceKm, false, false);
+    const { score, badgeTitle } = calculatePinpointScore(distanceKm, false, false);
 
     const timeSpentMs = Date.now() - questionStartTimeRef.current;
     playCorrectSound();
 
     const newScore = playerScore + score;
     setScore(newScore);
+
+    const cityName = currentQuestion.cityTarget?.nameEs || currentQuestion.country.nameEs;
+
+    // Registrar en el historial de pines para que sigan visibles en el Globo 3D
+    const historyItem: PinHistoryItem = {
+      clickedCoords: coords,
+      targetCoords,
+      distanceKm,
+      score,
+      cityName
+    };
+    setPinHistory(prev => [...prev, historyItem]);
+
+    // Toast flotante con la distancia y los puntos de esta ubicación
+    setLastResultToast({
+      cityName,
+      score,
+      distanceKm,
+      badgeTitle
+    });
 
     const newResult: PlayerRoundResult = {
       questionIndex: currentIndex,
@@ -162,7 +194,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     const updatedResults = [...playerResults, newResult];
     setPlayerResults(updatedResults);
 
-    // Avance inmediato en Ranked / Puntería sin delay ("nada más pulsar ya te sale el siguiente")
+    // Avance inmediato en Ranked / Puntería
     const nextIdx = currentIndex + 1;
     if (nextIdx < questions.length) {
       setCurrentIndex(nextIdx);
@@ -292,7 +324,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
 
   if (!currentQuestion) return null;
 
-  // Estilos del temporizador según el tiempo restante (Normal > 10s | Amarillo <= 10s | Rojo <= 3s)
+  // Estilos del temporizador según el tiempo restante
   let timerBadgeStyle = 'bg-zinc-900 border-zinc-700 text-cyan-300';
   if (timeLeft <= 3) {
     timerBadgeStyle = 'bg-rose-950/90 border-rose-600 text-red-500 animate-pulse';
@@ -353,45 +385,66 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
         </div>
       </div>
 
-      {/* 2. Pregunta Activa */}
-      <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4 flex-wrap shrink-0 border-l-4 border-l-indigo-500">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-950/50 border border-indigo-800/60 rounded-xl text-indigo-400 shrink-0">
-            <Target className="w-5 h-5" />
+      {/* 2. Pregunta Activa + Toast del Último Resultado */}
+      <div className="flex flex-col gap-2 shrink-0">
+        <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4 flex-wrap shrink-0 border-l-4 border-l-indigo-500">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-indigo-950/50 border border-indigo-800/60 rounded-xl text-indigo-400 shrink-0">
+              <Target className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-400 font-bold">
+                {duelMode === 'flags' ? 'Adivina la Bandera 🚩' : duelMode === 'capitals' ? 'Capitales del Mundo 🏛️' : 'Localiza en el Mapa 🗺️'}
+              </span>
+              <h3 className="text-base sm:text-lg font-serif font-bold text-zinc-100 mt-0.5">
+                {currentQuestion.promptText}
+              </h3>
+            </div>
           </div>
-          <div>
-            <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-400 font-bold">
-              {duelMode === 'flags' ? 'Adivina la Bandera 🚩' : duelMode === 'capitals' ? 'Capitales del Mundo 🏛️' : 'Localiza en el Mapa 🗺️'}
-            </span>
-            <h3 className="text-base sm:text-lg font-serif font-bold text-zinc-100 mt-0.5">
-              {currentQuestion.promptText}
-            </h3>
-          </div>
+
+          {currentQuestion.questionType === 'flag' && (
+            <div className="w-20 h-13 rounded-lg overflow-hidden border border-zinc-700 shadow-sm shrink-0">
+              <img src={currentQuestion.country.flagSvg} alt="Bandera" className="w-full h-full object-cover" />
+            </div>
+          )}
+
+          <button
+            onClick={onQuit}
+            className="text-xs text-zinc-400 hover:text-zinc-200 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition"
+          >
+            Abandonar
+          </button>
         </div>
 
-        {/* Si es pregunta de Bandera, mostrar la bandera */}
-        {currentQuestion.questionType === 'flag' && (
-          <div className="w-20 h-13 rounded-lg overflow-hidden border border-zinc-700 shadow-sm shrink-0">
-            <img src={currentQuestion.country.flagSvg} alt="Bandera" className="w-full h-full object-cover" />
-          </div>
+        {/* Banner Toast del Tiro Anterior (Muestra distancia y puntos obtenidos mientras avanzas) */}
+        {lastResultToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-zinc-900/90 border border-cyan-500/40 px-4 py-2 rounded-xl text-xs flex items-center justify-between gap-3 shadow-lg text-zinc-200 font-mono"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-cyan-400 font-bold">📍 Tiro anterior ({lastResultToast.cityName}):</span>
+              <span className="text-zinc-300">{lastResultToast.distanceKm?.toLocaleString()} km</span>
+              <span className="text-zinc-500">•</span>
+              <span className="text-cyan-300 font-sans">{lastResultToast.badgeTitle}</span>
+            </div>
+            <div className="text-emerald-400 font-extrabold text-sm font-mono">
+              +{lastResultToast.score} pts
+            </div>
+          </motion.div>
         )}
-
-        <button
-          onClick={onQuit}
-          className="text-xs text-zinc-400 hover:text-zinc-200 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition"
-        >
-          Abandonar
-        </button>
       </div>
 
       {/* 3. Mapa Interactivo Principal (Globo 3D para Pinpoint, Mapa 2D para Países/Banderas) */}
-      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-250px)] max-h-[calc(100vh-250px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-270px)] max-h-[calc(100vh-270px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
         {duelMode === 'pinpoint' ? (
           <PinpointWorldMap
             clickedCoords={lastPinpointClick}
             targetCoords={currentQuestion.cityTarget?.coordinates || [currentQuestion.country.latlng[1], currentQuestion.country.latlng[0]]}
             onMapClick={handlePinpointClick}
             isEvaluated={false}
+            previousPins={pinHistory}
           />
         ) : (
           <WorldMap

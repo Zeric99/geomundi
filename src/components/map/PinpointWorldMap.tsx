@@ -4,11 +4,20 @@ import { feature } from 'topojson-client';
 import { Crosshair, Globe, Map as MapIcon, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import topoData from '../../data/world-110m.json';
 
+export interface PinHistoryItem {
+  clickedCoords: [number, number];
+  targetCoords: [number, number];
+  distanceKm?: number;
+  score?: number;
+  cityName?: string;
+}
+
 interface PinpointWorldMapProps {
   clickedCoords: [number, number] | null; // [lng, lat]
   targetCoords: [number, number] | null;  // [lng, lat]
   onMapClick: (coords: [number, number]) => void;
   isEvaluated: boolean;
+  previousPins?: PinHistoryItem[];
   continent?: string;
   cityName?: string;
 }
@@ -129,7 +138,8 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
   clickedCoords,
   targetCoords,
   onMapClick,
-  isEvaluated
+  isEvaluated,
+  previousPins = []
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
@@ -138,12 +148,9 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const earthMeshRef = useRef<THREE.Mesh | null>(null);
-  const arcMeshRef = useRef<THREE.Line | null>(null);
-  const userPinMeshRef = useRef<THREE.Group | null>(null);
-  const targetPinMeshRef = useRef<THREE.Group | null>(null);
+  const markersGroupRef = useRef<THREE.Group | null>(null);
 
   // Rotación y Zoom target (yaw: rotación Y, pitch: inclinación X)
-  // Inicialmente centrado hacia América / Europa
   const rotationRef = useRef<{ yaw: number; pitch: number }>({ yaw: 0, pitch: -0.2 });
   const targetRotationRef = useRef<{ yaw: number; pitch: number }>({ yaw: 0, pitch: -0.2 });
   const zoomScaleRef = useRef<number>(1.0);
@@ -302,91 +309,114 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     };
   }, []);
 
-  // Actualizar Marcadores y Arco Neón 3D
+  // Renderizar Marcadores y Arcos 3D (Rondas anteriores + Ronda activa)
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
 
-    if (userPinMeshRef.current) scene.remove(userPinMeshRef.current);
-    if (targetPinMeshRef.current) scene.remove(targetPinMeshRef.current);
-    if (arcMeshRef.current) scene.remove(arcMeshRef.current);
+    if (markersGroupRef.current) {
+      scene.remove(markersGroupRef.current);
+      markersGroupRef.current = null;
+    }
 
-    // 1. Marcador del tiro del usuario (Mira Cian 3D)
-    if (clickedCoords) {
-      const pos = lngLatToVector3(clickedCoords[0], clickedCoords[1], 1.01);
-      const userGroup = new THREE.Group();
-      userGroup.position.copy(pos);
+    const group = new THREE.Group();
 
+    const drawPinAndArc = (
+      userCoords: [number, number],
+      tCoords: [number, number],
+      isHistorical: boolean = false
+    ) => {
+      // 1. Marcador del tiro del usuario (Mira Cian 3D)
+      const userPos = lngLatToVector3(userCoords[0], userCoords[1], 1.01);
+      const pinGeo = new THREE.SphereGeometry(isHistorical ? 0.02 : 0.025, 16, 16);
+      const pinMat = new THREE.MeshBasicMaterial({ color: isHistorical ? 0x0891b2 : 0x06b6d4 });
+      const pinMesh = new THREE.Mesh(pinGeo, pinMat);
+      pinMesh.position.copy(userPos);
+      group.add(pinMesh);
+
+      const ringGeo = new THREE.RingGeometry(0.025, 0.04, 32);
+      const ringMat = new THREE.MeshBasicMaterial({ color: isHistorical ? 0x0891b2 : 0x22d3ee, side: THREE.DoubleSide });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.position.copy(userPos);
+      ringMesh.lookAt(userPos.clone().multiplyScalar(2));
+      group.add(ringMesh);
+
+      // 2. Marcador del objetivo real (Baliza Esmeralda 3D)
+      const targetPos = lngLatToVector3(tCoords[0], tCoords[1], 1.01);
+      const tPinGeo = new THREE.SphereGeometry(isHistorical ? 0.025 : 0.03, 16, 16);
+      const tPinMat = new THREE.MeshBasicMaterial({ color: isHistorical ? 0x059669 : 0x10b981 });
+      const tPinMesh = new THREE.Mesh(tPinGeo, tPinMat);
+      tPinMesh.position.copy(targetPos);
+      group.add(tPinMesh);
+
+      // 3. Arco Neón 3D
+      const points: THREE.Vector3[] = [];
+      const numPoints = 40;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        const p = new THREE.Vector3().lerpVectors(userPos, targetPos, t);
+        const dist = userPos.distanceTo(targetPos);
+        const altitude = Math.sin(t * Math.PI) * (dist * 0.25);
+        p.normalize().multiplyScalar(1.01 + altitude);
+        points.push(p);
+      }
+
+      const arcGeometry = new THREE.BufferGeometry().setFromPoints(points);
+      const arcMaterial = new THREE.LineBasicMaterial({
+        color: isHistorical ? 0x0891b2 : 0x22d3ee,
+        linewidth: isHistorical ? 1 : 3
+      });
+      const arcLine = new THREE.Line(arcGeometry, arcMaterial);
+      group.add(arcLine);
+    };
+
+    // A. Dibujar pines históricos de rondas anteriores
+    if (previousPins && previousPins.length > 0) {
+      previousPins.forEach(item => {
+        drawPinAndArc(item.clickedCoords, item.targetCoords, true);
+      });
+
+      // Centrar suavemente en el último tiro registrado
+      const lastPin = previousPins[previousPins.length - 1];
+      let midLng = (lastPin.clickedCoords[0] + lastPin.targetCoords[0]) / 2;
+      if (Math.abs(lastPin.clickedCoords[0] - lastPin.targetCoords[0]) > 180) {
+        midLng += 180;
+        if (midLng > 180) midLng -= 360;
+      }
+      const midLat = (lastPin.clickedCoords[1] + lastPin.targetCoords[1]) / 2;
+
+      const rotY = - (midLng + 90) * (Math.PI / 180);
+      const rotX = - midLat * (Math.PI / 180);
+      targetRotationRef.current = { yaw: rotY, pitch: rotX };
+    }
+
+    // B. Dibujar tiro de la ronda activa si está evaluada
+    if (clickedCoords && targetCoords && isEvaluated) {
+      drawPinAndArc(clickedCoords, targetCoords, false);
+
+      let midLng = (clickedCoords[0] + targetCoords[0]) / 2;
+      if (Math.abs(clickedCoords[0] - targetCoords[0]) > 180) {
+        midLng += 180;
+        if (midLng > 180) midLng -= 360;
+      }
+      const midLat = (clickedCoords[1] + targetCoords[1]) / 2;
+
+      const rotY = - (midLng + 90) * (Math.PI / 180);
+      const rotX = - midLat * (Math.PI / 180);
+      targetRotationRef.current = { yaw: rotY, pitch: rotX };
+    } else if (clickedCoords && !isEvaluated) {
+      // Tiro individual en progreso
+      const userPos = lngLatToVector3(clickedCoords[0], clickedCoords[1], 1.01);
       const pinGeo = new THREE.SphereGeometry(0.025, 16, 16);
       const pinMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
       const pinMesh = new THREE.Mesh(pinGeo, pinMat);
-      userGroup.add(pinMesh);
-
-      const ringGeo = new THREE.RingGeometry(0.03, 0.045, 32);
-      const ringMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee, side: THREE.DoubleSide });
-      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-      ringMesh.lookAt(pos.clone().multiplyScalar(2));
-      userGroup.add(ringMesh);
-
-      userPinMeshRef.current = userGroup;
-      scene.add(userGroup);
+      pinMesh.position.copy(userPos);
+      group.add(pinMesh);
     }
 
-    // 2. Marcador del objetivo real (Baliza Esmeralda 3D) + Arco Conector
-    if (targetCoords && isEvaluated) {
-      const targetPos = lngLatToVector3(targetCoords[0], targetCoords[1], 1.01);
-      const targetGroup = new THREE.Group();
-      targetGroup.position.copy(targetPos);
-
-      const pinGeo = new THREE.SphereGeometry(0.03, 16, 16);
-      const pinMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
-      const pinMesh = new THREE.Mesh(pinGeo, pinMat);
-      targetGroup.add(pinMesh);
-
-      targetPinMeshRef.current = targetGroup;
-      scene.add(targetGroup);
-
-      // Arco curvado 3D
-      if (clickedCoords) {
-        const startPos = lngLatToVector3(clickedCoords[0], clickedCoords[1], 1.01);
-        const endPos = targetPos;
-
-        const points: THREE.Vector3[] = [];
-        const numPoints = 50;
-
-        for (let i = 0; i <= numPoints; i++) {
-          const t = i / numPoints;
-          const p = new THREE.Vector3().lerpVectors(startPos, endPos, t);
-          const dist = startPos.distanceTo(endPos);
-          const altitude = Math.sin(t * Math.PI) * (dist * 0.25);
-          p.normalize().multiplyScalar(1.01 + altitude);
-          points.push(p);
-        }
-
-        const arcGeometry = new THREE.BufferGeometry().setFromPoints(points);
-        const arcMaterial = new THREE.LineBasicMaterial({
-          color: 0x22d3ee,
-          linewidth: 3
-        });
-
-        const arcLine = new THREE.Line(arcGeometry, arcMaterial);
-        arcMeshRef.current = arcLine;
-        scene.add(arcLine);
-
-        // Auto-centrar la esfera 3D suavemente sobre el área del tiro y objetivo
-        let midLng = (clickedCoords[0] + targetCoords[0]) / 2;
-        if (Math.abs(clickedCoords[0] - targetCoords[0]) > 180) {
-          midLng += 180;
-          if (midLng > 180) midLng -= 360;
-        }
-        const midLat = (clickedCoords[1] + targetCoords[1]) / 2;
-
-        const rotY = - (midLng + 90) * (Math.PI / 180);
-        const rotX = - midLat * (Math.PI / 180);
-        targetRotationRef.current = { yaw: rotY, pitch: rotX };
-      }
-    }
-  }, [clickedCoords, targetCoords, isEvaluated, lngLatToVector3]);
+    markersGroupRef.current = group;
+    scene.add(group);
+  }, [clickedCoords, targetCoords, isEvaluated, previousPins, lngLatToVector3]);
 
   // Controles de zoom y reseteo
   const handleZoomIn = () => {
@@ -431,8 +461,6 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     const sensitivity = 0.005 / zoomScaleRef.current;
     
     // Movimiento físico natural:
-    // Arrastrar a la derecha (dx > 0) hace girar el globo a la derecha.
-    // Arrastrar hacia abajo (dy > 0) desplaza la cara frontal hacia abajo (se ve el polo norte).
     const newYaw = rotationStartRef.current.yaw + dx * sensitivity;
     const newPitch = Math.max(-1.3, Math.min(1.3, rotationStartRef.current.pitch - dy * sensitivity));
 
@@ -463,7 +491,6 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
 
       if (intersects.length > 0) {
         const point = intersects[0].point;
-        // Transformar el punto 3D intersectado al espacio local no-rotado de la esfera
         const localPoint = earthMeshRef.current.worldToLocal(point.clone());
         const [lng, lat] = vector3ToLngLat(localPoint);
 
