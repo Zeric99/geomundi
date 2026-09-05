@@ -154,8 +154,8 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
 
       // Inercia / desaceleración progresiva tras soltar el arrastre
       if (!isPointerDownRef.current) {
-        velocityRef.current.theta *= 0.92;
-        velocityRef.current.phi *= 0.92;
+        velocityRef.current.theta *= 0.70;
+        velocityRef.current.phi *= 0.70;
 
         if (Math.abs(velocityRef.current.theta) > 0.00005) {
           targetSphericalRef.current.theta += velocityRef.current.theta;
@@ -369,7 +369,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     const deltaTheta = - dx * sensitivity;
     const deltaPhi = - dy * sensitivity;
 
-    velocityRef.current = { theta: deltaTheta * 0.4, phi: deltaPhi * 0.4 };
+    velocityRef.current = { theta: deltaTheta * 0.06, phi: deltaPhi * 0.06 };
 
     const newTheta = sphericalStartRef.current.theta + deltaTheta;
     // Clampear phi entre 0.08 rad (Polo Norte) y PI - 0.08 rad (Antártida / Polo Sur)
