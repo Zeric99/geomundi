@@ -70,6 +70,18 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     btnHover: string;
   }[] = [
     {
+      id: 'city-pinpoint',
+      title: '🎯 Puntería Geográfica (MapTap)',
+      desc: 'Te damos una ciudad y debes hacer clic lo más cerca posible para ganar hasta 1,000 pts.',
+      bgEmoji: '🎯',
+      cardGradient: 'from-cyan-950/50 via-[#18181B] to-[#18181B]',
+      borderColor: 'border-cyan-700/60',
+      hoverBorder: 'hover:border-cyan-400',
+      tagStyle: 'bg-cyan-950/80 text-cyan-300 border-cyan-700/60',
+      accentText: 'group-hover:text-cyan-300',
+      btnHover: 'group-hover:bg-cyan-500 group-hover:text-black',
+    },
+    {
       id: 'list-select',
       title: 'Modo Clásico: Adivinar Países',
       desc: 'Elige un país de la lista superior y encuéntralo en el mapa.',

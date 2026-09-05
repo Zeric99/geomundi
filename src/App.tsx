@@ -9,6 +9,7 @@ import { TriviaCuriositiesMode } from './components/game/TriviaCuriositiesMode';
 import { ListSelectMode } from './components/game/ListSelectMode';
 import { FlagSkipChainMode } from './components/game/FlagSkipChainMode';
 import { DailyChallengeMode } from './components/game/DailyChallengeMode';
+import { CityPinpointMode } from './components/game/CityPinpointMode';
 import { CountryExplorer } from './components/explore/CountryExplorer';
 import { TutorDashboard } from './components/tutor/TutorDashboard';
 import { LeaderboardView } from './components/leaderboard/LeaderboardView';
@@ -77,7 +78,7 @@ export function App() {
     recordGame(summary);
 
     if (isDailyChallengeActive) {
-      dailyChallengeService.recordDailyCompletion(summary.score, summary.accuracy);
+      dailyChallengeService.recordDailyCompletion(summary.score, summary.accuracy, summary.durationSeconds || 30);
     }
 
     // Evaluar si se desbloqueó algún logro
@@ -453,6 +454,15 @@ export function App() {
                     onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
                     onQuit={quitGame}
                     isGeekMode={config.isGeekMode}
+                  />
+                )}
+
+                {/* 7. Modo Puntería Geográfica (City Pinpoint) */}
+                {config.mode === 'city-pinpoint' && (
+                  <CityPinpointMode
+                    continent={config.continent}
+                    onFinishGame={handleGameComplete}
+                    onReturnToMenu={quitGame}
                   />
                 )}
               </div>

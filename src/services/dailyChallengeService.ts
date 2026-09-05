@@ -116,7 +116,7 @@ export class DailyChallengeService {
         stageType: 'flag-to-map',
         country: selectedCountries[1],
         promptText: `¿A qué país corresponde esta bandera nacional?`,
-        detailText: selectedCountries[1].flagUrl
+        detailText: selectedCountries[1].flagSvg
       },
       {
         stage: 3,
@@ -311,9 +311,10 @@ export class DailyChallengeService {
   /**
    * Genera el texto copiable estilo Wordle para compartir en redes/WhatsApp
    */
-  generateShareSnippet(score: number, accuracy: number, durationSeconds: number, dateStr: string = this.getTodayDateString()): string {
+  generateShareSnippet(score: number, accuracy: number, durationOrResults?: number | GameRoundResult[], dateStr: string = this.getTodayDateString()): string {
+    const duration = typeof durationOrResults === 'number' ? durationOrResults : 30;
     return `🌍 MapTap Desafío Diario #${dateStr}
-🎯 Precisión: ${accuracy}% | ⏱️ Tiempo: ${durationSeconds}s | 🏆 Puntos: ${score} pts
+🎯 Precisión: ${accuracy}% | ⏱️ Tiempo: ${duration}s | 🏆 Puntos: ${score} pts
 🟩🟩🟩🟩🟩 (5/5 Pruebas Superadas)
 
 ¡Juega gratis y pon a prueba tu geografía en MapTap! 🗺️✨`;
