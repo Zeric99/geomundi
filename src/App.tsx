@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Navbar, ActiveTab } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { GameFilters } from './components/game/GameFilters';
@@ -70,6 +70,22 @@ export function App() {
     countries,
     onGameComplete: handleGameComplete
   });
+
+  // Generar lista de países de banderas estable para la sesión activa
+  const flagChainCountries = useMemo(() => {
+    if (!isPlaying || config.mode !== 'flag-skip-chain') return [];
+    const fullList = config.isGeekMode
+      ? [...countries, ...GEEK_TERRITORIES]
+      : countries;
+    const continentList = config.continent === 'World'
+      ? fullList
+      : fullList.filter(c => c.continent === config.continent);
+    const isAll = config.totalQuestions >= 190 || config.totalQuestions === 999 || config.totalQuestions === 0;
+    const count = isAll
+      ? continentList.length
+      : Math.min(config.totalQuestions || 10, continentList.length);
+    return [...continentList].sort(() => Math.random() - 0.5).slice(0, count);
+  }, [isPlaying, config.mode, config.continent, config.isGeekMode, config.totalQuestions, countries]);
 
   // Iniciar Práctica Focalizada desde el Tutor o Banner
   const handleStartFocusedPractice = useCallback((customCodes?: string[]) => {
@@ -203,30 +219,16 @@ export function App() {
             ) : (
               <div className="h-full flex flex-col min-h-0 overflow-hidden space-y-1.5">
                 {/* 1. Modo Adivina la Bandera */}
-                {config.mode === 'flag-skip-chain' && (() => {
-                  const fullList = config.isGeekMode
-                    ? [...countries, ...GEEK_TERRITORIES]
-                    : countries;
-                  const continentList = config.continent === 'World'
-                    ? fullList
-                    : fullList.filter(c => c.continent === config.continent);
-                  const isAll = config.totalQuestions >= 190 || config.totalQuestions === 999 || config.totalQuestions === 0;
-                  const count = isAll
-                    ? continentList.length
-                    : Math.min(config.totalQuestions || 10, continentList.length);
-                  const selectedList = [...continentList].sort(() => Math.random() - 0.5).slice(0, count);
-
-                  return (
-                    <FlagSkipChainMode
-                      initialCountries={selectedList}
-                      continent={config.continent}
-                      onFinishGame={handleGameComplete}
-                      onQuit={quitGame}
-                      isGeekMode={config.isGeekMode}
-                      onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
-                    />
-                  );
-                })()}
+                {config.mode === 'flag-skip-chain' && (
+                  <FlagSkipChainMode
+                    initialCountries={flagChainCountries}
+                    continent={config.continent}
+                    onFinishGame={handleGameComplete}
+                    onQuit={quitGame}
+                    isGeekMode={config.isGeekMode}
+                    onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
+                  />
+                )}
 
                 {/* 2. Modo Lista & Mapa (Colores) */}
                 {config.mode === 'list-select' && (

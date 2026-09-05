@@ -14,11 +14,14 @@ import {
   ArrowRight,
   HelpCircle,
   Clock,
-  Layers
+  Layers,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Continent, Country, CountryMapStatus } from '../../types/country';
 import { GameSummary, GameRoundResult, Question } from '../../types/game';
 import { WorldMap } from '../map/WorldMap';
+import { GameOverModal } from './GameOverModal';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import confetti from 'canvas-confetti';
 
@@ -65,6 +68,12 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
   const [solvedCount, setSolvedCount] = useState<number>(0);
 
+  // Conmutador ON/OFF para mostrar el nombre del país al fallar en la bandera
+  const [showCountryNames, setShowCountryNames] = useState<boolean>(false);
+
+  // Resumen final al completar la partida
+  const [finishedSummary, setFinishedSummary] = useState<GameSummary | null>(null);
+
   // Registro de resultados para estadísticas finales
   const [gameRecords, setGameRecords] = useState<Record<string, FlagAttemptRecord>>({});
   
@@ -75,9 +84,8 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
   const startTimeRef = useRef<number>(Date.now());
   const questionStartTimeRef = useRef<number>(Date.now());
 
-  // Inicializar la partida
-  useEffect(() => {
-    // Barajar países
+  // Reiniciar partida internamente
+  const resetGame = () => {
     const shuffled = [...initialCountries].sort(() => 0.5 - Math.random());
     setCurrentQueue(shuffled);
     setSkippedQueue([]);
@@ -88,8 +96,17 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
     setMaxStreak(0);
     setSolvedCount(0);
     setCountryStatuses({});
+    setGameRecords({});
+    setFinishedSummary(null);
+    setShowRoundTransitionModal(false);
+    setFeedbackToast(null);
     startTimeRef.current = Date.now();
     questionStartTimeRef.current = Date.now();
+  };
+
+  // Inicializar la partida
+  useEffect(() => {
+    resetGame();
   }, [initialCountries]);
 
   const currentCountry = currentQueue[currentIndex] || null;
@@ -210,8 +227,12 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
         [clickedCountry.cca3.toUpperCase()]: 'wrong'
       }));
 
+      const wrongText = showCountryNames
+        ? `Has pulsado en ${clickedCountry.nameEs}. ¡Inténtalo de nuevo o salta la bandera!`
+        : `Ese no es el país correcto. ¡Inténtalo de nuevo!`;
+
       setFeedbackToast({
-        text: `Has pulsado ${clickedCountry.nameEs}. ¡Inténtalo de nuevo o salta la bandera!`,
+        text: wrongText,
         type: 'wrong',
         country: clickedCountry
       });
@@ -263,9 +284,9 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
     const firstTryCount = results.filter(r => r.firstTry).length;
     const wrongCount = totalUniqueFlags - solvedCount;
 
-    onFinishGame({
+    const summary: GameSummary = {
       mode: 'flag-skip-chain',
-      continent: 'World',
+      continent,
       totalQuestions: totalUniqueFlags,
       correctCount: solvedCount,
       firstTryCount,
@@ -276,10 +297,13 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
       durationSeconds,
       playedAt: new Date().toISOString(),
       results
-    });
+    };
+
+    setFinishedSummary(summary);
+    onFinishGame(summary);
   };
 
-  if (!currentCountry && !showRoundTransitionModal) return null;
+  if (!currentCountry && !showRoundTransitionModal && !finishedSummary) return null;
 
   return (
     <div className="flex flex-col h-full gap-4 max-w-7xl mx-auto w-full px-2 sm:px-4">
@@ -371,8 +395,22 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
             </div>
           </div>
 
-          {/* Botones de Acción: Saltar y Pista */}
+          {/* Botones de Acción: Nombres ON/OFF, Pista y Saltar */}
           <div className="flex items-center gap-2.5 flex-wrap">
+            {/* CONMUTADOR MOSTRAR NOMBRES DE PAÍSES AL FALLAR */}
+            <button
+              onClick={() => setShowCountryNames(prev => !prev)}
+              className={`px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
+                showCountryNames
+                  ? 'bg-cyan-500/20 hover:bg-cyan-500/30 border-cyan-500/40 text-cyan-300 shadow-glow-cyan'
+                  : 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-slate-400'
+              }`}
+              title={showCountryNames ? "Ocultar nombre de países al fallar en el mapa" : "Mostrar nombre de países al fallar en el mapa"}
+            >
+              {showCountryNames ? <Eye className="w-4 h-4 text-cyan-400" /> : <EyeOff className="w-4 h-4 text-slate-400" />}
+              <span>Mostrar nombres: <strong className={showCountryNames ? "text-cyan-300 font-extrabold" : "text-slate-400 font-bold"}>{showCountryNames ? 'ON' : 'OFF'}</strong></span>
+            </button>
+
             <button
               onClick={handleUseHint}
               disabled={Boolean(activeHint) || isEvaluating}
@@ -489,6 +527,16 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Modal de Fin de Juego (Felicidades / Resumen / Opciones) */}
+      {finishedSummary && (
+        <GameOverModal
+          summary={finishedSummary}
+          onPlayAgain={resetGame}
+          onGoToTutor={() => {}}
+          onReturnToMenu={onQuit}
+        />
       )}
     </div>
   );
