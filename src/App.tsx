@@ -23,6 +23,7 @@ import { DuelResultModal } from './components/multiplayer/DuelResultModal';
 import { GameOverModal } from './components/game/GameOverModal';
 import { FlagModal } from './components/common/FlagModal';
 import { WireframeGlobe } from './components/common/WireframeGlobe';
+import { BackgroundStardust } from './components/common/BackgroundStardust';
 import { useCountriesData } from './hooks/useCountriesData';
 import { useStatsManager } from './hooks/useStatsManager';
 import { useGameState } from './hooks/useGameState';
@@ -320,6 +321,9 @@ export function App() {
     <div className={`relative flex flex-col bg-black text-slate-100 selection:bg-cyan-500 selection:text-slate-950 ${
       isPlaying ? 'h-screen max-h-screen overflow-hidden' : 'min-h-screen'
     }`}>
+      {/* Partículas de Polvo Estelar en Movimiento por Toda la Pantalla */}
+      {showGlobeInMainMenu && <BackgroundStardust />}
+
       {/* Globo Terráqueo 3D Wireframe en el Lateral Derecho (Solo en menús principales Un Jugador y Multijugador) */}
       {showGlobeInMainMenu && (
         <div className="fixed -top-12 -right-36 sm:-right-28 md:-right-20 lg:-right-10 pointer-events-none z-0 opacity-95 overflow-visible select-none">

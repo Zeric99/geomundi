@@ -27,20 +27,7 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
     return points;
   }, []);
 
-  // Pre-generar partículas de polvo estelar que flotan y se mueven lentamente por el fondo
-  const ambientParticles = useRef(
-    Array.from({ length: 90 }, () => ({
-      x: Math.random(),
-      y: Math.random(),
-      vx: (Math.random() - 0.5) * 0.00008,
-      vy: (Math.random() - 0.5) * 0.00008,
-      radius: Math.random() * 1.6 + 0.6,
-      baseOpacity: Math.random() * 0.5 + 0.15,
-      pulseFreq: Math.random() * 0.002 + 0.001
-    }))
-  ).current;
-
-  // Cargar datos de continentes (world-110m.json)
+  // Cargar topojson de continentes
   useEffect(() => {
     let isMounted = true;
     const fetchGeoData = async () => {
@@ -96,8 +83,8 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
       const delta = time - lastTime;
       lastTime = time;
 
-      // Rotación ultra-lenta (0.0018° por milisegundo = ~0.1° por segundo)
-      rotationRef.current = (rotationRef.current + delta * 0.0018) % 360;
+      // Rotación extremadamente lenta y serena (0.0012° por ms = ~0.07°/s)
+      rotationRef.current = (rotationRef.current + delta * 0.0012) % 360;
       const currentRot = rotationRef.current;
 
       projection.rotate([currentRot, -16, 0]);
@@ -105,46 +92,16 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
       // Limpiar lienzo transparente
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 0. DIBUJAR PUNTOS Y PARTÍCULAS EN MOVIMIENTO POR TODO EL FONDO
-      ambientParticles.forEach((p) => {
-        // Mover partícula lentamente
-        p.x += p.vx * delta;
-        p.y += p.vy * delta;
-
-        // Rebote o reaparición continua al salir de bordes
-        if (p.x < 0) p.x = 1;
-        if (p.x > 1) p.x = 0;
-        if (p.y < 0) p.y = 1;
-        if (p.y > 1) p.y = 0;
-
-        const alphaPulse = Math.sin(time * p.pulseFreq) * 0.15;
-        const currentOpacity = Math.max(0.08, Math.min(0.8, p.baseOpacity + alphaPulse));
-
-        ctx.beginPath();
-        ctx.arc(
-          p.x * canvas.width,
-          p.y * canvas.height,
-          p.radius * dpr,
-          0,
-          Math.PI * 2
-        );
-        ctx.fillStyle = `rgba(255, 255, 255, ${currentOpacity.toFixed(3)})`;
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
-        ctx.shadowBlur = 3 * dpr;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      });
-
-      // 1. Silueta / Sombrado sutil del globo
+      // 1. Silueta / Sombreado sutil de la esfera
       ctx.beginPath();
       pathGenerator(sphereFeature);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.012)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
       ctx.fill();
 
       // 2. Anillo exterior nítido de la esfera
       ctx.beginPath();
       pathGenerator(sphereFeature);
-      ctx.lineWidth = 1.35 * dpr;
+      ctx.lineWidth = 1.4 * dpr;
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
       ctx.stroke();
 
@@ -152,7 +109,7 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
       ctx.beginPath();
       pathGenerator(graticule);
       ctx.lineWidth = 0.7 * dpr;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
       ctx.setLineDash([2 * dpr, 4 * dpr]);
       ctx.stroke();
       ctx.setLineDash([]);
@@ -161,10 +118,10 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
       if (landGeoJson) {
         ctx.beginPath();
         pathGenerator(landGeoJson);
-        ctx.lineWidth = 1.3 * dpr;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-        ctx.shadowBlur = 9 * dpr;
+        ctx.lineWidth = 1.35 * dpr;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+        ctx.shadowBlur = 10 * dpr;
         ctx.stroke();
         ctx.shadowBlur = 0;
       }
@@ -178,13 +135,13 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
         if (dist < Math.PI / 2) {
           const pt = projection([lon, lat]);
           if (pt) {
-            const alpha = Math.pow(Math.cos(dist), 1.1) * 0.75;
+            const alpha = Math.pow(Math.cos(dist), 1.1) * 0.8;
             if (alpha > 0.03) {
               ctx.beginPath();
-              ctx.arc(pt[0], pt[1], 1.3 * dpr, 0, Math.PI * 2);
+              ctx.arc(pt[0], pt[1], 1.35 * dpr, 0, Math.PI * 2);
               ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
-              ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
-              ctx.shadowBlur = 3 * dpr;
+              ctx.shadowColor = 'rgba(255, 255, 255, 0.7)';
+              ctx.shadowBlur = 4 * dpr;
               ctx.fill();
               ctx.shadowBlur = 0;
             }
@@ -213,11 +170,11 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [landGeoJson, size, geoGridPoints, ambientParticles]);
+  }, [landGeoJson, size, geoGridPoints]);
 
   return (
     <div className={`relative flex items-center justify-center pointer-events-none select-none ${className}`}>
-      {/* Resplandor radial de fondo */}
+      {/* Resplandor de aura blanca sutil */}
       <div 
         className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/10 via-white/5 to-transparent blur-3xl" 
         style={{ transform: 'scale(0.9)' }}
