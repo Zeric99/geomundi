@@ -284,7 +284,8 @@ export function useGameState({ countries, onGameComplete }: UseGameStateProps) {
           firstTry: false,
           attemptsUsed: newAttempts,
           timeSpentMs,
-          pointsEarned: 0
+          pointsEarned: 0,
+          wrongCountryCode: selectedCountry.cca3 !== 'WRONG_MATCH' ? selectedCountry.cca3 : undefined
         };
 
         const updatedResults = [...roundResults, result];

@@ -44,8 +44,9 @@ export default {
       },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-        display: ['Fraunces', 'Instrument Serif', 'Plus Jakarta Sans', 'serif'],
-        serif: ['Instrument Serif', 'Fraunces', 'Georgia', 'serif'],
+        display: ['Outfit', 'Plus Jakarta Sans', 'sans-serif'],
+        title: ['Outfit', 'Plus Jakarta Sans', 'sans-serif'],
+        serif: ['Outfit', 'Plus Jakarta Sans', 'serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       boxShadow: {

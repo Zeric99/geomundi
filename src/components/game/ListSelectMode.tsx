@@ -19,10 +19,13 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { GEEK_TERRITORIES } from '../../data/fallbackCountries';
+import { GameSummary, GameRoundResult } from '../../types/game';
+import { GameOverModal } from './GameOverModal';
 
 interface ListSelectModeProps {
   countries: Country[];
   continent: Continent;
+  onFinishGame?: (summary: GameSummary) => void;
   onQuit: () => void;
   isGeekMode?: boolean;
 }
@@ -33,11 +36,13 @@ interface CountryItemState {
   country: Country;
   status: CountryResultStatus;
   attempts: number;
+  timeSpentMs?: number;
 }
 
 export const ListSelectMode: React.FC<ListSelectModeProps> = ({
   countries,
   continent,
+  onFinishGame,
   onQuit,
   isGeekMode = false
 }) => {
@@ -92,6 +97,10 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
   const [streak, setStreak] = useState<number>(0);
   const [maxStreak, setMaxStreak] = useState<number>(0);
   const [bannerMessage, setBannerMessage] = useState<{ text: string; type: 'info' | 'success' | 'warning' | 'error' } | null>(null);
+  const [finishedSummary, setFinishedSummary] = useState<GameSummary | null>(null);
+
+  const startTimeRef = React.useRef<number>(Date.now());
+  const hasReportedRef = React.useRef<boolean>(false);
 
   // Mapear estados a los colores del mapa (correct=verde, hint=amarillo, wrong=rojo)
   const mapCountryStatuses = useMemo(() => {
@@ -135,9 +144,61 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
     return itemsState[selectedCountryCode]?.country || null;
   }, [selectedCountryCode, itemsState]);
 
+  // Generar resumen y reportar resultados
+  const finishSession = useCallback(() => {
+    if (hasReportedRef.current) return;
+    hasReportedRef.current = true;
+
+    const durationSeconds = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
+    const results: GameRoundResult[] = baseCountries.map(c => {
+      const item = itemsState[c.cca3.toUpperCase()];
+      const status = item ? item.status : 'pending';
+      const isSuccess = status === 'correct' || status === 'second_try';
+      const isFirstTry = status === 'correct';
+
+      return {
+        question: {
+          id: `list_${c.cca3}`,
+          country: c,
+          questionType: 'name',
+          promptText: `Ubicar ${c.nameEs}`,
+          hintUsed: status === 'second_try',
+          attempts: item ? item.attempts : 0
+        },
+        userSuccess: isSuccess,
+        firstTry: isFirstTry,
+        attemptsUsed: item ? item.attempts : 1,
+        timeSpentMs: item?.timeSpentMs || 2000,
+        pointsEarned: isFirstTry ? 100 : (status === 'second_try' ? 50 : 0)
+      };
+    });
+
+    const accuracy = counts.total > 0 ? Math.round((counts.correct / counts.total) * 100) : 0;
+
+    const summary: GameSummary = {
+      mode: 'list-select',
+      continent,
+      totalQuestions: counts.total,
+      correctCount: counts.correct + counts.secondTry,
+      firstTryCount: counts.correct,
+      wrongCount: counts.wrong,
+      score,
+      maxStreak,
+      accuracy,
+      durationSeconds,
+      playedAt: new Date().toISOString(),
+      results
+    };
+
+    setFinishedSummary(summary);
+    if (onFinishGame) {
+      onFinishGame(summary);
+    }
+  }, [baseCountries, itemsState, counts, continent, score, maxStreak, onFinishGame]);
+
   // Comprobar victoria/completado
   useEffect(() => {
-    if (counts.total > 0 && counts.completed === counts.total) {
+    if (counts.total > 0 && counts.completed === counts.total && !hasReportedRef.current) {
       playVictorySound();
       try {
         confetti({
@@ -146,8 +207,9 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
           origin: { y: 0.6 }
         });
       } catch (e) {}
+      finishSession();
     }
-  }, [counts.completed, counts.total, playVictorySound]);
+  }, [counts.completed, counts.total, playVictorySound, finishSession]);
 
   // Manejar clic en país del mapa
   const handleMapCountryClick = useCallback((clickedCountry: Country, clickedCca3: string) => {
@@ -317,7 +379,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
                 Objetivo:
               </span>
               <span className="text-lg">{targetCountry.flagEmoji}</span>
-              <span className="text-sm sm:text-base font-serif font-normal text-zinc-100">
+              <span className="text-sm sm:text-base font-display font-bold text-zinc-100 tracking-wide">
                 {targetCountry.nameEs}
               </span>
               {itemsState[targetCountry.cca3.toUpperCase()]?.attempts === 1 && (
@@ -514,6 +576,36 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
           isGeekMode={isGeekMode}
         />
       </div>
+
+      {/* Modal de Fin de Partida */}
+      {finishedSummary && (
+        <GameOverModal
+          summary={finishedSummary}
+          onPlayAgain={() => {
+            const nextState: Record<string, CountryItemState> = {};
+            baseCountries.forEach(c => {
+              nextState[c.cca3.toUpperCase()] = {
+                country: c,
+                status: 'pending',
+                attempts: 0
+              };
+            });
+            setItemsState(nextState);
+            setSelectedCountryCode(null);
+            setPulsingFailedCountryCode(null);
+            setFinishedSummary(null);
+            setScore(0);
+            setStreak(0);
+            setMaxStreak(0);
+            startTimeRef.current = Date.now();
+            hasReportedRef.current = false;
+          }}
+          onGoToTutor={() => {
+            onQuit();
+          }}
+          onReturnToMenu={onQuit}
+        />
+      )}
     </div>
   );
 };

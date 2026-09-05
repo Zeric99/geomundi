@@ -50,6 +50,7 @@ export interface GameRoundResult {
   attemptsUsed: number;
   timeSpentMs: number;
   pointsEarned: number;
+  wrongCountryCode?: string;
 }
 
 export interface GameSummary {

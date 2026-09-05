@@ -372,8 +372,8 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
                 </span>
               )}
             </div>
-            <h2 className="text-base sm:text-lg font-serif font-normal text-zinc-100 mt-1">
-              Escribir Países: <span className="text-indigo-300">{solvedCount} de {totalUniqueCountries} acertados</span>
+            <h2 className="text-base sm:text-lg font-display font-semibold text-zinc-100 mt-1 tracking-wide">
+              Escribir Países: <span className="text-teal-400">{solvedCount} de {totalUniqueCountries} acertados</span>
             </h2>
           </div>
         </div>
@@ -386,7 +386,7 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
           </div>
           <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700/60">
             <div
-              className="h-full bg-indigo-500 transition-all duration-300 rounded-full"
+              className="h-full bg-teal-500 transition-all duration-300 rounded-full"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -421,13 +421,13 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
 
       {/* Tarjeta de Pregunta Activa con Formulario y Botón de Pasar */}
       {currentCountry && (
-        <div className="bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-4 sm:p-5 shadow-card-subtle space-y-4 relative overflow-hidden">
+        <div className="bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-4 sm:p-5 shadow-card-subtle space-y-4 relative overflow-hidden border-l-4 border-l-teal-500">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3.5">
               <div
                 onClick={() => onOpenFlagModal?.(currentCountry)}
                 title="🔍 Haz clic para ampliar la bandera en alta definición"
-                className="w-16 h-11 sm:w-20 sm:h-13 rounded-lg overflow-hidden shadow-sm border border-zinc-700/80 bg-zinc-900 flex-shrink-0 cursor-zoom-in hover:border-indigo-500 hover:ring-1 hover:ring-indigo-500/50 transition-all active:scale-95 group relative"
+                className="w-16 h-11 sm:w-20 sm:h-13 rounded-lg overflow-hidden shadow-sm border border-zinc-700/80 bg-zinc-900 flex-shrink-0 cursor-zoom-in hover:border-teal-500 hover:ring-1 hover:ring-teal-500/50 transition-all active:scale-95 group relative"
               >
                 <img
                   src={currentCountry.flagSvg}
@@ -440,11 +440,11 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
               </div>
 
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-300 bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-800/50 inline-block mb-1">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-teal-300 bg-teal-950/60 px-2 py-0.5 rounded border border-teal-800/60 inline-block mb-1">
                   País #{currentIndex + 1} de {currentQueue.length} (Ronda {roundNumber})
                 </span>
-                <h3 className="text-base sm:text-xl font-serif font-normal text-zinc-100">
-                  ¿Cómo se llama el país resaltado en <span className="text-amber-300 font-medium">ámbar</span> en el mapa?
+                <h3 className="text-base sm:text-xl font-display font-bold text-zinc-100 tracking-wide">
+                  ¿Cómo se llama el país resaltado en <span className="text-amber-300 font-bold">ámbar</span> en el mapa?
                 </h3>
               </div>
             </div>

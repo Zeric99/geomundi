@@ -215,6 +215,7 @@ export function App() {
                 onStartGame={(overrideCfg) => startGame(overrideCfg)}
                 blindSpots={blindSpots}
                 onStartFocusedPractice={() => handleStartFocusedPractice()}
+                onGoToTutor={() => setActiveTab('tutor')}
               />
             ) : (
               <div className="h-full flex flex-col min-h-0 overflow-hidden space-y-1.5">
@@ -225,6 +226,10 @@ export function App() {
                     continent={config.continent}
                     onFinishGame={handleGameComplete}
                     onQuit={quitGame}
+                    onGoToTutor={() => {
+                      quitGame();
+                      setActiveTab('tutor');
+                    }}
                     isGeekMode={config.isGeekMode}
                     onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
                   />
@@ -235,6 +240,7 @@ export function App() {
                   <ListSelectMode
                     countries={countries}
                     continent={config.continent}
+                    onFinishGame={handleGameComplete}
                     onQuit={quitGame}
                     isGeekMode={config.isGeekMode}
                   />

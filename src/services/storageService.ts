@@ -75,6 +75,12 @@ export class StorageService {
         ? Math.round((existing.averageResponseTimeMs * 0.7) + (result.timeSpentMs * 0.3))
         : result.timeSpentMs;
 
+      // Actualizar países de confusión si hubo un error de selección
+      let confusionList = existing.confusionCountries || [];
+      if (result.wrongCountryCode && !confusionList.includes(result.wrongCountryCode.toUpperCase())) {
+        confusionList = [...confusionList, result.wrongCountryCode.toUpperCase()].slice(-5);
+      }
+
       updatedCountries[cca3] = {
         ...existing,
         nameEs: result.question.country.nameEs,
@@ -83,7 +89,8 @@ export class StorageService {
         firstTrySuccesses: newFirstTry,
         mistakes: newMistakes,
         lastReviewedAt: new Date().toISOString(),
-        averageResponseTimeMs: newAvgTime
+        averageResponseTimeMs: newAvgTime,
+        confusionCountries: confusionList
       };
     }
 

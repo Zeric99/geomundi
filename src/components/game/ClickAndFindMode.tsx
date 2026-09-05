@@ -71,7 +71,7 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
 
             {questionType === 'name' && (
               <div className="flex items-center gap-2.5">
-                <h2 className="text-2xl sm:text-3xl font-serif font-normal text-zinc-100 tracking-tight">
+                <h2 className="text-2xl sm:text-3xl font-display font-bold text-zinc-100 tracking-wide">
                   {country.nameEs}
                 </h2>
                 {onOpenFlagModal && (
@@ -88,7 +88,7 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
 
             {questionType === 'capital' && (
               <div>
-                <h2 className="text-2xl sm:text-3xl font-serif font-normal text-zinc-100">
+                <h2 className="text-2xl sm:text-3xl font-display font-bold text-zinc-100 tracking-wide">
                   {country.capital}
                 </h2>
                 <p className="text-xs text-zinc-400 mt-0.5 font-sans">
@@ -99,7 +99,7 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
 
             {questionType === 'flag' && (
               <div>
-                <h2 className="text-lg sm:text-xl font-serif font-normal text-zinc-200">
+                <h2 className="text-lg sm:text-xl font-display font-semibold text-zinc-200 tracking-wide">
                   ¿A qué país pertenece esta bandera?
                 </h2>
                 <p className="text-xs text-indigo-400 mt-0.5 flex items-center gap-1 font-sans">

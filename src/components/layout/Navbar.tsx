@@ -22,7 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full bg-[#121214]/95 backdrop-blur-md border-b border-zinc-800/80 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
-        {/* Logo & Marca Editorial */}
+        {/* Logo & Marca */}
         <div
           onClick={() => onChangeTab('game')}
           className="flex items-center gap-3 cursor-pointer group"
@@ -32,11 +32,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-serif font-black text-xl sm:text-2xl tracking-tight text-zinc-100">
-                Map<span className="text-indigo-400 italic">Tap</span>
+              <span className="font-display font-bold text-xl sm:text-2xl tracking-wide text-zinc-100">
+                Map<span className="text-indigo-400">Tap</span>
               </span>
             </div>
-            <p className="text-[11px] text-zinc-400 font-medium hidden sm:block">
+            <p className="text-[11px] text-zinc-400 font-sans hidden sm:block">
               Geografía interactiva y repetición espaciada
             </p>
           </div>

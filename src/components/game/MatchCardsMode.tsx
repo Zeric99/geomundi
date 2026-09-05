@@ -115,13 +115,13 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
   return (
     <div className="space-y-4">
       {/* Barra de Instrucción */}
-      <div className="bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-4 shadow-card-subtle flex items-center justify-between gap-4 flex-wrap">
+      <div className="bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-4 shadow-card-subtle flex items-center justify-between gap-4 flex-wrap border-l-4 border-l-purple-500">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-indigo-400">
+          <div className="p-2.5 bg-purple-950/50 border border-purple-800/60 rounded-lg text-purple-400">
             <Layers className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-serif font-normal text-zinc-100 text-base">
+            <h3 className="font-display font-semibold text-zinc-100 text-base sm:text-lg tracking-wide">
               Modo Emparejar (Match 5 Países)
             </h3>
             <p className="text-xs text-zinc-400 font-sans">

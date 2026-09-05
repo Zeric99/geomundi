@@ -29,6 +29,7 @@ interface GameFiltersProps {
   onStartGame: (overrideConfig?: Partial<GameConfig>) => void;
   blindSpots: BlindSpotItem[];
   onStartFocusedPractice: () => void;
+  onGoToTutor: () => void;
 }
 
 export const GameFilters: React.FC<GameFiltersProps> = ({
@@ -36,7 +37,8 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   onChangeConfig,
   onStartGame,
   blindSpots,
-  onStartFocusedPractice
+  onStartFocusedPractice,
+  onGoToTutor
 }) => {
   // Modal de configuración del modo seleccionado
   const [activeConfigMode, setActiveConfigMode] = useState<GameMode | null>(null);
@@ -55,56 +57,84 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     title: string; 
     desc: string; 
     bgEmoji: string;
-    accentColor: string; 
-    borderGlow: string;
+    cardGradient: string;
+    borderColor: string;
+    hoverBorder: string;
+    tagStyle: string;
+    accentText: string;
+    btnHover: string;
   }[] = [
     {
       id: 'list-select',
       title: 'Modo Clásico: Adivinar Países',
       desc: 'Elige un país de la lista superior y encuéntralo en el mapa.',
       bgEmoji: '🗺️',
-      accentColor: 'from-emerald-500/20 to-teal-600/10',
-      borderGlow: 'hover:border-emerald-500/80 hover:shadow-[0_0_30px_rgba(16,185,129,0.25)]',
+      cardGradient: 'from-emerald-950/40 via-[#18181B] to-[#18181B]',
+      borderColor: 'border-emerald-800/50',
+      hoverBorder: 'hover:border-emerald-500/70',
+      tagStyle: 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60',
+      accentText: 'group-hover:text-emerald-300',
+      btnHover: 'group-hover:bg-emerald-600 group-hover:text-white',
     },
     {
       id: 'flag-skip-chain',
       title: 'Adivina la Bandera',
       desc: 'Descubre a qué país pertenece cada bandera en el mapa.',
       bgEmoji: '🚩',
-      accentColor: 'from-sky-500/20 to-blue-600/10',
-      borderGlow: 'hover:border-sky-500/80 hover:shadow-[0_0_30px_rgba(56,189,248,0.25)]',
+      cardGradient: 'from-rose-950/40 via-[#18181B] to-[#18181B]',
+      borderColor: 'border-rose-800/50',
+      hoverBorder: 'hover:border-rose-500/70',
+      tagStyle: 'bg-rose-950/80 text-rose-300 border-rose-700/60',
+      accentText: 'group-hover:text-rose-300',
+      btnHover: 'group-hover:bg-rose-600 group-hover:text-white',
     },
     {
       id: 'click-find',
       title: 'Localiza en el Mapa',
       desc: 'Te damos un país, bandera o capital para ubicarlo en el mapa.',
       bgEmoji: '📍',
-      accentColor: 'from-cyan-500/20 to-sky-600/10',
-      borderGlow: 'hover:border-cyan-500/80 hover:shadow-[0_0_30px_rgba(6,182,212,0.25)]',
+      cardGradient: 'from-indigo-950/40 via-[#18181B] to-[#18181B]',
+      borderColor: 'border-indigo-800/50',
+      hoverBorder: 'hover:border-indigo-500/70',
+      tagStyle: 'bg-indigo-950/80 text-indigo-300 border-indigo-700/60',
+      accentText: 'group-hover:text-indigo-300',
+      btnHover: 'group-hover:bg-indigo-600 group-hover:text-white',
     },
     {
       id: 'input-write',
       title: 'Escribir Países',
       desc: 'El mapa ilumina un país y escribes su nombre con teclado.',
       bgEmoji: '⌨️',
-      accentColor: 'from-teal-500/20 to-emerald-600/10',
-      borderGlow: 'hover:border-teal-500/80 hover:shadow-[0_0_30px_rgba(20,184,166,0.25)]',
+      cardGradient: 'from-teal-950/40 via-[#18181B] to-[#18181B]',
+      borderColor: 'border-teal-800/50',
+      hoverBorder: 'hover:border-teal-500/70',
+      tagStyle: 'bg-teal-950/80 text-teal-300 border-teal-700/60',
+      accentText: 'group-hover:text-teal-300',
+      btnHover: 'group-hover:bg-teal-600 group-hover:text-white',
     },
     {
       id: 'trivia-curiosities',
       title: 'Trivia y Curiosidades',
       desc: 'Preguntas de récords mundiales y geografía sobre el mapa.',
       bgEmoji: '🏆',
-      accentColor: 'from-indigo-500/20 to-purple-600/10',
-      borderGlow: 'hover:border-indigo-500/80 hover:shadow-[0_0_30px_rgba(99,102,241,0.25)]',
+      cardGradient: 'from-amber-950/40 via-[#18181B] to-[#18181B]',
+      borderColor: 'border-amber-800/50',
+      hoverBorder: 'hover:border-amber-500/70',
+      tagStyle: 'bg-amber-950/80 text-amber-300 border-amber-700/60',
+      accentText: 'group-hover:text-amber-300',
+      btnHover: 'group-hover:bg-amber-600 group-hover:text-zinc-950',
     },
     {
       id: 'explore',
       title: 'Modo Explorador',
       desc: 'Navegación libre: consulta datos, banderas y fronteras.',
       bgEmoji: '🧭',
-      accentColor: 'from-amber-500/20 to-orange-600/10',
-      borderGlow: 'hover:border-amber-500/80 hover:shadow-[0_0_30px_rgba(245,158,11,0.25)]',
+      cardGradient: 'from-sky-950/40 via-[#18181B] to-[#18181B]',
+      borderColor: 'border-sky-800/50',
+      hoverBorder: 'hover:border-sky-500/70',
+      tagStyle: 'bg-sky-950/80 text-sky-300 border-sky-700/60',
+      accentText: 'group-hover:text-sky-300',
+      btnHover: 'group-hover:bg-sky-600 group-hover:text-white',
     },
   ];
 
@@ -140,10 +170,10 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       {/* Título de Selección de Modalidades */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold font-serif text-zinc-100 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-display font-bold text-zinc-100 tracking-wide">
             Elige una Modalidad de Juego
           </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-sans">
             Selecciona el modo de estudio o desafío que prefieras para calibrar tu aprendizaje.
           </p>
         </div>
@@ -155,16 +185,16 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
           <div
             key={m.id}
             onClick={() => handleOpenModeConfig(m.id)}
-            className="cursor-pointer p-5 sm:p-6 rounded-2xl border border-zinc-800 bg-[#18181B] hover:bg-[#202024] hover:border-zinc-700 transition-all duration-200 transform hover:-translate-y-0.5 flex flex-col justify-between group relative overflow-hidden min-h-[170px] shadow-sm"
+            className={`cursor-pointer p-5 sm:p-6 rounded-2xl border ${m.borderColor} ${m.hoverBorder} bg-gradient-to-br ${m.cardGradient} transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden min-h-[175px] shadow-sm hover:shadow-md`}
           >
-            {/* Emoji discreto de fondo */}
-            <div className="absolute top-4 right-4 sm:top-5 sm:right-5 text-5xl sm:text-6xl opacity-10 pointer-events-none select-none group-hover:opacity-20 transition-all duration-300 transform leading-none">
+            {/* Emoji de fondo */}
+            <div className="absolute top-4 right-4 text-5xl opacity-15 pointer-events-none select-none group-hover:opacity-30 transition-all duration-300 transform group-hover:scale-110 leading-none">
               {m.bgEmoji}
             </div>
 
             {/* Contenido Principal */}
-            <div className="relative z-10 space-y-1.5 pr-8">
-              <h3 className="font-serif font-bold text-zinc-100 text-lg sm:text-xl tracking-tight leading-snug group-hover:text-indigo-400 transition-colors">
+            <div className="relative z-10 space-y-1.5 pr-6">
+              <h3 className={`font-display font-bold text-zinc-100 text-lg sm:text-xl tracking-wide leading-snug transition-colors ${m.accentText}`}>
                 {m.title}
               </h3>
 
@@ -174,9 +204,9 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
             </div>
 
             {/* Botón Inferior: Configurar y Jugar */}
-            <div className="relative z-10 pt-3.5 mt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs font-semibold text-zinc-300 group-hover:text-white">
+            <div className="relative z-10 pt-3.5 mt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs font-sans font-medium text-zinc-300 group-hover:text-white">
               <span>Configurar y Jugar</span>
-              <div className="p-1.5 rounded-lg bg-zinc-800 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+              <div className={`p-1.5 rounded-lg bg-zinc-800 transition-all ${m.btnHover}`}>
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </div>
@@ -184,34 +214,35 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
         ))}
       </div>
 
-      {/* Banner de Práctica Focalizada (Tutor de Repaso Espaciado) */}
-      {blindSpots.length > 0 && (
-        <div className="bg-[#18181B] border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap shadow-sm mt-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-500/15 border border-amber-500/30 rounded-xl text-amber-400">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-zinc-100 flex items-center gap-2">
-                Sesión de Repaso Espaciado
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded border border-amber-500/30 font-bold">
-                  {blindSpots.length} Tarjetas Prioritarias
-                </span>
-              </h3>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
-                El Tutor de Repaso Espaciado ha preparado una ronda rápida con tus países pendientes de memorización.
-              </p>
-            </div>
+      {/* Banner de Tutor Personal: Sesión de Refuerzo Personalizada */}
+      <div className="bg-[#18181B] border border-indigo-500/30 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap shadow-sm mt-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-indigo-500/15 border border-indigo-500/30 rounded-xl text-indigo-400">
+            <Brain className="w-5 h-5" />
           </div>
-          <button
-            onClick={onStartFocusedPractice}
-            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-sm transition-all flex items-center gap-2 active:scale-95"
-          >
-            <Zap className="w-3.5 h-3.5 fill-zinc-950" />
-            <span>Iniciar Repaso Espaciado</span>
-          </button>
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-zinc-100 flex items-center gap-2">
+              Tutor personal: Sesión de refuerzo personalizada
+              {blindSpots.length > 0 && (
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded border border-amber-500/30 font-bold">
+                  {blindSpots.length} Países Prioritarios
+                </span>
+              )}
+            </h3>
+            <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
+              Accede a la sección de Tutor para revisar tu mazo de tarjetas, consultar diagnósticos e iniciar la práctica de repaso.
+            </p>
+          </div>
         </div>
-      )}
+        <button
+          onClick={onGoToTutor}
+          className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 active:scale-95 border border-indigo-500"
+        >
+          <Brain className="w-4 h-4" />
+          <span>Ir al Tutor Personal</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
 
       {/* Modal de Configuración Específica del Modo Elegido */}
       <AnimatePresence>
@@ -252,7 +283,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                   <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">
                     Ajustes de Partida
                   </span>
-                  <h2 className="text-xl sm:text-2xl font-bold font-serif text-zinc-100 mt-1">
+                  <h2 className="text-xl sm:text-2xl font-display font-semibold text-zinc-100 mt-1 tracking-wide">
                     {activeModeData.title}
                   </h2>
                 </div>

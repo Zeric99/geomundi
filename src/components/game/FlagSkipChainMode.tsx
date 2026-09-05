@@ -29,6 +29,7 @@ interface FlagSkipChainModeProps {
   initialCountries: Country[];
   onFinishGame: (summary: GameSummary) => void;
   onQuit: () => void;
+  onGoToTutor?: () => void;
   isGeekMode?: boolean;
   continent?: Continent;
   onOpenFlagModal?: (country: Country) => void;
@@ -46,6 +47,7 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
   initialCountries,
   onFinishGame,
   onQuit,
+  onGoToTutor,
   isGeekMode = false,
   continent = 'World',
   onOpenFlagModal
@@ -364,13 +366,13 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
 
       {/* Tarjeta de Bandera Activa y Botón de Saltar */}
       {currentCountry && (
-        <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-sm flex items-center justify-between gap-4 flex-wrap relative overflow-hidden">
+        <div className="bg-[#18181B] border border-zinc-800 rounded-xl p-4 sm:p-5 shadow-card-subtle flex items-center justify-between gap-4 flex-wrap relative overflow-hidden border-l-4 border-l-rose-500">
           <div className="flex items-center gap-4">
             {/* Visualizador de Bandera con opción de zoom */}
             <div
               onClick={() => onOpenFlagModal?.(currentCountry)}
               title="🔍 Haz clic para ampliar la bandera en alta definición"
-              className="w-24 h-16 sm:w-28 sm:h-18 rounded-xl overflow-hidden shadow-md border border-zinc-700 bg-zinc-900 flex-shrink-0 cursor-zoom-in hover:border-indigo-400 transition-all active:scale-95 group relative"
+              className="w-24 h-16 sm:w-28 sm:h-18 rounded-xl overflow-hidden shadow-md border border-zinc-700 bg-zinc-900 flex-shrink-0 cursor-zoom-in hover:border-rose-400 transition-all active:scale-95 group relative"
             >
               <img
                 src={currentCountry.flagSvg}
@@ -383,10 +385,10 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
             </div>
 
             <div>
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 inline-block mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-300 bg-rose-950/60 px-2 py-0.5 rounded border border-rose-800/60 inline-block mb-1">
                 ¿A qué país pertenece esta bandera?
               </span>
-              <h2 className="text-lg sm:text-xl font-serif font-bold text-zinc-100">
+              <h2 className="text-lg sm:text-xl font-display font-bold text-zinc-100 tracking-wide">
                 Haz clic en el país en el mapa
               </h2>
               <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1.5 font-sans">
@@ -402,22 +404,22 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
               onClick={() => setShowCountryNames(prev => !prev)}
               className={`px-3 py-2 rounded-lg border text-xs font-semibold transition-all flex items-center gap-1.5 active:scale-95 ${
                 showCountryNames
-                  ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300'
+                  ? 'bg-rose-950/60 border-rose-800/60 text-rose-300'
                   : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-400'
               }`}
               title={showCountryNames ? "Ocultar nombre de países al fallar en el mapa" : "Mostrar nombre de países al fallar en el mapa"}
             >
-              {showCountryNames ? <Eye className="w-4 h-4 text-indigo-400" /> : <EyeOff className="w-4 h-4 text-zinc-400" />}
-              <span>Mostrar nombres: <strong className={showCountryNames ? "text-indigo-300 font-extrabold" : "text-zinc-400 font-bold"}>{showCountryNames ? 'ON' : 'OFF'}</strong></span>
+              {showCountryNames ? <Eye className="w-4 h-4 text-rose-400" /> : <EyeOff className="w-4 h-4 text-zinc-400" />}
+              <span>Mostrar nombres: <strong className={showCountryNames ? "text-rose-300 font-extrabold" : "text-zinc-400 font-bold"}>{showCountryNames ? 'ON' : 'OFF'}</strong></span>
             </button>
 
             <button
               onClick={handleUseHint}
               disabled={Boolean(activeHint) || isEvaluating}
-              className={`px-3.5 py-2 rounded-lg border text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 py-2 rounded-lg border text-xs font-semibold transition-all ${
                 activeHint
                   ? 'bg-zinc-800/60 border-zinc-800 text-zinc-500 cursor-not-allowed'
-                  : 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30 text-amber-300 active:scale-95'
+                  : 'bg-amber-950/40 hover:bg-amber-900/60 border-amber-800/60 text-amber-300 active:scale-95'
               }`}
             >
               <Lightbulb className="w-4 h-4 text-amber-400" />
@@ -428,7 +430,7 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
             <button
               onClick={handleSkipFlag}
               disabled={isEvaluating}
-              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 active:scale-95 border border-indigo-500"
+              className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 active:scale-95 border border-rose-500"
               title="Pospone esta bandera para resolverla en la 2ª ronda"
             >
               <span>Saltar (Dejar para luego)</span>
@@ -534,7 +536,7 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
         <GameOverModal
           summary={finishedSummary}
           onPlayAgain={resetGame}
-          onGoToTutor={() => {}}
+          onGoToTutor={onGoToTutor || onQuit}
           onReturnToMenu={onQuit}
         />
       )}
