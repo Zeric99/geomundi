@@ -1,8 +1,31 @@
 import { Continent, Country } from './country';
 
-export type GameMode = 'click-find' | 'input-write' | 'match-cards' | 'trivia-curiosities' | 'list-select' | 'explore' | 'flag-skip-chain';
+export type GameMode = 'click-find' | 'input-write' | 'match-cards' | 'trivia-curiosities' | 'list-select' | 'explore' | 'flag-skip-chain' | 'city-pinpoint';
 
-export type QuestionType = 'name' | 'flag' | 'capital' | 'mixed' | 'trivia';
+export type QuestionType = 'name' | 'flag' | 'capital' | 'mixed' | 'trivia' | 'city-location';
+
+export interface CityTarget {
+  id: string;
+  nameEs: string;
+  nameEn: string;
+  countryNameEs: string;
+  cca3: string;
+  continent: Continent;
+  coordinates: [number, number]; // [lng, lat]
+  population?: number;
+  triviaFact: string;
+  flagEmoji?: string;
+}
+
+export interface PinpointResult {
+  city: CityTarget;
+  clickedCoordinates: [number, number]; // [lng, lat]
+  distanceKm: number;
+  score: number;
+  isSameCountry: boolean;
+  isSameContinent: boolean;
+  badgeTitle: string;
+}
 
 export interface TriviaItem {
   id: string;

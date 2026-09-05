@@ -8,6 +8,7 @@ import { InputWriteMode } from './components/game/InputWriteMode';
 import { TriviaCuriositiesMode } from './components/game/TriviaCuriositiesMode';
 import { ListSelectMode } from './components/game/ListSelectMode';
 import { FlagSkipChainMode } from './components/game/FlagSkipChainMode';
+import { DailyChallengeMode } from './components/game/DailyChallengeMode';
 import { CountryExplorer } from './components/explore/CountryExplorer';
 import { TutorDashboard } from './components/tutor/TutorDashboard';
 import { LeaderboardView } from './components/leaderboard/LeaderboardView';
@@ -30,7 +31,7 @@ import { Achievement } from './types/achievements';
 import { DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile } from './types/multiplayer';
 import { GEEK_TERRITORIES } from './data/fallbackCountries';
 import { achievementService } from './services/achievementService';
-import { dailyChallengeService } from './services/dailyChallengeService';
+import { dailyChallengeService, DailyStageQuestion } from './services/dailyChallengeService';
 import { challengeService } from './services/challengeService';
 import { multiplayerService } from './services/multiplayerService';
 import { Loader2 } from 'lucide-react';
@@ -45,6 +46,7 @@ export function App() {
   const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState<boolean>(false);
   const [isDonateModalOpen, setIsDonateModalOpen] = useState<boolean>(false);
   const [isDailyChallengeActive, setIsDailyChallengeActive] = useState<boolean>(false);
+  const [activeDailyQuestions, setActiveDailyQuestions] = useState<DailyStageQuestion[]>([]);
 
   // Estado del Modo Multijugador y Ranked ELO
   const [playerProfile, setPlayerProfile] = useState<PlayerProfile>(() => multiplayerService.getPlayerProfile());
@@ -156,18 +158,18 @@ export function App() {
   const handleStartDailyChallenge = useCallback(() => {
     if (countries.length === 0) return;
     const dailyQuestions = dailyChallengeService.generateDailyQuestions(countries);
-    const codes = dailyQuestions.map(q => q.country.cca3);
-
+    setActiveDailyQuestions(dailyQuestions);
     setIsDailyChallengeActive(true);
-    setActiveTab('game');
-    startGame({
-      mode: 'click-find',
-      continent: 'World',
-      questionType: 'mixed',
-      totalQuestions: 10,
-      focusedPracticeCodes: codes
-    });
-  }, [countries, startGame]);
+    setActiveTab('singleplayer');
+  }, [countries]);
+
+  // Finalizar Desafío Diario y mostrar leaderboard
+  const handleFinishDailyChallenge = useCallback((score: number, accuracy: number, durationSeconds: number) => {
+    dailyChallengeService.recordDailyCompletion(score, accuracy, durationSeconds);
+    setIsDailyChallengeActive(false);
+    setActiveDailyQuestions([]);
+    setActiveTab('leaderboard');
+  }, []);
 
   // Detectar Reto recibido por URL (?challenge=...)
   useEffect(() => {
@@ -260,7 +262,7 @@ export function App() {
 
   if (isLoading && countries.length === 0) {
     return (
-      <div className="min-h-screen bg-[#0B0F19] flex flex-col items-center justify-center text-white space-y-4">
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white space-y-4">
         <Loader2 className="w-12 h-12 text-cyan-400 animate-spin" />
         <h2 className="text-xl font-display font-bold">Cargando Atlas Mundial...</h2>
         <p className="text-xs text-slate-400">Sincronizando polígonos y datos de países</p>
@@ -289,7 +291,7 @@ export function App() {
     : null;
 
   return (
-    <div className={`flex flex-col bg-[#0B0F19] text-slate-100 selection:bg-cyan-500 selection:text-slate-950 ${
+    <div className={`flex flex-col bg-black text-slate-100 selection:bg-cyan-500 selection:text-slate-950 ${
       isPlaying ? 'h-screen max-h-screen overflow-hidden' : 'min-h-screen'
     }`}>
       {/* Barra de Navegación */}
@@ -317,8 +319,18 @@ export function App() {
       }`}>
         {/* PESTAÑA 1: UN JUGADOR (SINGLEPLAYER) */}
         {(activeTab === 'game' || activeTab === 'singleplayer') && (
-          <div className={isPlaying ? 'h-full flex flex-col min-h-0 overflow-hidden' : ''}>
-            {!isPlaying ? (
+          <div className={isPlaying || isDailyChallengeActive ? 'h-full flex flex-col min-h-0 overflow-hidden' : ''}>
+            {isDailyChallengeActive && activeDailyQuestions.length > 0 ? (
+              <DailyChallengeMode
+                questions={activeDailyQuestions}
+                onFinishChallenge={handleFinishDailyChallenge}
+                onQuit={() => {
+                  setIsDailyChallengeActive(false);
+                  setActiveDailyQuestions([]);
+                }}
+                onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
+              />
+            ) : !isPlaying ? (
               <GameFilters
                 config={config}
                 onChangeConfig={(newCfg) => updateConfig(newCfg)}

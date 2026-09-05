@@ -25,7 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isSingle = activeTab === 'game' || activeTab === 'singleplayer';
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#121214]/95 backdrop-blur-md border-b border-zinc-800/80 shadow-sm">
+    <header className="sticky top-0 z-40 w-full bg-black/90 backdrop-blur-md border-b border-zinc-800/80 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-3">
         {/* Logo & Marca */}
         <div

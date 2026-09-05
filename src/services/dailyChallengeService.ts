@@ -1,13 +1,28 @@
 import { Country } from '../types/country';
-import { GameRoundResult, Question } from '../types/game';
+import { GameRoundResult, Question, TriviaItem } from '../types/game';
+import { TRIVIA_POOL } from '../data/triviaPool';
 
 const DAILY_STORAGE_KEY = 'GEOMUNDI_DAILY_CHALLENGE_V1';
+
+export type DailyStageType = 'name-to-map' | 'flag-to-map' | 'capital-to-map' | 'map-to-input' | 'trivia-to-country';
+
+export interface DailyStageQuestion {
+  stage: 1 | 2 | 3 | 4 | 5;
+  stageTitle: string;
+  stageSubtitle: string;
+  stageType: DailyStageType;
+  country: Country;
+  promptText: string;
+  detailText?: string;
+  triviaItem?: TriviaItem;
+}
 
 export interface DailyChallengeRecord {
   dateStr: string; // YYYY-MM-DD
   completed: boolean;
   score: number;
   accuracy: number;
+  durationSeconds: number;
   completedAt: string;
 }
 
@@ -16,6 +31,18 @@ export interface DailyStreakState {
   bestStreak: number;
   lastCompletedDate: string;
   history: Record<string, DailyChallengeRecord>;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  username: string;
+  avatar: string;
+  score: number;
+  accuracy: number;
+  durationSeconds: number;
+  isUser?: boolean;
+  countryCode?: string;
+  playedDate?: string;
 }
 
 // PRNG con semilla basada en texto (Mulberry32)
@@ -51,54 +78,74 @@ export class DailyChallengeService {
   }
 
   /**
-   * Genera las 10 preguntas deterministas para la fecha dada
+   * Genera las 5 preguntas estructuradas y deterministas para el día:
+   * 1. Nombre -> Clicar en mapa
+   * 2. Bandera -> Clicar en mapa
+   * 3. Capital -> Clicar en mapa
+   * 4. Resaltado en mapa -> Escribir nombre
+   * 5. Trivia / Curiosidad -> Clicar en mapa
    */
-  generateDailyQuestions(countries: Country[], dateStr: string = this.getTodayDateString()): Question[] {
+  generateDailyQuestions(countries: Country[], dateStr: string = this.getTodayDateString()): DailyStageQuestion[] {
     if (countries.length === 0) return [];
 
     const seed = hashString(dateStr);
     const rng = seededRandom(seed);
 
-    // Separar países por continente para asegurar variedad
-    const continents = ['Europe', 'Americas', 'Africa', 'Asia', 'Oceania'] as const;
-    const pool: Country[] = [];
+    // Seleccionar 5 países únicos evitando repetirlos en la misma sesión
+    const shuffledCountries = [...countries].sort(() => rng() - 0.5);
+    const selectedCountries = shuffledCountries.slice(0, 5);
 
-    continents.forEach(cont => {
-      const contCountries = countries.filter(c => c.continent === cont);
-      const shuffled = [...contCountries].sort(() => rng() - 0.5);
-      pool.push(...shuffled.slice(0, 2)); // 2 por continente = 10
-    });
+    // Seleccionar 1 pregunta de trivia determinista de la pool
+    const triviaPoolShuffled = [...TRIVIA_POOL].sort(() => rng() - 0.5);
+    const selectedTrivia = triviaPoolShuffled[0];
+    const triviaCountry = countries.find(c => c.cca3 === selectedTrivia.countryCode) || selectedCountries[4];
 
-    // Si faltan para 10, rellenar
-    if (pool.length < 10) {
-      const remaining = countries.filter(c => !pool.includes(c));
-      const shuffled = [...remaining].sort(() => rng() - 0.5);
-      pool.push(...shuffled.slice(0, 10 - pool.length));
-    }
-
-    // Barajar lista final deterministamente
-    const finalShuffled = [...pool].sort(() => rng() - 0.5);
-
-    const questionTypes = ['name', 'flag', 'capital'] as const;
-
-    return finalShuffled.map((country, idx) => {
-      const qType = questionTypes[Math.floor(rng() * questionTypes.length)];
-      let promptText = `Ubica ${country.nameEs}`;
-      if (qType === 'capital') {
-        promptText = `¿Qué país tiene por capital ${country.capital}?`;
-      } else if (qType === 'flag') {
-        promptText = `Identifica el país de esta bandera`;
+    return [
+      {
+        stage: 1,
+        stageTitle: 'Etapa 1: Nombre ➔ Mapa',
+        stageSubtitle: 'Haz clic en el mapa donde está el país especificado',
+        stageType: 'name-to-map',
+        country: selectedCountries[0],
+        promptText: `¿Dónde se ubica ${selectedCountries[0].nameEs} en el mapa mundial?`
+      },
+      {
+        stage: 2,
+        stageTitle: 'Etapa 2: Bandera ➔ Mapa',
+        stageSubtitle: 'Identifica esta bandera y búscala en el mapa',
+        stageType: 'flag-to-map',
+        country: selectedCountries[1],
+        promptText: `¿A qué país corresponde esta bandera nacional?`,
+        detailText: selectedCountries[1].flagUrl
+      },
+      {
+        stage: 3,
+        stageTitle: 'Etapa 3: Capital ➔ Mapa',
+        stageSubtitle: 'Ubica el país al que pertenece la capital',
+        stageType: 'capital-to-map',
+        country: selectedCountries[2],
+        promptText: `¿En qué país se encuentra la capital ${selectedCountries[2].capital}?`,
+        detailText: selectedCountries[2].capital
+      },
+      {
+        stage: 4,
+        stageTitle: 'Etapa 4: Mapa ➔ Escribir Nombre',
+        stageSubtitle: 'El país está marcado en el mapa. Escribe su nombre',
+        stageType: 'map-to-input',
+        country: selectedCountries[3],
+        promptText: `¿Qué país es el que aparece seleccionado en amarillo en el mapa?`
+      },
+      {
+        stage: 5,
+        stageTitle: 'Etapa 5: Trivia ➔ País',
+        stageSubtitle: 'Resuelve la curiosidad seleccionando el país correcto',
+        stageType: 'trivia-to-country',
+        country: triviaCountry,
+        promptText: selectedTrivia.question,
+        detailText: selectedTrivia.hint,
+        triviaItem: selectedTrivia
       }
-
-      return {
-        id: `daily_${dateStr}_${country.cca3}_${idx}`,
-        country,
-        questionType: qType,
-        promptText,
-        hintUsed: false,
-        attempts: 0
-      };
-    });
+    ];
   }
 
   /**
@@ -126,7 +173,7 @@ export class DailyChallengeService {
   /**
    * Registra el resultado del reto diario de hoy y actualiza racha
    */
-  recordDailyCompletion(score: number, accuracy: number): DailyStreakState {
+  recordDailyCompletion(score: number, accuracy: number, durationSeconds: number): DailyStreakState {
     const state = this.getStreakState();
     const today = this.getTodayDateString();
 
@@ -154,6 +201,7 @@ export class DailyChallengeService {
           completed: true,
           score,
           accuracy,
+          durationSeconds,
           completedAt: new Date().toISOString()
         }
       }
@@ -167,18 +215,106 @@ export class DailyChallengeService {
   }
 
   /**
+   * Obtiene el ranking diario para la fecha dada (con rivales del día deterministas)
+   */
+  getDailyLeaderboard(dateStr: string = this.getTodayDateString()): LeaderboardEntry[] {
+    const seed = hashString(dateStr + '_leaderboard');
+    const rng = seededRandom(seed);
+
+    const rivalNames = [
+      { name: 'MateoGamer99', avatar: '👨‍🚀', country: 'ES' },
+      { name: 'Sofia_Geo', avatar: '👩‍🏫', country: 'MX' },
+      { name: 'LucasExplorer', avatar: '🦊', country: 'AR' },
+      { name: 'Elena_Atlas', avatar: '👑', country: 'CL' },
+      { name: 'Carlos_World', avatar: '🦁', country: 'CO' },
+      { name: 'Vanesa_Map', avatar: '👩‍💻', country: 'ES' },
+      { name: 'David_Geek', avatar: '🚀', country: 'PE' },
+      { name: 'Lucia_Banderas', avatar: '🎨', country: 'UY' },
+      { name: 'Nico_Master', avatar: '⚡', country: 'EC' }
+    ];
+
+    const rivals: LeaderboardEntry[] = rivalNames.map((r) => {
+      const score = Math.floor(rng() * 200) + 800; // 800-1000 pts
+      const accuracy = score > 950 ? 100 : score > 900 ? 80 : 60;
+      const durationSeconds = Math.floor(rng() * 25) + 15; // 15-40s
+      return {
+        rank: 0,
+        username: r.name,
+        avatar: r.avatar,
+        score,
+        accuracy,
+        durationSeconds,
+        countryCode: r.country
+      };
+    });
+
+    const state = this.getStreakState();
+    const userToday = state.history[dateStr];
+
+    if (userToday) {
+      rivals.push({
+        rank: 0,
+        username: 'Tú (Jugador Local)',
+        avatar: '🫵',
+        score: userToday.score,
+        accuracy: userToday.accuracy,
+        durationSeconds: userToday.durationSeconds || 30,
+        isUser: true,
+        countryCode: 'ES'
+      });
+    }
+
+    // Ordenar por score desc, luego duration asc
+    rivals.sort((a, b) => b.score - a.score || a.durationSeconds - b.durationSeconds);
+    return rivals.map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+  }
+
+  /**
+   * Obtiene el ranking acumulado mundial global de todos los tiempos
+   */
+  getGlobalLeaderboard(): LeaderboardEntry[] {
+    const globalRivals: LeaderboardEntry[] = [
+      { rank: 1, username: 'AtlasKing99', avatar: '👑', score: 14850, accuracy: 98, durationSeconds: 0, countryCode: 'ES' },
+      { rank: 2, username: 'GeoMaster_Latam', avatar: '🌎', score: 12400, accuracy: 95, durationSeconds: 0, countryCode: 'MX' },
+      { rank: 3, username: 'Carmen_Cartografa', avatar: '🧭', score: 11200, accuracy: 94, durationSeconds: 0, countryCode: 'AR' },
+      { rank: 4, username: 'Diego_Speed', avatar: '⚡', score: 9850, accuracy: 91, durationSeconds: 0, countryCode: 'CL' },
+      { rank: 5, username: 'Laura_Banderas', avatar: '🚩', score: 8900, accuracy: 89, durationSeconds: 0, countryCode: 'CO' },
+      { rank: 6, username: 'Alvaro_Geek', avatar: '🎓', score: 7650, accuracy: 88, durationSeconds: 0, countryCode: 'ES' },
+      { rank: 7, username: 'Beatriz_World', avatar: '🌟', score: 6500, accuracy: 86, durationSeconds: 0, countryCode: 'PE' }
+    ];
+
+    const state = this.getStreakState();
+    const historyEntries = Object.values(state.history);
+    const userTotalScore = historyEntries.reduce((acc, curr) => acc + curr.score, 0);
+
+    if (userTotalScore > 0) {
+      const avgAccuracy = Math.round(
+        historyEntries.reduce((acc, curr) => acc + curr.accuracy, 0) / historyEntries.length
+      );
+
+      globalRivals.push({
+        rank: 0,
+        username: 'Tú (Jugador Local)',
+        avatar: '🫵',
+        score: userTotalScore,
+        accuracy: avgAccuracy,
+        durationSeconds: 0,
+        isUser: true,
+        countryCode: 'ES'
+      });
+    }
+
+    globalRivals.sort((a, b) => b.score - a.score);
+    return globalRivals.map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+  }
+
+  /**
    * Genera el texto copiable estilo Wordle para compartir en redes/WhatsApp
    */
-  generateShareSnippet(score: number, accuracy: number, results: GameRoundResult[], dateStr: string = this.getTodayDateString()): string {
-    const blocks = results.map(r => {
-      if (r.firstTry) return '🟩';
-      if (r.userSuccess) return '🟨';
-      return '🟥';
-    }).join('');
-
+  generateShareSnippet(score: number, accuracy: number, durationSeconds: number, dateStr: string = this.getTodayDateString()): string {
     return `🌍 MapTap Desafío Diario #${dateStr}
-🎯 Precisión: ${accuracy}% | 🏆 Puntos: ${score} pts
-${blocks}
+🎯 Precisión: ${accuracy}% | ⏱️ Tiempo: ${durationSeconds}s | 🏆 Puntos: ${score} pts
+🟩🟩🟩🟩🟩 (5/5 Pruebas Superadas)
 
 ¡Juega gratis y pon a prueba tu geografía en MapTap! 🗺️✨`;
   }
