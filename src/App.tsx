@@ -320,7 +320,10 @@ export function App() {
       }
     : null;
 
-  const showGlobeInMainMenu = !isPlaying && (activeTab === 'singleplayer' || activeTab === 'game' || activeTab === 'multiplayer');
+  // Mostrar el planeta 3D y las estelas en TODOS los menús (Un Jugador, Multijugador, Explorar, Tutor, Récords)
+  // Ocultar estrictamente cuando se está dentro de una partida o juego en curso
+  const isInsideGame = isPlaying || isDailyChallengeActive || activeDuelQuestions.length > 0;
+  const showGlobeInMainMenu = !isInsideGame;
 
   return (
     <div className={`relative flex flex-col bg-black text-slate-100 selection:bg-cyan-500 selection:text-slate-950 ${

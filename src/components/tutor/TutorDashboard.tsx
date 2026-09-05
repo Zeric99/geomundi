@@ -56,7 +56,7 @@ export const TutorDashboard: React.FC<TutorDashboardProps> = ({
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-200">
       {/* Header del Tutor de Repaso Espaciado */}
-      <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-card-subtle relative overflow-hidden">
+      <div className="bg-zinc-950/80 backdrop-blur-sm border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-card-subtle relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="p-3.5 bg-zinc-800 border border-zinc-700 rounded-xl text-indigo-400 shadow-sm flex-shrink-0">
@@ -145,7 +145,7 @@ export const TutorDashboard: React.FC<TutorDashboardProps> = ({
       </div>
 
       {/* Mazo de Tarjetas por Niveles de Repetición Espaciada */}
-      <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-card-subtle space-y-4">
+      <div className="bg-zinc-950/80 backdrop-blur-sm border border-zinc-800/80 rounded-2xl p-5 sm:p-6 shadow-card-subtle space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-zinc-800">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-zinc-800 border border-zinc-700 text-indigo-400">
