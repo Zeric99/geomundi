@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Navbar, ActiveTab } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { GameFilters } from './components/game/GameFilters';
@@ -10,6 +10,10 @@ import { ListSelectMode } from './components/game/ListSelectMode';
 import { FlagSkipChainMode } from './components/game/FlagSkipChainMode';
 import { CountryExplorer } from './components/explore/CountryExplorer';
 import { TutorDashboard } from './components/tutor/TutorDashboard';
+import { LeaderboardView } from './components/leaderboard/LeaderboardView';
+import { AchievementToast } from './components/achievements/AchievementToast';
+import { AchievementsModal } from './components/achievements/AchievementsModal';
+import { DonateModal } from './components/common/DonateModal';
 import { GameOverModal } from './components/game/GameOverModal';
 import { FlagModal } from './components/common/FlagModal';
 import { useCountriesData } from './hooks/useCountriesData';
@@ -18,13 +22,23 @@ import { useGameState } from './hooks/useGameState';
 import { Country } from './types/country';
 import { GameConfig, GameSummary } from './types/game';
 import { TutorAdvice } from './types/stats';
+import { Achievement } from './types/achievements';
 import { GEEK_TERRITORIES } from './data/fallbackCountries';
+import { achievementService } from './services/achievementService';
+import { dailyChallengeService } from './services/dailyChallengeService';
+import { challengeService } from './services/challengeService';
 import { Loader2 } from 'lucide-react';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('game');
   const [explorerContinent, setExplorerContinent] = useState<any>('World');
   const [previewFlagCountry, setPreviewFlagCountry] = useState<Country | null>(null);
+
+  // Modales y Toasts de Nuevas Funcionalidades
+  const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
+  const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState<boolean>(false);
+  const [isDonateModalOpen, setIsDonateModalOpen] = useState<boolean>(false);
+  const [isDailyChallengeActive, setIsDailyChallengeActive] = useState<boolean>(false);
 
   // Carga de Países
   const { countries, isLoading } = useCountriesData();
@@ -43,7 +57,23 @@ export function App() {
   // Hook de Juego
   const handleGameComplete = useCallback((summary: GameSummary) => {
     recordGame(summary);
-  }, [recordGame]);
+
+    if (isDailyChallengeActive) {
+      dailyChallengeService.recordDailyCompletion(summary.score, summary.accuracy);
+    }
+
+    // Evaluar si se desbloqueó algún logro
+    const newAchievements = achievementService.evaluateAchievements(stats, {
+      accuracy: summary.accuracy,
+      maxStreak: summary.maxStreak,
+      isGeekMode: config.isGeekMode,
+      isDaily: isDailyChallengeActive
+    });
+
+    if (newAchievements.length > 0) {
+      setUnlockedAchievement(newAchievements[0]);
+    }
+  }, [recordGame, isDailyChallengeActive, stats, config.isGeekMode]);
 
   const {
     isPlaying,
@@ -106,6 +136,46 @@ export function App() {
       focusedPracticeCodes: targetCodes
     });
   }, [getFocusedPracticeCountries, startGame]);
+
+  // Iniciar Desafío Diario
+  const handleStartDailyChallenge = useCallback(() => {
+    if (countries.length === 0) return;
+    const dailyQuestions = dailyChallengeService.generateDailyQuestions(countries);
+    const codes = dailyQuestions.map(q => q.country.cca3);
+
+    setIsDailyChallengeActive(true);
+    setActiveTab('game');
+    startGame({
+      mode: 'click-find',
+      continent: 'World',
+      questionType: 'mixed',
+      totalQuestions: 10,
+      focusedPracticeCodes: codes
+    });
+  }, [countries, startGame]);
+
+  // Detectar Reto recibido por URL (?challenge=...)
+  useEffect(() => {
+    if (countries.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const challengeCode = params.get('challenge');
+    if (challengeCode) {
+      const decoded = challengeService.decodeChallenge(challengeCode);
+      if (decoded) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        alert(`⚔️ ¡Has aceptado el reto de ${decoded.creatorName || 'un amigo'}! Puntuación a superar: ${decoded.creatorScore} pts.`);
+        setIsDailyChallengeActive(false);
+        setActiveTab('game');
+        startGame({
+          mode: decoded.mode || 'click-find',
+          continent: (decoded.continent as any) || 'World',
+          questionType: decoded.questionType || 'mixed',
+          totalQuestions: decoded.countryCodes.length,
+          focusedPracticeCodes: decoded.countryCodes
+        });
+      }
+    }
+  }, [countries, startGame]);
 
   // Manejar acción desde tarjeta del Tutor
   const handleAdviceAction = useCallback((advice: TutorAdvice) => {

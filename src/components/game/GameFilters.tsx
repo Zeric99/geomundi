@@ -22,6 +22,9 @@ import {
 import { Continent } from '../../types/country';
 import { GameConfig, GameMode, QuestionType } from '../../types/game';
 import { BlindSpotItem } from '../../types/stats';
+import { WireframeGlobe } from '../common/WireframeGlobe';
+
+import { DailyChallengeCard } from '../daily/DailyChallengeCard';
 
 interface GameFiltersProps {
   config: GameConfig;
@@ -30,6 +33,7 @@ interface GameFiltersProps {
   blindSpots: BlindSpotItem[];
   onStartFocusedPractice: () => void;
   onGoToTutor: () => void;
+  onStartDaily: () => void;
 }
 
 export const GameFilters: React.FC<GameFiltersProps> = ({
@@ -38,7 +42,8 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   onStartGame,
   blindSpots,
   onStartFocusedPractice,
-  onGoToTutor
+  onGoToTutor,
+  onStartDaily
 }) => {
   // Modal de configuración del modo seleccionado
   const [activeConfigMode, setActiveConfigMode] = useState<GameMode | null>(null);
@@ -166,9 +171,19 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   const activeModeData = modes.find(m => m.id === activeConfigMode) || modes[0];
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
+    <div className="relative w-full max-w-6xl mx-auto space-y-6 overflow-visible">
+      {/* Globo Terráqueo 3D de Malla Vectorial (Wireframe) en el lateral derecho de fondo */}
+      <div className="absolute -top-16 -right-28 sm:-right-20 lg:-right-12 pointer-events-none z-0 opacity-75 overflow-visible select-none hidden sm:block">
+        <WireframeGlobe size={620} />
+      </div>
+
+      {/* Tarjeta Destacada: Desafío Diario */}
+      <div className="relative z-10">
+        <DailyChallengeCard onStartDaily={onStartDaily} />
+      </div>
+
       {/* Título de Selección de Modalidades */}
-      <div className="flex items-center justify-between">
+      <div className="relative z-10 flex items-center justify-between pt-2">
         <div>
           <h2 className="text-2xl sm:text-3xl font-display font-bold text-zinc-100 tracking-wide">
             Elige una Modalidad de Juego
@@ -180,7 +195,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       </div>
 
       {/* Grid Principal de Tarjetas de Modos de Juego */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         {modes.map((m) => (
           <div
             key={m.id}
@@ -215,7 +230,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       </div>
 
       {/* Banner de Tutor Personal: Sesión de Refuerzo Personalizada */}
-      <div className="bg-[#18181B] border border-indigo-500/30 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap shadow-sm mt-6">
+      <div className="relative z-10 bg-[#18181B] border border-indigo-500/30 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap shadow-sm mt-6">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-indigo-500/15 border border-indigo-500/30 rounded-xl text-indigo-400">
             <Brain className="w-5 h-5" />
