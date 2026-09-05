@@ -28,7 +28,6 @@ const landFeatures = feature(topoData as any, topoData.objects.land as any);
 /**
  * Genera una textura equirrectangular satelital ultra-crisp (4096x2048) en Canvas 2D
  * perfectamente sincronizada 1:1 con las coordenadas geográficas de TopoJSON.
- * Elimina cualquier carga externa de CDN para garantizar calibración matemática absoluta.
  */
 function generateSatelliteEarthTexture(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
@@ -79,7 +78,6 @@ function generateSatelliteEarthTexture(): HTMLCanvasElement {
           if (!poly || poly.length === 0) return;
           const outerRing: number[][] = Array.isArray(poly[0]?.[0]) ? poly[0] : poly;
 
-          // Calcular latitud y longitud medias para color biogeográfico
           let sumLat = 0;
           let sumLng = 0;
           outerRing.forEach((pt: number[]) => {
@@ -89,7 +87,6 @@ function generateSatelliteEarthTexture(): HTMLCanvasElement {
           const avgLat = sumLat / outerRing.length;
           const avgLng = sumLng / outerRing.length;
 
-          // Color biogeográfico realista según latitud/longitud real
           let landColor = '#224726'; // Verde templado
 
           const absLat = Math.abs(avgLat);
@@ -111,7 +108,6 @@ function generateSatelliteEarthTexture(): HTMLCanvasElement {
           drawPolygon(outerRing);
           ctx.fill();
 
-          // Sombra sutil de costa
           ctx.strokeStyle = 'rgba(14, 116, 144, 0.4)';
           ctx.lineWidth = 1.5;
           ctx.stroke();
@@ -158,20 +154,22 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
   const earthMeshRef = useRef<THREE.Mesh | null>(null);
   const markersGroupRef = useRef<THREE.Group | null>(null);
 
-  // Rotación y Zoom target (yaw: rotación Y, pitch: inclinación X)
-  const rotationRef = useRef<{ yaw: number; pitch: number }>({ yaw: 0, pitch: 0 });
-  const targetRotationRef = useRef<{ yaw: number; pitch: number }>({ yaw: 0, pitch: 0 });
+  // Coordenadas esféricas de la Cámara Orbit (theta: acimutal, phi: polar de 0.08 a PI-0.08)
+  const sphericalRef = useRef<{ theta: number; phi: number }>({ theta: 0, phi: Math.PI / 2 });
+  const targetSphericalRef = useRef<{ theta: number; phi: number }>({ theta: 0, phi: Math.PI / 2 });
+  const velocityRef = useRef<{ theta: number; phi: number }>({ theta: 0, phi: 0 });
+
   const zoomScaleRef = useRef<number>(1.0);
   const targetZoomScaleRef = useRef<number>(1.0);
 
   // Arrastre con ratón / touch
   const isPointerDownRef = useRef<boolean>(false);
   const pointerStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const rotationStartRef = useRef<{ yaw: number; pitch: number }>({ yaw: 0, pitch: 0 });
+  const sphericalStartRef = useRef<{ theta: number; phi: number }>({ theta: 0, phi: Math.PI / 2 });
   const dragDistRef = useRef<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
-  // Convertir [lng, lat] a Vector3 3D exacto en la esfera Three.js
+  // Convertir [lng, lat] a Vector3 3D exacto en la superficie de la Tierra (R=1.01)
   const lngLatToVector3 = useCallback((lng: number, lat: number, radius: number = 1.01): THREE.Vector3 => {
     const phi = (90 - lat) * (Math.PI / 180);
     const theta = (lng + 180) * (Math.PI / 180);
@@ -192,7 +190,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     return [lng, lat];
   }, []);
 
-  // Inicializar Escena Three.js 3D
+  // Inicializar Escena Three.js 3D con Orbit Spherical Camera
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
@@ -204,9 +202,10 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    // 2. Cámara
+    // 2. Cámara (Inicializada mirando el ecuador)
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(0, 0, 3.5);
+    camera.up.set(0, 1, 0); // Eje norte siempre alineado verticalmente
     cameraRef.current = camera;
 
     // 3. Renderer WebGL
@@ -226,12 +225,12 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     dirLight.position.set(5, 3, 5);
     scene.add(dirLight);
 
-    // 5. Textura Satelital (Generada 1:1 desde TopoJSON sin depender de CDN externo)
+    // 5. Textura Satelital
     const procCanvas = generateSatelliteEarthTexture();
     const earthTexture = new THREE.CanvasTexture(procCanvas);
     earthTexture.colorSpace = THREE.SRGBColorSpace;
 
-    // 6. Malla Esférica de la Tierra (Orden de Rotación YXZ)
+    // 6. Malla Esférica de la Tierra (Mesh estacionario en 0,0,0)
     const sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
     const sphereMaterial = new THREE.MeshStandardMaterial({
       map: earthTexture,
@@ -240,7 +239,6 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     });
 
     const earthMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    earthMesh.rotation.order = 'YXZ';
     earthMeshRef.current = earthMesh;
     scene.add(earthMesh);
 
@@ -255,24 +253,43 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     const atmosMesh = new THREE.Mesh(atmosGeometry, atmosMaterial);
     scene.add(atmosMesh);
 
-    // Bucle de Animación a 60fps
+    // Bucle de Animación a 60fps con Inercia Damping
     let animFrameId: number;
     const animate = () => {
       animFrameId = requestAnimationFrame(animate);
 
-      // Lerp suave de rotación yaw/pitch y zoom
-      rotationRef.current.yaw += (targetRotationRef.current.yaw - rotationRef.current.yaw) * 0.12;
-      rotationRef.current.pitch += (targetRotationRef.current.pitch - rotationRef.current.pitch) * 0.12;
-      zoomScaleRef.current += (targetZoomScaleRef.current - zoomScaleRef.current) * 0.12;
+      // Inercia / desaceleración progresiva tras soltar el arrastre
+      if (!isPointerDownRef.current) {
+        velocityRef.current.theta *= 0.92;
+        velocityRef.current.phi *= 0.92;
 
-      if (earthMeshRef.current) {
-        earthMeshRef.current.rotation.order = 'YXZ';
-        earthMeshRef.current.rotation.y = rotationRef.current.yaw;
-        earthMeshRef.current.rotation.x = rotationRef.current.pitch;
+        if (Math.abs(velocityRef.current.theta) > 0.00005) {
+          targetSphericalRef.current.theta += velocityRef.current.theta;
+        }
+        if (Math.abs(velocityRef.current.phi) > 0.00005) {
+          targetSphericalRef.current.phi = Math.max(
+            0.08,
+            Math.min(Math.PI - 0.08, targetSphericalRef.current.phi + velocityRef.current.phi)
+          );
+        }
       }
 
+      // Lerp suave hacia las coordenadas esféricas target y zoom
+      sphericalRef.current.theta += (targetSphericalRef.current.theta - sphericalRef.current.theta) * 0.14;
+      sphericalRef.current.phi += (targetSphericalRef.current.phi - sphericalRef.current.phi) * 0.14;
+      zoomScaleRef.current += (targetZoomScaleRef.current - zoomScaleRef.current) * 0.14;
+
+      // Posicionar cámara usando coordenadas esféricas Orbit (Radio, Phi, Theta)
       if (cameraRef.current) {
-        cameraRef.current.position.z = 3.5 / zoomScaleRef.current;
+        const radius = 3.5 / zoomScaleRef.current;
+        const phi = sphericalRef.current.phi;
+        const theta = sphericalRef.current.theta;
+
+        cameraRef.current.position.x = radius * Math.sin(phi) * Math.sin(theta);
+        cameraRef.current.position.y = radius * Math.cos(phi);
+        cameraRef.current.position.z = radius * Math.sin(phi) * Math.cos(theta);
+        cameraRef.current.up.set(0, 1, 0); // Eje norte 100% recto
+        cameraRef.current.lookAt(0, 0, 0);
       }
 
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
@@ -369,7 +386,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
         drawPinAndArc(item.clickedCoords, item.targetCoords, true);
       });
 
-      // Centrar suavemente en el último tiro registrado
+      // Centrar suavemente la cámara en el último tiro registrado
       const lastPin = previousPins[previousPins.length - 1];
       let midLng = (lastPin.clickedCoords[0] + lastPin.targetCoords[0]) / 2;
       if (Math.abs(lastPin.clickedCoords[0] - lastPin.targetCoords[0]) > 180) {
@@ -378,9 +395,9 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       }
       const midLat = (lastPin.clickedCoords[1] + lastPin.targetCoords[1]) / 2;
 
-      const rotY = - (midLng + 90) * (Math.PI / 180);
-      const rotX = midLat * (Math.PI / 180);
-      targetRotationRef.current = { yaw: rotY, pitch: rotX };
+      const tTheta = (midLng + 90) * (Math.PI / 180);
+      const tPhi = Math.max(0.08, Math.min(Math.PI - 0.08, (90 - midLat) * (Math.PI / 180)));
+      targetSphericalRef.current = { theta: tTheta, phi: tPhi };
     }
 
     // B. Dibujar tiro de la ronda activa si está evaluada
@@ -394,9 +411,9 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       }
       const midLat = (clickedCoords[1] + targetCoords[1]) / 2;
 
-      const rotY = - (midLng + 90) * (Math.PI / 180);
-      const rotX = midLat * (Math.PI / 180);
-      targetRotationRef.current = { yaw: rotY, pitch: rotX };
+      const tTheta = (midLng + 90) * (Math.PI / 180);
+      const tPhi = Math.max(0.08, Math.min(Math.PI - 0.08, (90 - midLat) * (Math.PI / 180)));
+      targetSphericalRef.current = { theta: tTheta, phi: tPhi };
     } else if (clickedCoords && !isEvaluated) {
       // Tiro individual en progreso
       const userPos = lngLatToVector3(clickedCoords[0], clickedCoords[1], 1.01);
@@ -421,7 +438,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
   };
 
   const handleResetView = () => {
-    targetRotationRef.current = { yaw: 0, pitch: 0 };
+    targetSphericalRef.current = { theta: 0, phi: Math.PI / 2 };
     targetZoomScaleRef.current = 1.0;
   };
 
@@ -431,11 +448,12 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     targetZoomScaleRef.current = Math.max(0.6, Math.min(4.0, targetZoomScaleRef.current * delta));
   };
 
-  // Arrastre físico exacto 1:1 de MapTap.gg
+  // Arrastre 1:1 idéntico a MapTap.gg con Clamping Polar de la Antártida e Inercia Damping
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     isPointerDownRef.current = true;
     pointerStartRef.current = { x: e.clientX, y: e.clientY };
-    rotationStartRef.current = { ...rotationRef.current };
+    sphericalStartRef.current = { ...sphericalRef.current };
+    velocityRef.current = { theta: 0, phi: 0 };
     dragDistRef.current = 0;
     setIsDragging(false);
   };
@@ -451,14 +469,19 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       setIsDragging(true);
     }
 
-    const sensitivity = 0.0045 / zoomScaleRef.current;
+    const sensitivity = 0.004 / zoomScaleRef.current;
     
-    // Arrastre 1:1 idéntico a MapTap.gg:
-    const newYaw = rotationStartRef.current.yaw - dx * sensitivity;
-    const newPitch = Math.max(-1.4, Math.min(1.4, rotationStartRef.current.pitch + dy * sensitivity));
+    // Cambios angulares esféricos:
+    const deltaTheta = - dx * sensitivity;
+    const deltaPhi = - dy * sensitivity;
 
-    rotationRef.current = { yaw: newYaw, pitch: newPitch };
-    targetRotationRef.current = { yaw: newYaw, pitch: newPitch };
+    velocityRef.current = { theta: deltaTheta * 0.4, phi: deltaPhi * 0.4 };
+
+    const newTheta = sphericalStartRef.current.theta + deltaTheta;
+    // Clampear phi entre 0.08 rad (Polo Norte) y PI - 0.08 rad (Antártida / Polo Sur)
+    const newPhi = Math.max(0.08, Math.min(Math.PI - 0.08, sphericalStartRef.current.phi + deltaPhi));
+
+    targetSphericalRef.current = { theta: newTheta, phi: newPhi };
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -471,7 +494,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       const clickX = e.clientX - rect.left;
       const clickY = e.clientY - rect.top;
 
-      // Raycasting 3D exacto sobre la esfera rotada
+      // Raycasting 3D exacto sobre la superficie de la Tierra
       const mouse = new THREE.Vector2(
         (clickX / rect.width) * 2 - 1,
         -(clickY / rect.height) * 2 + 1
@@ -484,8 +507,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
 
       if (intersects.length > 0) {
         const point = intersects[0].point;
-        const localPoint = earthMeshRef.current.worldToLocal(point.clone());
-        const [lng, lat] = vector3ToLngLat(localPoint);
+        const [lng, lat] = vector3ToLngLat(point);
 
         onMapClick([lng, lat]);
       }
