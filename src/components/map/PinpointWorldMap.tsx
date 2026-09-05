@@ -22,34 +22,35 @@ interface PinpointWorldMapProps {
   cityName?: string;
 }
 
-// Extraer continentes en memoria
+// Extraer continentes en memoria directamente desde la fuente autoritativa TopoJSON
 const landFeatures = feature(topoData as any, topoData.objects.land as any);
 
 /**
- * Genera una textura equirrectangular satelital realista de la Tierra (2048x1024) en Canvas 2D
- * con océanos azules, vegetación verde, desiertos dorados y casquetes polares sin NINGUNA línea de frontera.
+ * Genera una textura equirrectangular satelital ultra-crisp (4096x2048) en Canvas 2D
+ * perfectamente sincronizada 1:1 con las coordenadas geográficas de TopoJSON.
+ * Elimina cualquier carga externa de CDN para garantizar calibración matemática absoluta.
  */
 function generateSatelliteEarthTexture(): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
-  canvas.width = 2048;
-  canvas.height = 1024;
+  canvas.width = 4096;
+  canvas.height = 2048;
   const ctx = canvas.getContext('2d');
   if (!ctx) return canvas;
 
-  // 1. Océano Profundo
-  const oceanGrad = ctx.createLinearGradient(0, 0, 0, 1024);
-  oceanGrad.addColorStop(0, '#091c30');
-  oceanGrad.addColorStop(0.3, '#0e2b4a');
-  oceanGrad.addColorStop(0.5, '#0c2744');
-  oceanGrad.addColorStop(0.7, '#0c243e');
-  oceanGrad.addColorStop(1, '#061322');
+  // 1. Océano Profundo con gradiente abisal realista
+  const oceanGrad = ctx.createLinearGradient(0, 0, 0, 2048);
+  oceanGrad.addColorStop(0, '#071829');
+  oceanGrad.addColorStop(0.3, '#0b2440');
+  oceanGrad.addColorStop(0.5, '#0a213b');
+  oceanGrad.addColorStop(0.7, '#081c33');
+  oceanGrad.addColorStop(1, '#040d18');
   ctx.fillStyle = oceanGrad;
-  ctx.fillRect(0, 0, 2048, 1024);
+  ctx.fillRect(0, 0, 4096, 2048);
 
-  // 2. Renderizar polígonos de masa terrestre sin líneas de fronteras
+  // 2. Renderizar masas terrestres sin líneas de fronteras
   if (landFeatures && (landFeatures as any).features) {
-    const scaleX = 2048 / 360;
-    const scaleY = 1024 / 180;
+    const scaleX = 4096 / 360;
+    const scaleY = 2048 / 180;
 
     const projectPoint = (lng: number, lat: number): [number, number] => {
       const x = (lng + 180) * scaleX;
@@ -78,35 +79,42 @@ function generateSatelliteEarthTexture(): HTMLCanvasElement {
           if (!poly || poly.length === 0) return;
           const outerRing: number[][] = Array.isArray(poly[0]?.[0]) ? poly[0] : poly;
 
-          // Calcular latitud media para gradientes biogeográficos
+          // Calcular latitud y longitud medias para color biogeográfico
           let sumLat = 0;
-          outerRing.forEach((pt: number[]) => { sumLat += pt[1]; });
-          const avgLat = sumLat / outerRing.length;
           let sumLng = 0;
-          outerRing.forEach((pt: number[]) => { sumLng += pt[0]; });
+          outerRing.forEach((pt: number[]) => {
+            sumLng += pt[0];
+            sumLat += pt[1];
+          });
+          const avgLat = sumLat / outerRing.length;
           const avgLng = sumLng / outerRing.length;
 
-          // Color biogeográfico realista
-          let landColor = '#244828'; // Verde templado
+          // Color biogeográfico realista según latitud/longitud real
+          let landColor = '#224726'; // Verde templado
 
           const absLat = Math.abs(avgLat);
           if (absLat > 60) {
-            landColor = '#dbeafe'; // Hielo y nieve polar
+            landColor = '#e2e8f0'; // Hielo y nieve polar
           } else if (avgLat > 12 && avgLat < 35 && avgLng > -18 && avgLng < 65) {
-            landColor = '#b89458'; // Sahara / Arabia
+            landColor = '#b89458'; // Desierto del Sahara / Arabia
           } else if (avgLat > 35 && avgLat < 48 && avgLng > 55 && avgLng < 105) {
             landColor = '#a8894f'; // Desierto de Gobi / Asia Central
           } else if (avgLat > -32 && avgLat < -18 && avgLng > 112 && avgLng < 154) {
-            landColor = '#bc7c47'; // Outback de Australia
+            landColor = '#b57442'; // Outback de Australia
           } else if (absLat < 15) {
-            landColor = '#173d1f'; // Selva Amazónica / Congo
+            landColor = '#153a1d'; // Selva Amazónica / Congo
           } else if (absLat >= 15 && absLat <= 38) {
-            landColor = '#32592c'; // Sabanas y zonas subtropicales
+            landColor = '#2e5628'; // Sabanas y bosques subtropicales
           }
 
           ctx.fillStyle = landColor;
           drawPolygon(outerRing);
           ctx.fill();
+
+          // Sombra sutil de costa
+          ctx.strokeStyle = 'rgba(14, 116, 144, 0.4)';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
         });
       };
 
@@ -118,18 +126,18 @@ function generateSatelliteEarthTexture(): HTMLCanvasElement {
     });
   }
 
-  // 3. Casquetes Polares
-  const northIce = ctx.createLinearGradient(0, 0, 0, 100);
+  // 3. Casquetes Polares (Norte y Sur)
+  const northIce = ctx.createLinearGradient(0, 0, 0, 180);
   northIce.addColorStop(0, '#f8fafc');
   northIce.addColorStop(1, 'rgba(248, 250, 252, 0)');
   ctx.fillStyle = northIce;
-  ctx.fillRect(0, 0, 2048, 100);
+  ctx.fillRect(0, 0, 4096, 180);
 
-  const southIce = ctx.createLinearGradient(0, 920, 0, 1024);
+  const southIce = ctx.createLinearGradient(0, 1860, 0, 2048);
   southIce.addColorStop(0, 'rgba(248, 250, 252, 0)');
   southIce.addColorStop(1, '#f8fafc');
   ctx.fillStyle = southIce;
-  ctx.fillRect(0, 920, 2048, 104);
+  ctx.fillRect(0, 1860, 4096, 188);
 
   return canvas;
 }
@@ -218,25 +226,10 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     dirLight.position.set(5, 3, 5);
     scene.add(dirLight);
 
-    // 5. Textura Satelital
+    // 5. Textura Satelital (Generada 1:1 desde TopoJSON sin depender de CDN externo)
     const procCanvas = generateSatelliteEarthTexture();
     const earthTexture = new THREE.CanvasTexture(procCanvas);
     earthTexture.colorSpace = THREE.SRGBColorSpace;
-
-    // Textura fotográfica NASA de alta resolución si está disponible
-    const loader = new THREE.TextureLoader();
-    loader.load(
-      'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/earth_atmos_2048.jpg',
-      (loadedTex) => {
-        loadedTex.colorSpace = THREE.SRGBColorSpace;
-        if (earthMeshRef.current) {
-          (earthMeshRef.current.material as THREE.MeshStandardMaterial).map = loadedTex;
-          (earthMeshRef.current.material as THREE.MeshStandardMaterial).needsUpdate = true;
-        }
-      },
-      undefined,
-      () => {}
-    );
 
     // 6. Malla Esférica de la Tierra (Orden de Rotación YXZ)
     const sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
@@ -461,8 +454,6 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     const sensitivity = 0.0045 / zoomScaleRef.current;
     
     // Arrastre 1:1 idéntico a MapTap.gg:
-    // Mover ratón a la derecha (dx > 0) desplaza la superficie bajo el cursor a la derecha.
-    // Mover ratón hacia abajo (dy > 0) desplaza la superficie bajo el cursor hacia abajo.
     const newYaw = rotationStartRef.current.yaw - dx * sensitivity;
     const newPitch = Math.max(-1.4, Math.min(1.4, rotationStartRef.current.pitch + dy * sensitivity));
 
