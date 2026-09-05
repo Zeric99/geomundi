@@ -131,14 +131,14 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
   return (
     <div className="flex flex-col h-full min-h-0 gap-2 max-w-7xl mx-auto w-full px-1 sm:px-2 overflow-hidden">
       {/* Barra Superior: Categoría, Vidas, Racha, Puntuación */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 shadow-md shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18181B]/95 backdrop-blur-md px-3.5 py-2 rounded-xl border border-zinc-800 shadow-card-subtle shrink-0">
         {/* Contador y Badge de Categoría */}
         <div className="flex items-center gap-2.5">
-          <div className="px-2.5 py-0.5 bg-slate-800 rounded-lg border border-slate-700 text-xs font-semibold text-slate-300">
-            Pregunta <span className="text-cyan-400 font-bold">{currentIndex + 1}</span> / {totalQuestions}
+          <div className="px-2.5 py-0.5 bg-zinc-800 rounded-md border border-zinc-700 text-xs font-mono font-medium text-zinc-300">
+            Pregunta <span className="text-indigo-400 font-bold">{currentIndex + 1}</span> / {totalQuestions}
           </div>
 
-          <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border text-xs font-semibold ${categoryInfo.bg} ${categoryInfo.color}`}>
+          <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-md border text-xs font-mono font-medium ${categoryInfo.bg} ${categoryInfo.color}`}>
             <CategoryIcon className="w-3.5 h-3.5" />
             <span>{categoryInfo.label}</span>
           </div>
@@ -146,14 +146,14 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
 
         {/* Vidas y Racha */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-rose-950/40 border border-rose-800/40 px-2 py-0.5 rounded-lg">
+          <div className="flex items-center gap-1 bg-rose-950/30 border border-rose-800/40 px-2 py-0.5 rounded-md">
             {[...Array(3)].map((_, i) => (
               <Heart
                 key={i}
                 className={`w-3.5 h-3.5 transition-all duration-300 ${
                   i < lives
-                    ? 'fill-rose-500 text-rose-500 drop-shadow-[0_0_6px_rgba(244,63,94,0.7)]'
-                    : 'text-slate-600 opacity-40'
+                    ? 'fill-rose-500 text-rose-500'
+                    : 'text-zinc-700 opacity-40'
                 }`}
               />
             ))}
@@ -163,21 +163,21 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
             <motion.div
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
-              className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-lg text-amber-400 font-bold text-xs"
+              className="flex items-center gap-1 bg-amber-950/40 border border-amber-800/50 px-2 py-0.5 rounded-md text-amber-300 font-mono text-xs"
             >
-              <Flame className="w-3.5 h-3.5 fill-amber-400 animate-pulse" />
+              <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
               <span>x{streak}</span>
             </motion.div>
           )}
 
-          <div className="text-right">
-            <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider mr-1">Pts:</span>
-            <span className="text-base font-black text-emerald-400 font-mono">{score}</span>
+          <div className="text-right font-mono">
+            <span className="text-[10px] uppercase text-zinc-500 font-medium tracking-wider mr-1">Pts:</span>
+            <span className="text-base font-normal text-emerald-400">{score}</span>
           </div>
 
           <button
             onClick={onQuit}
-            className="text-xs text-slate-400 hover:text-slate-200 px-2 py-1 rounded-lg hover:bg-slate-800 transition"
+            className="text-xs text-zinc-400 hover:text-zinc-200 px-2 py-1 rounded-md hover:bg-zinc-800 transition font-mono"
           >
             Salir
           </button>
@@ -189,21 +189,21 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
         key={currentQuestion.id}
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative bg-gradient-to-r from-slate-900/95 via-indigo-950/40 to-slate-900/95 backdrop-blur-md p-3 sm:p-4 rounded-xl border border-indigo-500/30 shadow-md shrink-0"
+        className="relative bg-[#18181B]/95 backdrop-blur-md p-3 sm:p-4 rounded-xl border border-zinc-800 shadow-card-subtle shrink-0 border-l-4 border-l-indigo-500"
       >
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5">
           <div className="flex items-start gap-2.5 max-w-4xl">
-            <div className="p-2 bg-indigo-500/20 border border-indigo-400/30 rounded-xl shrink-0 mt-0.5">
+            <div className="p-2 bg-indigo-950/50 border border-indigo-800/60 rounded-lg shrink-0 mt-0.5">
               <Sparkles className="w-5 h-5 text-indigo-400" />
             </div>
 
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400">Curiosidad Geográfica</span>
-                <span className="text-slate-500">•</span>
-                <span className="text-[11px] text-slate-400">Toca un país para ver su nombre y confírmalo</span>
+                <span className="text-[11px] font-mono font-medium uppercase tracking-wider text-indigo-400">Curiosidad Geográfica</span>
+                <span className="text-zinc-600">•</span>
+                <span className="text-[11px] text-zinc-400 font-sans">Toca un país para ver su nombre y confírmalo</span>
               </div>
-              <h2 className="text-sm sm:text-base md:text-lg font-black text-white leading-snug">
+              <h2 className="text-sm sm:text-base md:text-lg font-serif font-normal text-zinc-100 leading-snug">
                 {currentQuestion.promptText}
               </h2>
             </div>
@@ -214,13 +214,13 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
             <button
               onClick={onUseHint}
               disabled={currentQuestion.hintUsed || isEvaluating}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 currentQuestion.hintUsed
-                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                  : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 hover:shadow-glow-amber'
+                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
+                  : 'bg-amber-950/40 hover:bg-amber-900/50 text-amber-200 border border-amber-800/60 shadow-sm'
               }`}
             >
-              <Lightbulb className="w-3.5 h-3.5" />
+              <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
               <span>{currentQuestion.hintUsed ? 'Pista usada' : 'Pedir Pista'}</span>
             </button>
           </div>
@@ -233,7 +233,7 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-2 p-2 bg-amber-950/40 border border-amber-700/50 rounded-lg text-amber-200 text-xs flex items-center gap-2"
+              className="mt-2 p-2 bg-amber-950/30 border border-amber-800/50 rounded-lg text-amber-200 text-xs flex items-center gap-2 font-sans"
             >
               <HelpCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <span><strong>Pista:</strong> {trivia?.hint || activeHint}</span>
@@ -244,19 +244,19 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
 
       {/* Barra Interactiva de Selección y Confirmación */}
       {!isEvaluating && (
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl border bg-slate-900/90 backdrop-blur-md shrink-0 border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-xl border bg-[#18181B]/95 backdrop-blur-md shrink-0 border-zinc-800 shadow-sm">
           {selectedCountry ? (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1">
+            <div className="flex items-center gap-2 flex-wrap font-sans">
+              <span className="text-[11px] font-mono font-medium uppercase tracking-wider text-indigo-400 flex items-center gap-1">
                 <Target className="w-3.5 h-3.5" /> Seleccionado:
               </span>
               <span className="text-base">{selectedCountry.flagEmoji}</span>
-              <strong className="text-white text-xs sm:text-sm">{selectedCountry.nameEs}</strong>
-              <span className="text-slate-400 text-xs">(Capital: {selectedCountry.capital || 'N/A'})</span>
+              <strong className="text-zinc-100 text-xs sm:text-sm font-medium">{selectedCountry.nameEs}</strong>
+              <span className="text-zinc-400 text-xs font-sans">(Capital: {selectedCountry.capital || 'N/A'})</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <HelpCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <div className="flex items-center gap-2 text-xs text-zinc-400 font-sans">
+              <HelpCircle className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
               <span>Haz clic en cualquier país del mapa para seleccionarlo y ver su nombre</span>
             </div>
           )}
@@ -264,10 +264,10 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
           <button
             onClick={handleConfirmAnswer}
             disabled={!selectedCountry || isEvaluating}
-            className={`px-4 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${
+            className={`px-4 py-1.5 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${
               selectedCountry
-                ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 shadow-glow-cyan'
-                : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm'
+                : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
             }`}
           >
             <Check className="w-3.5 h-3.5" />
@@ -277,7 +277,7 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
       )}
 
       {/* Mapa Interactivo Principal */}
-      <div className="relative flex-1 min-h-0 w-full rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+      <div className="relative flex-1 min-h-0 w-full rounded-xl overflow-hidden shadow-lg border border-zinc-800">
         <WorldMap
           countryStatuses={countryStatuses}
           selectedCountryCode={!isEvaluating && selectedCountry ? selectedCountry.cca3 : null}
@@ -288,35 +288,35 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
           isGeekMode={isGeekMode}
         />
 
-        {/* Modal Flotante de Explicación de la Curiosidad (FIJO hasta que el jugador pulsa "Siguiente") */}
+        {/* Modal Flotante de Explicación de la Curiosidad */}
         <AnimatePresence>
           {showFactModal && lastFactAnswer && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: 20 }}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-xl bg-[#0F172A]/98 backdrop-blur-2xl p-4 sm:p-5 rounded-2xl border border-cyan-500/60 shadow-[0_10px_40px_rgba(0,0,0,0.95)] space-y-3"
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-xl bg-[#18181B] p-4 sm:p-5 rounded-2xl border border-zinc-700 shadow-2xl space-y-3"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                  <div className={`p-2 rounded-xl border shrink-0 ${
+                  <div className={`p-2 rounded-lg border shrink-0 ${
                     lastFactAnswer.isCorrect 
-                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' 
-                      : 'bg-amber-500/20 border-amber-500/40 text-amber-400'
+                      ? 'bg-emerald-950/60 border-emerald-800/60 text-emerald-400' 
+                      : 'bg-amber-950/60 border-amber-800/60 text-amber-400'
                   }`}>
-                    {lastFactAnswer.isCorrect ? <CheckCircle2 className="w-6 h-6" /> : <BookOpen className="w-6 h-6" />}
+                    {lastFactAnswer.isCorrect ? <CheckCircle2 className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />}
                   </div>
 
                   <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400">
-                      {lastFactAnswer.isCorrect ? '✅ ¡Acertaste!' : '📍 País Correcto'}
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-300">
+                      {lastFactAnswer.isCorrect ? '✓ ¡Acertaste!' : '📍 País Correcto'}
                     </span>
                     <div className="flex items-center gap-2 flex-wrap mt-0.5">
                       <span className="text-xl">{lastFactAnswer.flagEmoji}</span>
-                      <h3 className="text-base sm:text-lg font-black text-white">
+                      <h3 className="text-base sm:text-lg font-serif font-normal text-zinc-100">
                         {lastFactAnswer.countryName}
                       </h3>
-                      <span className="text-[11px] text-slate-300 font-semibold bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
+                      <span className="text-[11px] text-zinc-400 font-mono bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">
                         Capital: {lastFactAnswer.capital}
                       </span>
                     </div>
@@ -326,7 +326,7 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
                 {/* Botón Siguiente Pregunta */}
                 <button
                   onClick={handleNext}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-black text-xs shadow-glow-cyan transition-all flex items-center gap-1.5 shrink-0 active:scale-95 animate-pulse"
+                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs shadow-sm transition-all flex items-center gap-1.5 shrink-0 active:scale-95"
                 >
                   <span>Siguiente Pregunta</span>
                   <ArrowRight className="w-4 h-4" />
@@ -334,8 +334,8 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
               </div>
 
               {/* Explicación de la Curiosidad */}
-              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed">
-                <span className="font-bold text-cyan-300 block mb-1">📖 Curiosidad explicada:</span>
+              <div className="p-3 bg-[#121214] rounded-lg border border-zinc-800 text-xs sm:text-sm text-zinc-300 leading-relaxed font-sans">
+                <span className="font-mono text-indigo-400 block mb-1">📖 Curiosidad explicada:</span>
                 {lastFactAnswer.fact}
               </div>
             </motion.div>

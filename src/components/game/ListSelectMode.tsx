@@ -304,30 +304,30 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
   return (
     <div className="flex flex-col h-full min-h-0 gap-1.5 max-w-7xl mx-auto w-full px-1 sm:px-2 overflow-hidden">
       {/* 1. Barra Unificada Compacta: Objetivo Activo + Estadísticas */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 shadow-md shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18181B]/95 backdrop-blur-md px-3.5 py-2 rounded-xl border border-zinc-800 shadow-card-subtle shrink-0">
         {/* Objetivo Activo o Instrucción */}
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-indigo-500/20 border border-indigo-400/30 rounded-xl text-indigo-300 shrink-0">
-            <Target className="w-4 h-4 animate-pulse" />
+          <div className="p-2 bg-zinc-800 border border-zinc-700 rounded-lg text-indigo-400 shrink-0">
+            <Target className="w-4 h-4" />
           </div>
 
           {targetCountry ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
+              <span className="text-xs font-mono font-medium uppercase tracking-wider text-indigo-400">
                 Objetivo:
               </span>
               <span className="text-lg">{targetCountry.flagEmoji}</span>
-              <span className="text-sm sm:text-base font-black text-white">
+              <span className="text-sm sm:text-base font-serif font-normal text-zinc-100">
                 {targetCountry.nameEs}
               </span>
               {itemsState[targetCountry.cca3.toUpperCase()]?.attempts === 1 && (
-                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-amber-950/50 text-amber-300 border border-amber-800/60 font-medium">
                   2º Intento
                 </span>
               )}
             </div>
           ) : (
-            <div className="text-xs sm:text-sm font-semibold text-slate-300">
+            <div className="text-xs sm:text-sm font-sans font-medium text-zinc-300">
               {counts.completed === counts.total 
                 ? '🎉 ¡Completado con éxito!'
                 : '👆 Selecciona un país de la lista o pulsa en el mapa'}
@@ -338,21 +338,21 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
         {/* Resumen de Resultados + Puntos + Salir */}
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* Verde: 1er intento */}
-          <div className="flex items-center gap-1 bg-emerald-950/50 border border-emerald-800/40 px-2 py-0.5 rounded-lg text-emerald-300 text-xs font-bold shadow-sm">
+          <div className="flex items-center gap-1 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded-md text-emerald-300 text-xs font-mono shadow-sm">
             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
             <span>{counts.correct}</span>
             <span className="text-[9px] opacity-70 hidden sm:inline">1º</span>
           </div>
 
           {/* Amarillo: 2º intento */}
-          <div className="flex items-center gap-1 bg-amber-950/50 border border-amber-800/40 px-2 py-0.5 rounded-lg text-amber-300 text-xs font-bold shadow-sm">
+          <div className="flex items-center gap-1 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded-md text-amber-300 text-xs font-mono shadow-sm">
             <AlertTriangle className="w-3 h-3 text-amber-400" />
             <span>{counts.secondTry}</span>
             <span className="text-[9px] opacity-70 hidden sm:inline">2º</span>
           </div>
 
           {/* Rojo: Fallados */}
-          <div className="flex items-center gap-1 bg-rose-950/50 border border-rose-800/40 px-2 py-0.5 rounded-lg text-rose-300 text-xs font-bold shadow-sm">
+          <div className="flex items-center gap-1 bg-rose-950/40 border border-rose-800/40 px-2 py-0.5 rounded-md text-rose-300 text-xs font-mono shadow-sm">
             <XCircle className="w-3 h-3 text-rose-400" />
             <span>{counts.wrong}</span>
             <span className="text-[9px] opacity-70 hidden sm:inline">Fallos</span>
@@ -360,20 +360,20 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
 
           {/* Racha */}
           {streak > 1 && (
-            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-lg text-amber-400 font-bold text-xs">
-              <Flame className="w-3.5 h-3.5 fill-amber-400 animate-pulse" />
+            <div className="flex items-center gap-1 bg-amber-950/40 border border-amber-800/50 px-2 py-0.5 rounded-md text-amber-300 font-mono text-xs">
+              <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
               <span>x{streak}</span>
             </div>
           )}
 
           {/* Puntos */}
-          <div className="text-right pl-2 border-l border-slate-800">
-            <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono tracking-tight">{score} pts</span>
+          <div className="text-right pl-2 border-l border-zinc-800 font-mono">
+            <span className="text-xs sm:text-sm font-normal text-emerald-400">{score} pts</span>
           </div>
 
           <button
             onClick={onQuit}
-            className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-slate-800 transition"
+            className="text-xs text-zinc-400 hover:text-white px-2 py-1 rounded-md hover:bg-zinc-800 transition font-mono"
           >
             Salir
           </button>
@@ -382,57 +382,57 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
 
       {/* Mensaje de retroalimentación temporal */}
       {bannerMessage && (
-        <div className={`text-xs px-3 py-1 rounded-xl border font-semibold ${
-          bannerMessage.type === 'success' ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300' :
-          bannerMessage.type === 'warning' ? 'bg-amber-950/70 border-amber-500/50 text-amber-300' :
-          bannerMessage.type === 'error' ? 'bg-rose-950/70 border-rose-500/50 text-rose-300' :
-          'bg-indigo-950/70 border-indigo-500/50 text-indigo-300'
+        <div className={`text-xs px-3 py-1 rounded-lg border font-sans ${
+          bannerMessage.type === 'success' ? 'bg-emerald-950/80 border-emerald-800/60 text-emerald-300' :
+          bannerMessage.type === 'warning' ? 'bg-amber-950/80 border-amber-800/60 text-amber-300' :
+          bannerMessage.type === 'error' ? 'bg-rose-950/80 border-rose-800/60 text-rose-300' :
+          'bg-indigo-950/80 border-indigo-800/60 text-indigo-300'
         }`}>
           {bannerMessage.text}
         </div>
       )}
 
-      {/* 2. Bandeja Compacta de Chips de Países (Optimizada para maximizar el mapa) */}
-      <div className="bg-slate-900/90 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-slate-800 shadow-md space-y-1.5 shrink-0">
+      {/* 2. Bandeja Compacta de Chips de Países */}
+      <div className="bg-[#18181B]/95 backdrop-blur-md px-3 py-2 rounded-xl border border-zinc-800 shadow-card-subtle space-y-1.5 shrink-0">
         {/* Barra de Filtros y Búsqueda */}
         <div className="flex flex-wrap items-center justify-between gap-1.5">
-          <div className="flex items-center gap-1 overflow-x-auto">
+          <div className="flex items-center gap-1 overflow-x-auto font-sans">
             <button
               onClick={() => setActiveFilter('all')}
-              className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition ${
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition ${
                 activeFilter === 'all'
-                  ? 'bg-cyan-500 text-slate-950 font-bold shadow-glow-cyan'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'bg-indigo-600 text-white font-medium shadow-sm'
+                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
               }`}
             >
               Todos ({counts.total})
             </button>
             <button
               onClick={() => setActiveFilter('pending')}
-              className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition ${
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition ${
                 activeFilter === 'pending'
-                  ? 'bg-slate-200 text-slate-950 font-bold'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'bg-zinc-200 text-zinc-950 font-medium'
+                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
               }`}
             >
               Pendientes ({counts.pending})
             </button>
             <button
               onClick={() => setActiveFilter('correct')}
-              className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition ${
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition ${
                 activeFilter === 'correct'
-                  ? 'bg-emerald-500 text-slate-950 font-bold'
-                  : 'bg-slate-800 text-emerald-400 hover:bg-slate-700'
+                  ? 'bg-emerald-600 text-white font-medium'
+                  : 'bg-zinc-800 text-emerald-400 hover:bg-zinc-700'
               }`}
             >
               Acertados ({counts.correct + counts.secondTry})
             </button>
             <button
               onClick={() => setActiveFilter('wrong')}
-              className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition ${
+              className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition ${
                 activeFilter === 'wrong'
-                  ? 'bg-rose-500 text-white font-bold'
-                  : 'bg-slate-800 text-rose-400 hover:bg-slate-700'
+                  ? 'bg-rose-600 text-white font-medium'
+                  : 'bg-zinc-800 text-rose-400 hover:bg-zinc-700'
               }`}
             >
               Fallados ({counts.wrong})
@@ -441,19 +441,19 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
 
           {/* Campo de Búsqueda */}
           <div className="relative flex-1 sm:max-w-xs min-w-[130px]">
-            <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar país..."
-              className="w-full pl-7 pr-2.5 py-0.5 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
+              className="w-full pl-7 pr-2.5 py-0.5 bg-[#121214] border border-zinc-700 rounded-md text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition font-sans"
             />
           </div>
         </div>
 
-        {/* Mosaico de Chips de Países y Territorios (Reducido para ganar altura para el mapa) */}
-        <div className="max-h-[50px] sm:max-h-[56px] overflow-y-auto pr-1 flex flex-wrap gap-1 custom-scrollbar">
+        {/* Mosaico de Chips de Países y Territorios */}
+        <div className="max-h-[50px] sm:max-h-[56px] overflow-y-auto pr-1 flex flex-wrap gap-1 custom-scrollbar font-sans">
           {filteredCountryItems.map((country) => {
             const cca3 = country.cca3.toUpperCase();
             const item = itemsState[cca3];
@@ -461,19 +461,19 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
             const status = item?.status || 'pending';
 
             // Estilos según el estado solicitado
-            let chipStyle = 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700 text-slate-300';
+            let chipStyle = 'bg-[#121214] hover:bg-zinc-800 border-zinc-800 text-zinc-300';
             let icon = null;
 
             if (isSelected) {
-              chipStyle = 'bg-purple-600/40 border-purple-400 text-purple-200 ring-2 ring-purple-500 shadow-glow-purple font-bold';
+              chipStyle = 'bg-indigo-950/60 border-indigo-500 text-indigo-200 ring-1 ring-indigo-500 font-medium';
             } else if (status === 'correct') {
-              chipStyle = 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300 font-bold';
+              chipStyle = 'bg-emerald-950/30 border-emerald-800/50 text-emerald-300 font-medium';
               icon = <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 shrink-0" />;
             } else if (status === 'second_try') {
-              chipStyle = 'bg-amber-950/40 border-amber-500/50 text-amber-300 font-bold';
+              chipStyle = 'bg-amber-950/30 border-amber-800/50 text-amber-300 font-medium';
               icon = <AlertTriangle className="w-2.5 h-2.5 text-amber-400 shrink-0" />;
             } else if (status === 'wrong') {
-              chipStyle = 'bg-rose-950/40 border-rose-600/50 text-rose-400 font-semibold line-through opacity-75';
+              chipStyle = 'bg-rose-950/30 border-rose-800/50 text-rose-400 font-normal line-through opacity-75';
               icon = <XCircle className="w-2.5 h-2.5 text-rose-400 shrink-0" />;
             }
 
@@ -487,7 +487,7 @@ export const ListSelectMode: React.FC<ListSelectModeProps> = ({
                   }
                 }}
                 disabled={status !== 'pending'}
-                className={`px-2 py-0.5 rounded-lg border text-[11px] transition-all flex items-center gap-1 active:scale-95 ${chipStyle} ${
+                className={`px-2 py-0.5 rounded-md border text-[11px] transition-all flex items-center gap-1 active:scale-95 ${chipStyle} ${
                   status !== 'pending' ? 'cursor-default' : 'cursor-pointer'
                 }`}
               >

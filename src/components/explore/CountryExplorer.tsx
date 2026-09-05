@@ -87,16 +87,16 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
   return (
     <div className="flex flex-col h-full min-h-0 gap-2 w-full">
       {/* Banner Superior de Instrucción, Buscador y Salir (z-50 para que el dropdown flote por encima del mapa) */}
-      <div className="relative z-50 bg-[#131C2E]/95 backdrop-blur-md border border-amber-500/30 rounded-2xl p-3 sm:p-4 shadow-xl flex items-center justify-between gap-3 flex-wrap shrink-0">
+      <div className="relative z-50 bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-3 sm:p-4 shadow-card-subtle flex items-center justify-between gap-3 flex-wrap shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-amber-500/20 border border-amber-500/40 rounded-xl text-amber-300">
+          <div className="p-2 bg-zinc-800 border border-zinc-700 rounded-lg text-amber-300">
             <Compass className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-display font-bold text-white text-sm sm:text-base">
+            <h3 className="font-serif font-normal text-zinc-100 text-sm sm:text-base">
               Modo Explorador Libre
             </h3>
-            <p className="text-[11px] text-slate-300">
+            <p className="text-[11px] text-zinc-400 font-sans">
               Haz clic en cualquier país o isla del mapa para inspeccionar sus datos, bandera y capital.
             </p>
           </div>
@@ -106,45 +106,45 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
           {/* Buscador Rápido de Países y Capitales */}
           <div className="relative w-full sm:w-72">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar cualquier país, capital..."
-                className="w-full bg-slate-900/95 border border-slate-700 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 outline-none transition"
+                className="w-full bg-[#121214] border border-zinc-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 rounded-lg pl-8 pr-7 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 outline-none transition font-sans"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
                 >
                   <X className="w-3 h-3" />
                 </button>
               )}
             </div>
 
-            {/* Resultados flotantes de búsqueda (Siempre al frente con z-50) */}
+            {/* Resultados flotantes de búsqueda */}
             {searchResults.length > 0 && (
-              <div className="absolute top-full right-0 sm:left-auto mt-1.5 w-[280px] sm:w-[320px] bg-[#0F172A]/98 backdrop-blur-2xl border border-cyan-500/60 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.95)] z-50 max-h-60 overflow-y-auto divide-y divide-slate-800 custom-scrollbar">
-                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cyan-400/80 bg-slate-900/90 border-b border-slate-800 flex justify-between items-center">
+              <div className="absolute top-full right-0 sm:left-auto mt-1.5 w-[280px] sm:w-[320px] bg-[#18181B] border border-zinc-700 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto divide-y divide-zinc-800 custom-scrollbar">
+                <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-indigo-300 bg-zinc-900 border-b border-zinc-800 flex justify-between items-center">
                   <span>{searchResults.length} resultados</span>
-                  <span className="text-slate-500 text-[9px] font-normal">Búsqueda mundial</span>
+                  <span className="text-zinc-500 text-[9px] font-sans">Búsqueda mundial</span>
                 </div>
                 {searchResults.map((c: Country) => (
                   <button
                     key={c.cca3}
                     onClick={() => handleSelectSearchResult(c)}
-                    className="w-full px-3.5 py-2 text-left hover:bg-cyan-500/20 flex items-center justify-between text-xs transition-colors group"
+                    className="w-full px-3.5 py-2 text-left hover:bg-zinc-800/80 flex items-center justify-between text-xs transition-colors group font-sans"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span className="text-base shrink-0">{c.flagEmoji}</span>
                       <div className="truncate">
-                        <span className="font-bold text-white group-hover:text-cyan-200 block truncate">{c.nameEs}</span>
-                        <span className="text-[11px] text-slate-400 group-hover:text-slate-300 block truncate">Cap: {c.capital || 'N/A'}</span>
+                        <span className="font-medium text-zinc-100 group-hover:text-indigo-300 block truncate">{c.nameEs}</span>
+                        <span className="text-[11px] text-zinc-400 block truncate font-sans">Cap: {c.capital || 'N/A'}</span>
                       </div>
                     </div>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-cyan-500/30 shrink-0 ml-2">
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 shrink-0 ml-2">
                       {c.continentEs || c.continent}
                     </span>
                   </button>
@@ -157,7 +157,7 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
           {onQuit && (
             <button
               onClick={onQuit}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 hover:text-white rounded-xl border border-slate-700 transition active:scale-95 shrink-0"
+              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-xs font-mono text-zinc-300 hover:text-white rounded-lg border border-zinc-700 transition active:scale-95 shrink-0"
             >
               Salir
             </button>
@@ -167,7 +167,7 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 flex-1 min-h-0 overflow-hidden">
         {/* Mapa Interactivo */}
-        <div className={`${selectedCountry ? 'lg:col-span-3' : 'lg:col-span-4'} h-full min-h-0 transition-all rounded-2xl overflow-hidden shadow-2xl border border-slate-800`}>
+        <div className={`${selectedCountry ? 'lg:col-span-3' : 'lg:col-span-4'} h-full min-h-0 transition-all rounded-xl overflow-hidden shadow-lg border border-zinc-800`}>
           <WorldMap
             continent={continent}
             onSelectContinent={onSelectContinent}
@@ -181,15 +181,15 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
 
         {/* Ficha Detallada del País Seleccionado */}
         {selectedCountry && (
-          <div className="lg:col-span-1 bg-[#131C2E]/95 backdrop-blur-md border border-cyan-500/40 rounded-2xl p-5 shadow-2xl flex flex-col justify-between animate-in fade-in slide-in-from-right-4 duration-200">
+          <div className="lg:col-span-1 bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-5 shadow-card-subtle flex flex-col justify-between animate-in fade-in slide-in-from-right-4 duration-200">
             <div>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-700/60">
-                <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider font-mono bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+                <span className="text-[11px] font-mono text-indigo-300 uppercase tracking-wider bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/60">
                   {selectedCountry.cca3} • {selectedCountry.cca2}
                 </span>
                 <button
                   onClick={() => setSelectedCountry(null)}
-                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
+                  className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-white transition"
                   title="Cerrar ficha"
                 >
                   <X className="w-4 h-4" />
@@ -201,67 +201,67 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
                 <div
                   onClick={() => onOpenFlagModal?.(selectedCountry)}
                   title="🔍 Clic para ampliar bandera en HD"
-                  className="cursor-zoom-in group/flag shrink-0 rounded-xl overflow-hidden border border-slate-700 shadow-md relative w-16 h-11 bg-slate-900 flex items-center justify-center"
+                  className="cursor-zoom-in group/flag shrink-0 rounded-lg overflow-hidden border border-zinc-700 shadow-sm relative w-16 h-11 bg-zinc-900 flex items-center justify-center"
                 >
                   <img
                     src={selectedCountry.flagSvg}
                     alt={`Bandera de ${selectedCountry.nameEs}`}
                     className="w-full h-full object-cover group-hover/flag:scale-105 transition-transform"
                   />
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/flag:opacity-100 flex items-center justify-center transition-opacity">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/flag:opacity-100 flex items-center justify-center transition-opacity">
                     <ZoomIn className="w-4 h-4 text-white" />
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-display font-black text-white text-xl leading-tight">
+                  <h3 className="font-serif font-normal text-zinc-100 text-xl leading-tight">
                     {selectedCountry.nameEs}
                   </h3>
-                  <p className="text-xs text-slate-400 font-medium">
+                  <p className="text-xs text-zinc-400 font-sans">
                     {selectedCountry.nameEn}
                   </p>
                 </div>
               </div>
 
               {/* Datos Geográficos */}
-              <div className="mt-5 space-y-2.5 text-xs">
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/70 border border-slate-800">
-                  <div className="flex items-center gap-2 text-slate-400">
+              <div className="mt-5 space-y-2 text-xs font-sans">
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#121214] border border-zinc-800">
+                  <div className="flex items-center gap-2 text-zinc-400">
                     <Landmark className="w-4 h-4 text-purple-400" />
                     <span>Capital</span>
                   </div>
-                  <span className="font-bold text-white text-sm">
+                  <span className="font-serif font-normal text-zinc-100 text-sm">
                     {selectedCountry.capital || 'N/A'}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/70 border border-slate-800">
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Globe className="w-4 h-4 text-cyan-400" />
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#121214] border border-zinc-800">
+                  <div className="flex items-center gap-2 text-zinc-400">
+                    <Globe className="w-4 h-4 text-indigo-400" />
                     <span>Continente</span>
                   </div>
-                  <span className="font-semibold text-slate-200">
+                  <span className="font-medium text-zinc-200">
                     {selectedCountry.continentEs}
                   </span>
                 </div>
 
                 {selectedCountry.subregionEs && (
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/70 border border-slate-800">
-                    <div className="flex items-center gap-2 text-slate-400">
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#121214] border border-zinc-800">
+                    <div className="flex items-center gap-2 text-zinc-400">
                       <Layers className="w-4 h-4 text-sky-400" />
                       <span>Subregión</span>
                     </div>
-                    <span className="font-semibold text-slate-200">
+                    <span className="font-medium text-zinc-200">
                       {selectedCountry.subregionEs}
                     </span>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/70 border border-slate-800">
-                  <div className="flex items-center gap-2 text-slate-400">
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#121214] border border-zinc-800">
+                  <div className="flex items-center gap-2 text-zinc-400">
                     <Users className="w-4 h-4 text-emerald-400" />
                     <span>Población</span>
                   </div>
-                  <span className="font-semibold text-emerald-300">
+                  <span className="font-mono text-emerald-400">
                     {selectedCountry.population ? selectedCountry.population.toLocaleString('es-ES') : 'N/A'}
                   </span>
                 </div>
@@ -270,7 +270,7 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
               {/* Países Vecinos / Fronteras */}
               {selectedCountry.borderCodes && selectedCountry.borderCodes.length > 0 && (
                 <div className="mt-4">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                  <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block mb-1.5">
                     Fronteras ({selectedCountry.borderCodes.length}):
                   </label>
                   <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
@@ -280,7 +280,7 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
                         <button
                           key={code}
                           onClick={() => handleBorderClick(code)}
-                          className="px-2 py-1 bg-slate-800/90 hover:bg-cyan-500/20 hover:text-cyan-300 border border-slate-700 rounded-lg text-[11px] font-semibold text-slate-300 transition-colors flex items-center gap-1 active:scale-95"
+                          className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 rounded-md text-[11px] font-sans transition-colors flex items-center gap-1 active:scale-95"
                         >
                           <span>{neighbor ? `${neighbor.flagEmoji} ${neighbor.nameEs}` : code}</span>
                         </button>
@@ -293,12 +293,12 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
 
             {/* Acción de Quiz */}
             {onStartQuizWithCountry && (
-              <div className="mt-5 pt-4 border-t border-slate-700/60">
+              <div className="mt-5 pt-4 border-t border-zinc-800">
                 <button
                   onClick={() => onStartQuizWithCountry(selectedCountry)}
-                  className="w-full py-2.5 px-3 bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-bold text-xs rounded-xl shadow-glow-cyan transition-all flex items-center justify-center gap-2 active:scale-95"
+                  className="w-full py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-sans font-medium text-xs rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95"
                 >
-                  <Play className="w-3.5 h-3.5 fill-slate-950" />
+                  <Play className="w-3.5 h-3.5 fill-white" />
                   <span>Jugar Partida con {selectedCountry.nameEs}</span>
                 </button>
               </div>

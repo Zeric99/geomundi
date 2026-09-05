@@ -4,28 +4,28 @@
 
 @layer base {
   body {
-    @apply bg-[#0B0F19] text-slate-100 antialiased selection:bg-cyan-500 selection:text-slate-950 min-h-screen;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    @apply bg-[#121214] text-zinc-100 antialiased selection:bg-zinc-200 selection:text-zinc-950 min-h-screen;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
   }
 }
 
-/* Scrollbar moderno estilizado */
+/* Scrollbar sobrio y profesional */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0B0F19;
+  background: #121214;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1E293B;
-  border-radius: 9999px;
+  background: #27272A;
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #06B6D4;
+  background: #3F3F46;
 }
 
 /* Animación de Shake para errores */

@@ -308,31 +308,31 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
   return (
     <div className="flex flex-col h-full gap-4 max-w-7xl mx-auto w-full px-2 sm:px-4">
       {/* Barra Superior: Ronda, Progreso, Pospuestas, Puntos */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-slate-800 shadow-xl">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#18181B] p-3.5 sm:p-4 rounded-xl border border-zinc-800 shadow-sm">
         <div className="flex items-center gap-2.5 flex-wrap">
           {/* Badge de Ronda */}
-          <div className="px-3 py-1 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-xl border border-amber-500/40 text-xs font-bold text-amber-300 flex items-center gap-1.5 shadow-sm">
+          <div className="px-3 py-1 bg-amber-500/15 rounded-lg border border-amber-500/30 text-xs font-bold text-amber-300 flex items-center gap-1.5 shadow-sm">
             <Layers className="w-3.5 h-3.5 text-amber-400" />
             <span>Ronda {roundNumber}</span>
           </div>
 
           {/* Progreso de la ronda actual */}
-          <div className="px-3 py-1 bg-slate-800 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300">
-            Bandera <span className="text-cyan-400 font-bold text-sm">{currentIndex + 1}</span> / {currentQueue.length}
+          <div className="px-3 py-1 bg-zinc-900 rounded-lg border border-zinc-800 text-xs font-semibold text-zinc-300 font-mono">
+            Bandera <span className="text-indigo-400 font-bold text-sm">{currentIndex + 1}</span> / {currentQueue.length}
           </div>
 
           {/* Contador de Pospuestas en cola */}
           {skippedQueue.length > 0 && (
-            <div className="px-2.5 py-1 bg-sky-950/50 rounded-xl border border-sky-600/40 text-xs font-bold text-sky-300 flex items-center gap-1.5 animate-pulse">
-              <SkipForward className="w-3.5 h-3.5 text-sky-400" />
+            <div className="px-2.5 py-1 bg-indigo-950/40 rounded-lg border border-indigo-500/30 text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+              <SkipForward className="w-3.5 h-3.5 text-indigo-400" />
               <span>{skippedQueue.length} en 2ª Ronda</span>
             </div>
           )}
         </div>
 
         {/* Marcadores de Aciertos, Racha y Puntos */}
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-400 font-bold bg-emerald-950/40 border border-emerald-800/40 px-2.5 py-1 rounded-xl">
+        <div className="flex items-center gap-4 font-mono">
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-400 font-bold bg-emerald-950/30 border border-emerald-800/40 px-2.5 py-1 rounded-lg">
             <CheckCircle2 className="w-4 h-4" />
             <span>{solvedCount} / {totalUniqueFlags} Resueltas</span>
           </div>
@@ -341,21 +341,21 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
             <motion.div
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
-              className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 rounded-xl text-amber-400 font-bold text-xs"
+              className="flex items-center gap-1 bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 rounded-lg text-amber-400 font-bold text-xs"
             >
-              <Flame className="w-4 h-4 fill-amber-400 animate-pulse" />
+              <Flame className="w-4 h-4 fill-amber-400" />
               <span>x{streak} combo</span>
             </motion.div>
           )}
 
           <div className="text-right">
-            <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider block">Puntos</span>
+            <span className="text-[10px] uppercase text-zinc-400 font-bold tracking-wider block font-sans">Puntos</span>
             <span className="text-lg font-black text-emerald-400 font-mono tracking-tight">{score}</span>
           </div>
 
           <button
             onClick={onQuit}
-            className="text-xs text-slate-400 hover:text-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-800 transition"
+            className="text-xs font-sans text-zinc-400 hover:text-zinc-200 px-2.5 py-1 rounded-lg hover:bg-zinc-800 transition"
           >
             Salir
           </button>
@@ -364,32 +364,32 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
 
       {/* Tarjeta de Bandera Activa y Botón de Saltar */}
       {currentCountry && (
-        <div className="bg-[#131C2E]/95 backdrop-blur-md border border-cyan-500/40 rounded-2xl p-4 sm:p-5 shadow-2xl flex items-center justify-between gap-4 flex-wrap relative overflow-hidden">
+        <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-sm flex items-center justify-between gap-4 flex-wrap relative overflow-hidden">
           <div className="flex items-center gap-4">
             {/* Visualizador de Bandera con opción de zoom */}
             <div
               onClick={() => onOpenFlagModal?.(currentCountry)}
               title="🔍 Haz clic para ampliar la bandera en alta definición"
-              className="w-24 h-16 sm:w-28 sm:h-18 rounded-xl overflow-hidden shadow-xl border-2 border-slate-700 bg-slate-950/80 flex-shrink-0 cursor-zoom-in hover:border-cyan-400 hover:ring-2 hover:ring-cyan-500/50 transition-all active:scale-95 group relative"
+              className="w-24 h-16 sm:w-28 sm:h-18 rounded-xl overflow-hidden shadow-md border border-zinc-700 bg-zinc-900 flex-shrink-0 cursor-zoom-in hover:border-indigo-400 transition-all active:scale-95 group relative"
             >
               <img
                 src={currentCountry.flagSvg}
                 alt="Bandera a adivinar"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
               />
-              <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <div className="absolute inset-0 bg-zinc-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                 <ZoomIn className="w-5 h-5 text-white drop-shadow" />
               </div>
             </div>
 
             <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30 inline-block mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 inline-block mb-1">
                 ¿A qué país pertenece esta bandera?
               </span>
-              <h2 className="text-lg sm:text-xl font-display font-black text-white">
+              <h2 className="text-lg sm:text-xl font-serif font-bold text-zinc-100">
                 Haz clic en el país en el mapa
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
+              <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1.5 font-sans">
                 <span>Si no la sabes, puedes saltarla y te saldrá en la siguiente ronda.</span>
               </p>
             </div>
@@ -400,24 +400,24 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
             {/* CONMUTADOR MOSTRAR NOMBRES DE PAÍSES AL FALLAR */}
             <button
               onClick={() => setShowCountryNames(prev => !prev)}
-              className={`px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
+              className={`px-3 py-2 rounded-lg border text-xs font-semibold transition-all flex items-center gap-1.5 active:scale-95 ${
                 showCountryNames
-                  ? 'bg-cyan-500/20 hover:bg-cyan-500/30 border-cyan-500/40 text-cyan-300 shadow-glow-cyan'
-                  : 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-slate-400'
+                  ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300'
+                  : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-400'
               }`}
               title={showCountryNames ? "Ocultar nombre de países al fallar en el mapa" : "Mostrar nombre de países al fallar en el mapa"}
             >
-              {showCountryNames ? <Eye className="w-4 h-4 text-cyan-400" /> : <EyeOff className="w-4 h-4 text-slate-400" />}
-              <span>Mostrar nombres: <strong className={showCountryNames ? "text-cyan-300 font-extrabold" : "text-slate-400 font-bold"}>{showCountryNames ? 'ON' : 'OFF'}</strong></span>
+              {showCountryNames ? <Eye className="w-4 h-4 text-indigo-400" /> : <EyeOff className="w-4 h-4 text-zinc-400" />}
+              <span>Mostrar nombres: <strong className={showCountryNames ? "text-indigo-300 font-extrabold" : "text-zinc-400 font-bold"}>{showCountryNames ? 'ON' : 'OFF'}</strong></span>
             </button>
 
             <button
               onClick={handleUseHint}
               disabled={Boolean(activeHint) || isEvaluating}
-              className={`px-3.5 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 py-2 rounded-lg border text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 activeHint
-                  ? 'bg-slate-800/60 border-slate-700 text-slate-500 cursor-not-allowed'
-                  : 'bg-amber-500/20 hover:bg-amber-500/30 border-amber-500/40 text-amber-300 active:scale-95'
+                  ? 'bg-zinc-800/60 border-zinc-800 text-zinc-500 cursor-not-allowed'
+                  : 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30 text-amber-300 active:scale-95'
               }`}
             >
               <Lightbulb className="w-4 h-4 text-amber-400" />
@@ -428,7 +428,7 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
             <button
               onClick={handleSkipFlag}
               disabled={isEvaluating}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-display font-bold text-xs shadow-glow-cyan transition-all flex items-center gap-2 active:scale-95 border border-sky-400/40"
+              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 active:scale-95 border border-indigo-500"
               title="Pospone esta bandera para resolverla en la 2ª ronda"
             >
               <span>Saltar (Dejar para luego)</span>

@@ -115,16 +115,16 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
   return (
     <div className="space-y-4">
       {/* Barra de Instrucción */}
-      <div className="bg-[#131C2E]/90 backdrop-blur-md border border-purple-500/30 rounded-2xl p-4 shadow-xl flex items-center justify-between gap-4 flex-wrap">
+      <div className="bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-4 shadow-card-subtle flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-purple-500/20 border border-purple-500/40 rounded-xl text-purple-300">
+          <div className="p-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-indigo-400">
             <Layers className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-display font-bold text-white text-base">
+            <h3 className="font-serif font-normal text-zinc-100 text-base">
               Modo Emparejar (Match 5 Países)
             </h3>
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-zinc-400 font-sans">
               Selecciona una tarjeta y haz clic en su país correspondiente en el mapa. Puedes pulsar las banderas para ampliarlas.
             </p>
           </div>
@@ -132,11 +132,11 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
 
         <div className="flex items-center gap-3">
           {orientationMsg && (
-            <div className="text-xs px-3 py-1 bg-indigo-950/60 border border-indigo-500/40 text-indigo-200 rounded-xl font-semibold">
+            <div className="text-xs px-3 py-1 bg-zinc-800 border border-zinc-700 text-indigo-300 rounded-lg font-sans">
               {orientationMsg}
             </div>
           )}
-          <div className="text-xs font-mono text-cyan-300 bg-cyan-500/10 px-3 py-1.5 rounded-xl border border-cyan-500/30 font-bold">
+          <div className="text-xs font-mono text-indigo-300 bg-indigo-950/60 px-3 py-1.5 rounded-lg border border-indigo-800/60 font-medium">
             {pairs.filter(p => p.matched).length} / {pairs.length} Emparejados
           </div>
         </div>
@@ -153,14 +153,14 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
               <div
                 key={pair.id}
                 onClick={() => handleSelectCard(pair.id)}
-                className={`w-full p-3 rounded-2xl border text-left transition-all relative flex items-center gap-3 cursor-pointer ${
+                className={`w-full p-3 rounded-xl border text-left transition-all relative flex items-center gap-3 cursor-pointer ${
                   pair.matched
-                    ? 'bg-emerald-950/40 border-emerald-500/60 opacity-80 cursor-default'
+                    ? 'bg-emerald-950/30 border-emerald-800/50 opacity-80 cursor-default'
                     : isFlashingError
-                    ? 'bg-rose-900/60 border-rose-500 animate-shake'
+                    ? 'bg-rose-950/60 border-rose-600 animate-shake'
                     : isSelected
-                    ? 'bg-gradient-to-r from-purple-900/60 to-[#1E2B48] border-purple-400 shadow-glow-purple scale-[1.02]'
-                    : 'bg-[#131C2E]/80 hover:bg-[#1A2740] border-slate-800 text-slate-300'
+                    ? 'bg-zinc-800 border-indigo-500 shadow-sm ring-1 ring-indigo-500'
+                    : 'bg-[#18181B] hover:bg-zinc-800/80 border-zinc-800 text-zinc-300'
                 }`}
               >
                 {/* Bandera con soporte de ampliación */}
@@ -177,18 +177,18 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
                   <img
                     src={pair.country.flagSvg}
                     alt={pair.country.nameEs}
-                    className="w-10 h-7 object-cover rounded shadow border border-slate-700 group-hover/flag:scale-105 transition-transform"
+                    className="w-10 h-7 object-cover rounded shadow-sm border border-zinc-700 group-hover/flag:scale-105 transition-transform"
                   />
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/flag:opacity-100 flex items-center justify-center transition-opacity">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/flag:opacity-100 flex items-center justify-center transition-opacity">
                     <ZoomIn className="w-3.5 h-3.5 text-white" />
                   </div>
                 </div>
 
-                <div className="overflow-hidden flex-1">
-                  <div className="font-display font-bold text-white text-sm truncate">
+                <div className="overflow-hidden flex-1 font-sans">
+                  <div className="font-serif font-normal text-zinc-100 text-sm truncate">
                     {pair.country.nameEs}
                   </div>
-                  <div className="text-[11px] text-slate-400 truncate">
+                  <div className="text-[11px] text-zinc-400 truncate">
                     Cap: {pair.country.capital}
                   </div>
                 </div>
@@ -197,7 +197,7 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                 )}
                 {isSelected && !pair.matched && (
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-glow-purple flex-shrink-0 animate-ping" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 flex-shrink-0 animate-ping" />
                 )}
               </div>
             );
@@ -205,7 +205,7 @@ export const MatchCardsMode: React.FC<MatchCardsModeProps> = ({
         </div>
 
         {/* Mapa Interactivo */}
-        <div className="lg:col-span-3 h-[520px] sm:h-[580px]">
+        <div className="lg:col-span-3 h-[520px] sm:h-[580px] rounded-xl overflow-hidden shadow-lg border border-zinc-800">
           <WorldMap
             countryStatuses={mapStatuses}
             onCountryClick={handleCountryClick}

@@ -356,37 +356,37 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
   return (
     <div className="space-y-4">
       {/* Cabecera de Estadísticas en Vivo */}
-      <div className="bg-[#131C2E]/90 backdrop-blur-md border border-cyan-500/30 rounded-2xl p-4 sm:p-5 shadow-2xl flex items-center justify-between gap-4 flex-wrap">
+      <div className="bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-4 sm:p-5 shadow-card-subtle flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-teal-500/20 border border-teal-500/40 rounded-xl text-teal-400">
-            <Type className="w-6 h-6" />
+          <div className="p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-indigo-400">
+            <Type className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold">
+              <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded-md bg-zinc-800 text-indigo-300 border border-zinc-700 font-medium">
                 Ronda {roundNumber}
               </span>
               {skippedQueue.length > 0 && (
-                <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40 font-bold">
+                <span className="text-xs font-mono uppercase px-2.5 py-0.5 rounded-md bg-zinc-800 text-amber-300 border border-zinc-700 font-medium">
                   {skippedQueue.length} Pospuestos
                 </span>
               )}
             </div>
-            <h2 className="text-base sm:text-lg font-bold text-white mt-1">
-              Escribir Países: <span className="text-cyan-300">{solvedCount} de {totalUniqueCountries} acertados</span>
+            <h2 className="text-base sm:text-lg font-serif font-normal text-zinc-100 mt-1">
+              Escribir Países: <span className="text-indigo-300">{solvedCount} de {totalUniqueCountries} acertados</span>
             </h2>
           </div>
         </div>
 
         {/* Barra de Progreso */}
         <div className="flex-1 max-w-xs hidden md:block">
-          <div className="flex justify-between text-xs text-slate-400 font-mono mb-1">
+          <div className="flex justify-between text-xs text-zinc-400 font-mono mb-1">
             <span>Progreso General</span>
             <span>{progressPercent}%</span>
           </div>
-          <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700/60">
+          <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700/60">
             <div
-              className="h-full bg-gradient-to-r from-teal-500 via-cyan-500 to-sky-400 transition-all duration-300 rounded-full"
+              className="h-full bg-indigo-500 transition-all duration-300 rounded-full"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -398,21 +398,21 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
             <motion.div
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
-              className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 border border-amber-500/40 rounded-xl text-amber-300 text-xs font-extrabold shadow-glow-amber"
+              className="flex items-center gap-1.5 px-3 py-1 bg-amber-950/40 border border-amber-800/50 rounded-lg text-amber-300 text-xs font-medium shadow-sm"
             >
-              <Flame className="w-4 h-4 fill-amber-400 animate-pulse" />
+              <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
               <span>x{streak} combo</span>
             </motion.div>
           )}
 
           <div className="text-right">
-            <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider block">Puntos</span>
-            <span className="text-lg font-black text-emerald-400 font-mono tracking-tight">{score}</span>
+            <span className="text-[10px] uppercase text-zinc-500 font-mono tracking-wider block">Puntos</span>
+            <span className="text-lg font-normal text-emerald-400 font-mono tracking-tight">{score}</span>
           </div>
 
           <button
             onClick={onQuit}
-            className="text-xs text-slate-400 hover:text-slate-200 px-2.5 py-1 rounded-lg hover:bg-slate-800 transition"
+            className="text-xs text-zinc-400 hover:text-zinc-200 px-2.5 py-1 rounded-md hover:bg-zinc-800 transition font-mono"
           >
             Salir
           </button>
@@ -421,30 +421,30 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
 
       {/* Tarjeta de Pregunta Activa con Formulario y Botón de Pasar */}
       {currentCountry && (
-        <div className="bg-[#131C2E]/95 backdrop-blur-md border border-cyan-500/40 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4 relative overflow-hidden">
+        <div className="bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-4 sm:p-5 shadow-card-subtle space-y-4 relative overflow-hidden">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3.5">
               <div
                 onClick={() => onOpenFlagModal?.(currentCountry)}
                 title="🔍 Haz clic para ampliar la bandera en alta definición"
-                className="w-16 h-11 sm:w-20 sm:h-13 rounded-xl overflow-hidden shadow-lg border-2 border-slate-700 bg-slate-950 flex-shrink-0 cursor-zoom-in hover:border-cyan-400 hover:ring-2 hover:ring-cyan-500/50 transition-all active:scale-95 group relative"
+                className="w-16 h-11 sm:w-20 sm:h-13 rounded-lg overflow-hidden shadow-sm border border-zinc-700/80 bg-zinc-900 flex-shrink-0 cursor-zoom-in hover:border-indigo-500 hover:ring-1 hover:ring-indigo-500/50 transition-all active:scale-95 group relative"
               >
                 <img
                   src={currentCountry.flagSvg}
                   alt={currentCountry.nameEs}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                 />
-                <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                   <ZoomIn className="w-4 h-4 text-white drop-shadow" />
                 </div>
               </div>
 
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30 inline-block mb-1">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-300 bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-800/50 inline-block mb-1">
                   País #{currentIndex + 1} de {currentQueue.length} (Ronda {roundNumber})
                 </span>
-                <h3 className="text-base sm:text-xl font-display font-bold text-white">
-                  ¿Cómo se llama el país resaltado en <span className="text-amber-400 font-black">ámbar</span> en el mapa?
+                <h3 className="text-base sm:text-xl font-serif font-normal text-zinc-100">
+                  ¿Cómo se llama el país resaltado en <span className="text-amber-300 font-medium">ámbar</span> en el mapa?
                 </h3>
               </div>
             </div>
@@ -455,10 +455,10 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
                 type="button"
                 onClick={handleUseHint}
                 disabled={Boolean(activeHint) || isEvaluating}
-                className={`px-3.5 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-1.5 ${
                   activeHint
-                    ? 'bg-slate-800/60 border-slate-700 text-slate-500 cursor-not-allowed'
-                    : 'bg-amber-500/20 hover:bg-amber-500/30 border-amber-500/40 text-amber-300 active:scale-95'
+                    ? 'bg-zinc-800/60 border-zinc-700 text-zinc-500 cursor-not-allowed'
+                    : 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-800/50 text-amber-200 active:scale-95'
                 }`}
               >
                 <Lightbulb className="w-4 h-4 text-amber-400" />
@@ -470,11 +470,11 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
                 type="button"
                 onClick={handleSkipCountry}
                 disabled={isEvaluating}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-display font-bold text-xs shadow-glow-cyan transition-all flex items-center gap-2 active:scale-95 border border-sky-400/40"
+                className="px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-sans font-medium text-xs shadow-sm transition-all flex items-center gap-2 active:scale-95 border border-zinc-700"
                 title="Pospone este país para escribirlo en la 2ª ronda"
               >
                 <span>Pasar (Dejar para luego)</span>
-                <SkipForward className="w-4 h-4" />
+                <SkipForward className="w-4 h-4 text-zinc-400" />
               </button>
             </div>
           </div>
@@ -489,10 +489,10 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
                 onChange={(e) => setInputValue(e.target.value)}
                 disabled={isEvaluating}
                 placeholder="Escribe el nombre del país (ej. Alemania, Canadá, Tailandia)... o pulsa Pasar"
-                className="w-full bg-[#0B0F19] border-2 border-slate-700 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-500/20 rounded-xl px-4 py-3 text-white text-base sm:text-lg font-medium placeholder-slate-500 transition-all outline-none"
+                className="w-full bg-[#121214] border border-zinc-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/40 rounded-lg px-4 py-2.5 text-zinc-100 text-base font-sans placeholder-zinc-500 transition-all outline-none"
               />
               {activeHint && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-amber-300 bg-amber-950/80 px-2 py-1 rounded border border-amber-500/40">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-amber-200 bg-amber-950/90 px-2 py-0.5 rounded border border-amber-800/60">
                   {activeHint}
                 </span>
               )}
@@ -501,7 +501,7 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
             <button
               type="submit"
               disabled={isEvaluating}
-              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl shadow-glow-emerald transition-all transform active:scale-95 flex items-center gap-2 shrink-0"
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg shadow-sm transition-all transform active:scale-95 flex items-center gap-2 shrink-0 text-sm"
             >
               <span>Enviar</span>
               <Send className="w-4 h-4" />
@@ -517,18 +517,18 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className={`p-3 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2.5 shadow-xl border ${
+            className={`p-3 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-2.5 shadow-md border ${
               feedbackToast.type === 'correct'
-                ? 'bg-emerald-950/90 text-emerald-200 border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                ? 'bg-emerald-950/90 text-emerald-200 border-emerald-800/60'
                 : feedbackToast.type === 'skip'
-                ? 'bg-sky-950/90 text-sky-200 border-sky-500/60 shadow-[0_0_20px_rgba(56,189,248,0.3)]'
+                ? 'bg-zinc-900/90 text-zinc-200 border-zinc-700/60'
                 : feedbackToast.type === 'close'
-                ? 'bg-amber-950/90 text-amber-200 border-amber-500/60 shadow-[0_0_20px_rgba(245,158,11,0.3)]'
-                : 'bg-rose-950/90 text-rose-200 border-rose-500/60 shadow-[0_0_20px_rgba(244,63,94,0.3)]'
+                ? 'bg-amber-950/90 text-amber-200 border-amber-800/60'
+                : 'bg-rose-950/90 text-rose-200 border-rose-800/60'
             }`}
           >
             {feedbackToast.type === 'correct' && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
-            {feedbackToast.type === 'skip' && <SkipForward className="w-5 h-5 text-sky-400 shrink-0" />}
+            {feedbackToast.type === 'skip' && <SkipForward className="w-5 h-5 text-zinc-400 shrink-0" />}
             {feedbackToast.type === 'close' && <HelpCircle className="w-5 h-5 text-amber-400 shrink-0" />}
             {feedbackToast.type === 'wrong' && <XCircle className="w-5 h-5 text-rose-400 shrink-0" />}
             <span>{feedbackToast.text}</span>
@@ -537,7 +537,7 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
       </AnimatePresence>
 
       {/* Mapa Interactivo con el país resaltado en ámbar */}
-      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-230px)] max-h-[calc(100vh-230px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-230px)] max-h-[calc(100vh-230px)] rounded-xl overflow-hidden shadow-lg border border-zinc-800">
         <WorldMap
           countryStatuses={{
             ...countryStatuses,
@@ -553,40 +553,40 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
 
       {/* Modal de Transición a la Ronda 2 (Países Pospuestos) */}
       {showRoundTransitionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-gradient-to-b from-[#131C2E] via-[#0F172A] to-[#0A101C] border border-cyan-500/50 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-[0_0_50px_rgba(6,182,212,0.35)] text-center space-y-5">
-            <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-sky-500/20 to-indigo-500/20 border border-sky-500/40 text-sky-400 shadow-glow-cyan">
-              <RotateCcw className="w-10 h-10 animate-spin-slow" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center space-y-5">
+            <div className="inline-flex p-4 rounded-xl bg-zinc-800 border border-zinc-700 text-indigo-400 shadow-sm">
+              <RotateCcw className="w-8 h-8 animate-spin-slow" />
             </div>
 
             <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/30">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-300 bg-indigo-950/60 px-2.5 py-0.5 rounded-md border border-indigo-800/60 font-medium">
                 ¡Ronda {roundNumber} Finalizada!
               </span>
-              <h3 className="text-2xl font-black text-white mt-2">
+              <h3 className="text-2xl font-serif font-normal text-zinc-100 mt-2">
                 Comienza la Ronda {roundNumber + 1}
               </h3>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">
+              <p className="text-xs sm:text-sm text-zinc-400 mt-1 leading-relaxed font-sans">
                 Has saltado <strong>{skippedQueue.length} países</strong>. Te los volvemos a mostrar en el mapa para que intentes escribirlos y completes el 100% de la partida.
               </p>
             </div>
 
             {/* Países en cola */}
-            <div className="flex items-center justify-center gap-1.5 flex-wrap p-3 bg-slate-950/60 rounded-2xl border border-slate-800 max-h-28 overflow-y-auto">
+            <div className="flex items-center justify-center gap-1.5 flex-wrap p-3 bg-[#121214] rounded-xl border border-zinc-800 max-h-28 overflow-y-auto">
               {skippedQueue.map((c) => (
                 <div
                   key={c.cca3}
-                  className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200"
+                  className="flex items-center gap-1 px-2.5 py-1 bg-zinc-900 border border-zinc-700/80 rounded-md text-xs text-zinc-200 font-sans"
                 >
                   <span>{c.flagEmoji}</span>
-                  <span className="font-semibold">{c.nameEs}</span>
+                  <span className="font-medium">{c.nameEs}</span>
                 </div>
               ))}
             </div>
 
             <button
               onClick={handleStartNextRound}
-              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-display font-extrabold text-sm shadow-glow-cyan transition-all flex items-center justify-center gap-2 active:scale-95"
+              className="w-full py-3 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-sans font-medium text-sm shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95"
             >
               <span>¡Comenzar Ronda {roundNumber + 1}!</span>
               <ArrowRight className="w-4 h-4" />

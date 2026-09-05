@@ -18,36 +18,36 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({ country, position, statu
         top: `${position.y - 12}px`,
       }}
     >
-      <div className="bg-[#131C2E]/95 backdrop-blur-md border border-cyan-500/40 rounded-xl p-3 shadow-2xl min-w-[200px] max-w-[280px] animate-in fade-in zoom-in-95 duration-150">
-        <div className="flex items-center gap-2.5 pb-2 border-b border-slate-700/60">
+      <div className="bg-[#18181B]/95 backdrop-blur-md border border-zinc-700/80 rounded-xl p-3 shadow-xl min-w-[200px] max-w-[280px] animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex items-center gap-2.5 pb-2 border-b border-zinc-800">
           <img
             src={country.flagSvg}
             alt={`Bandera de ${country.nameEs}`}
-            className="w-7 h-5 object-cover rounded shadow-sm border border-slate-700"
+            className="w-7 h-5 object-cover rounded shadow-sm border border-zinc-700"
           />
           <div className="overflow-hidden">
-            <h4 className="font-display font-bold text-white text-sm leading-tight truncate">
+            <h4 className="font-serif font-normal text-zinc-100 text-sm leading-tight truncate">
               {country.nameEs}
             </h4>
-            <p className="text-[11px] text-slate-400 font-medium truncate">
+            <p className="text-[11px] text-zinc-400 font-sans truncate">
               {country.nameEn}
             </p>
           </div>
         </div>
 
-        <div className="mt-2 space-y-1 text-xs">
-          <div className="flex justify-between items-center text-slate-300">
-            <span className="text-slate-400">Capital:</span>
-            <span className="font-semibold text-cyan-300">{country.capital || 'N/A'}</span>
+        <div className="mt-2 space-y-1 text-xs font-sans">
+          <div className="flex justify-between items-center text-zinc-300">
+            <span className="text-zinc-400">Capital:</span>
+            <span className="font-serif font-normal text-zinc-100">{country.capital || 'N/A'}</span>
           </div>
-          <div className="flex justify-between items-center text-slate-300">
-            <span className="text-slate-400">Continente:</span>
-            <span className="font-medium text-slate-200">{country.continentEs}</span>
+          <div className="flex justify-between items-center text-zinc-300">
+            <span className="text-zinc-400">Continente:</span>
+            <span className="font-medium text-zinc-300">{country.continentEs}</span>
           </div>
           {country.population > 0 && (
-            <div className="flex justify-between items-center text-slate-300">
-              <span className="text-slate-400">Población:</span>
-              <span className="font-medium text-slate-300">
+            <div className="flex justify-between items-center text-zinc-300">
+              <span className="text-zinc-400">Población:</span>
+              <span className="font-mono text-zinc-300">
                 {country.population.toLocaleString('es-ES')}
               </span>
             </div>
@@ -55,9 +55,9 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({ country, position, statu
         </div>
 
         {status && status !== 'neutral' && status !== 'hover' && (
-          <div className="mt-2 pt-1.5 border-t border-slate-700/50 flex items-center justify-center">
+          <div className="mt-2 pt-1.5 border-t border-zinc-800 flex items-center justify-center">
             {status === 'correct' && (
-              <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
+              <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
                 ✓ Acierto confirmado
               </span>
             )}

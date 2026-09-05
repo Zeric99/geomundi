@@ -43,21 +43,18 @@ export const FlagModal: React.FC<FlagModalProps> = ({
 
         {/* Contenedor del Modal de Bandera */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           className={`relative z-10 w-full ${
             hideDetails ? 'max-w-xl' : 'max-w-2xl'
-          } bg-gradient-to-b from-[#131C2E] via-[#0F172A] to-[#0B1120] border border-cyan-500/40 rounded-3xl p-6 sm:p-7 shadow-[0_0_50px_rgba(6,182,212,0.35)] overflow-hidden space-y-5`}
+          } bg-[#18181B] border border-zinc-800 rounded-2xl p-6 sm:p-7 shadow-2xl overflow-hidden space-y-5`}
         >
-          {/* Glow de acento superior */}
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 shadow-glow-cyan" />
-
           {/* Botón de Cierre (X) */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-2.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all active:scale-95 shadow-md border border-slate-700"
+            className="absolute top-5 right-5 p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all active:scale-95 shadow-sm border border-zinc-700"
             title="Cerrar (Esc)"
           >
             <X className="w-5 h-5" />
@@ -66,14 +63,14 @@ export const FlagModal: React.FC<FlagModalProps> = ({
           {/* Cabecera: Si está en modo juego, título neutral sin spoilers */}
           {hideDetails ? (
             <div className="flex items-center gap-2.5 pr-10">
-              <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
+              <div className="p-2 rounded-lg bg-zinc-800 border border-zinc-700 text-indigo-400">
                 <Flag className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-300">
                   Visor de Banderas HD
                 </span>
-                <h3 className="text-lg font-black text-white">
+                <h3 className="text-lg font-serif font-normal text-zinc-100">
                   Inspección de Bandera
                 </h3>
               </div>
@@ -83,14 +80,14 @@ export const FlagModal: React.FC<FlagModalProps> = ({
               <span className="text-3xl sm:text-4xl">{country.flagEmoji}</span>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono uppercase tracking-wider font-extrabold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/60">
                     {country.cca3}
                   </span>
-                  <span className="text-xs text-slate-400 font-medium">
+                  <span className="text-xs text-zinc-400 font-sans">
                     {country.continentEs}
                   </span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-black font-display text-white mt-0.5">
+                <h2 className="text-2xl sm:text-3xl font-serif font-normal text-zinc-100 mt-0.5">
                   {country.nameEs}
                 </h2>
               </div>
@@ -98,42 +95,42 @@ export const FlagModal: React.FC<FlagModalProps> = ({
           )}
 
           {/* Imagen de Bandera en Alta Definición */}
-          <div className="relative w-full aspect-[3/2] max-h-[360px] rounded-2xl overflow-hidden shadow-2xl border-2 border-slate-700 bg-slate-950/90 flex items-center justify-center group">
+          <div className="relative w-full aspect-[3/2] max-h-[360px] rounded-xl overflow-hidden shadow-lg border border-zinc-700/80 bg-zinc-900 flex items-center justify-center group">
             <img
               src={country.flagSvg}
               alt="Bandera en alta definición"
-              className="w-full h-full object-contain drop-shadow-[0_8px_25px_rgba(0,0,0,0.8)] transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
-            <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-slate-950/80 backdrop-blur-md border border-slate-700 text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ZoomIn className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/80 backdrop-blur-md border border-zinc-700 text-[11px] font-sans font-medium text-zinc-300 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ZoomIn className="w-3.5 h-3.5 text-indigo-400" />
               <span>Máxima Resolución</span>
             </div>
           </div>
 
-          {/* Datos Rápidos del País (ÚNICAMENTE en Modo Explorador, NUNCA en partidas de adivinar) */}
+          {/* Datos Rápidos del País */}
           {!hideDetails && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
-              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center gap-2.5">
+              <div className="p-3 bg-[#121214] rounded-xl border border-zinc-800 flex items-center gap-2.5">
                 <Landmark className="w-4 h-4 text-purple-400 shrink-0" />
                 <div className="overflow-hidden">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Capital</span>
-                  <span className="text-xs sm:text-sm font-bold text-white truncate block">{country.capital}</span>
+                  <span className="text-[10px] uppercase font-mono text-zinc-500 block">Capital</span>
+                  <span className="text-xs sm:text-sm font-serif font-normal text-zinc-100 truncate block">{country.capital}</span>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center gap-2.5">
-                <Globe className="w-4 h-4 text-cyan-400 shrink-0" />
+              <div className="p-3 bg-[#121214] rounded-xl border border-zinc-800 flex items-center gap-2.5">
+                <Globe className="w-4 h-4 text-indigo-400 shrink-0" />
                 <div className="overflow-hidden">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Región</span>
-                  <span className="text-xs sm:text-sm font-bold text-white truncate block">{country.subregionEs || country.continentEs}</span>
+                  <span className="text-[10px] uppercase font-mono text-zinc-500 block">Región</span>
+                  <span className="text-xs sm:text-sm font-sans font-medium text-zinc-200 truncate block">{country.subregionEs || country.continentEs}</span>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center gap-2.5 col-span-2 sm:col-span-1">
+              <div className="p-3 bg-[#121214] rounded-xl border border-zinc-800 flex items-center gap-2.5 col-span-2 sm:col-span-1">
                 <Users className="w-4 h-4 text-emerald-400 shrink-0" />
                 <div className="overflow-hidden">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Población</span>
-                  <span className="text-xs sm:text-sm font-bold text-white truncate block">
+                  <span className="text-[10px] uppercase font-mono text-zinc-500 block">Población</span>
+                  <span className="text-xs sm:text-sm font-mono text-emerald-400 truncate block">
                     {country.population ? country.population.toLocaleString('es-ES') : 'N/A'}
                   </span>
                 </div>
@@ -143,8 +140,8 @@ export const FlagModal: React.FC<FlagModalProps> = ({
 
           {/* Pie informativo */}
           <div className="text-center pt-1">
-            <span className="text-xs text-slate-400">
-              Pulsa fuera o presiona <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 font-mono text-[11px]">Esc</kbd> para volver al juego.
+            <span className="text-xs text-zinc-500 font-sans">
+              Pulsa fuera o presiona <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[11px]">Esc</kbd> para volver al juego.
             </span>
           </div>
         </motion.div>
