@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
-import { feature } from 'topojson-client';
-import { Crosshair, Globe, Map as MapIcon, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
-import topoData from '../../data/world-110m.json';
+import { Crosshair, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 
 export interface PinHistoryItem {
   clickedCoords: [number, number];
@@ -20,122 +18,6 @@ interface PinpointWorldMapProps {
   previousPins?: PinHistoryItem[];
   continent?: string;
   cityName?: string;
-}
-
-// Extraer continentes en memoria directamente desde la fuente autoritativa TopoJSON
-const landFeatures = feature(topoData as any, topoData.objects.land as any);
-
-/**
- * Genera una textura equirrectangular satelital ultra-crisp (4096x2048) en Canvas 2D
- * perfectamente sincronizada 1:1 con las coordenadas geográficas de TopoJSON.
- */
-function generateSatelliteEarthTexture(): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  canvas.width = 4096;
-  canvas.height = 2048;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return canvas;
-
-  // 1. Océano Profundo con gradiente abisal realista
-  const oceanGrad = ctx.createLinearGradient(0, 0, 0, 2048);
-  oceanGrad.addColorStop(0, '#071829');
-  oceanGrad.addColorStop(0.3, '#0b2440');
-  oceanGrad.addColorStop(0.5, '#0a213b');
-  oceanGrad.addColorStop(0.7, '#081c33');
-  oceanGrad.addColorStop(1, '#040d18');
-  ctx.fillStyle = oceanGrad;
-  ctx.fillRect(0, 0, 4096, 2048);
-
-  // 2. Renderizar masas terrestres sin líneas de fronteras
-  if (landFeatures && (landFeatures as any).features) {
-    const scaleX = 4096 / 360;
-    const scaleY = 2048 / 180;
-
-    const projectPoint = (lng: number, lat: number): [number, number] => {
-      const x = (lng + 180) * scaleX;
-      const y = (90 - lat) * scaleY;
-      return [x, y];
-    };
-
-    const drawPolygon = (ring: number[][]) => {
-      if (!ring || ring.length < 3) return;
-      ctx.beginPath();
-      const [firstX, firstY] = projectPoint(ring[0][0], ring[0][1]);
-      ctx.moveTo(firstX, firstY);
-      for (let i = 1; i < ring.length; i++) {
-        const [px, py] = projectPoint(ring[i][0], ring[i][1]);
-        ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-    };
-
-    (landFeatures as any).features.forEach((feat: any) => {
-      const geom = feat.geometry;
-      if (!geom) return;
-
-      const fillPolygonGeometry = (polygons: any[]) => {
-        polygons.forEach((poly: any) => {
-          if (!poly || poly.length === 0) return;
-          const outerRing: number[][] = Array.isArray(poly[0]?.[0]) ? poly[0] : poly;
-
-          let sumLat = 0;
-          let sumLng = 0;
-          outerRing.forEach((pt: number[]) => {
-            sumLng += pt[0];
-            sumLat += pt[1];
-          });
-          const avgLat = sumLat / outerRing.length;
-          const avgLng = sumLng / outerRing.length;
-
-          let landColor = '#224726'; // Verde templado
-
-          const absLat = Math.abs(avgLat);
-          if (absLat > 60) {
-            landColor = '#e2e8f0'; // Hielo y nieve polar
-          } else if (avgLat > 12 && avgLat < 35 && avgLng > -18 && avgLng < 65) {
-            landColor = '#b89458'; // Desierto del Sahara / Arabia
-          } else if (avgLat > 35 && avgLat < 48 && avgLng > 55 && avgLng < 105) {
-            landColor = '#a8894f'; // Desierto de Gobi / Asia Central
-          } else if (avgLat > -32 && avgLat < -18 && avgLng > 112 && avgLng < 154) {
-            landColor = '#b57442'; // Outback de Australia
-          } else if (absLat < 15) {
-            landColor = '#153a1d'; // Selva Amazónica / Congo
-          } else if (absLat >= 15 && absLat <= 38) {
-            landColor = '#2e5628'; // Sabanas y bosques subtropicales
-          }
-
-          ctx.fillStyle = landColor;
-          drawPolygon(outerRing);
-          ctx.fill();
-
-          ctx.strokeStyle = 'rgba(14, 116, 144, 0.4)';
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-        });
-      };
-
-      if (geom.type === 'Polygon') {
-        fillPolygonGeometry([geom.coordinates]);
-      } else if (geom.type === 'MultiPolygon') {
-        fillPolygonGeometry(geom.coordinates);
-      }
-    });
-  }
-
-  // 3. Casquetes Polares (Norte y Sur)
-  const northIce = ctx.createLinearGradient(0, 0, 0, 180);
-  northIce.addColorStop(0, '#f8fafc');
-  northIce.addColorStop(1, 'rgba(248, 250, 252, 0)');
-  ctx.fillStyle = northIce;
-  ctx.fillRect(0, 0, 4096, 180);
-
-  const southIce = ctx.createLinearGradient(0, 1860, 0, 2048);
-  southIce.addColorStop(0, 'rgba(248, 250, 252, 0)');
-  southIce.addColorStop(1, '#f8fafc');
-  ctx.fillStyle = southIce;
-  ctx.fillRect(0, 1860, 4096, 188);
-
-  return canvas;
 }
 
 export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
@@ -225,22 +107,34 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     dirLight.position.set(5, 3, 5);
     scene.add(dirLight);
 
-    // 5. Textura Satelital
-    const procCanvas = generateSatelliteEarthTexture();
-    const earthTexture = new THREE.CanvasTexture(procCanvas);
-    earthTexture.colorSpace = THREE.SRGBColorSpace;
-
-    // 6. Malla Esférica de la Tierra (Mesh estacionario en 0,0,0)
+    // 5. Textura Satelital NASA (topo + batimetría, 5400x2700)
+    //    offset.x = 0.25 corrige el desfase equirrectangular de Three.js con nuestro sistema lngLatToVector3
+    const textureLoader = new THREE.TextureLoader();
     const sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
     const sphereMaterial = new THREE.MeshStandardMaterial({
-      map: earthTexture,
       roughness: 0.7,
       metalness: 0.1
     });
-
     const earthMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
     earthMeshRef.current = earthMesh;
     scene.add(earthMesh);
+
+    textureLoader.load(
+      '/earth_texture.jpg',
+      (earthTexture) => {
+        earthTexture.colorSpace = THREE.SRGBColorSpace;
+        earthTexture.wrapS = THREE.RepeatWrapping;
+        earthTexture.offset.x = 0.25; // Alinea lng=0 (Meridiano Greenwich) correctamente
+        sphereMaterial.map = earthTexture;
+        sphereMaterial.needsUpdate = true;
+      },
+      undefined,
+      (err) => {
+        console.warn('NASA texture failed to load, using fallback color:', err);
+        sphereMaterial.color.set(0x1a5276);
+        sphereMaterial.needsUpdate = true;
+      }
+    );
 
     // 7. Resplandor atmosférico
     const atmosGeometry = new THREE.SphereGeometry(1.03, 64, 64);
