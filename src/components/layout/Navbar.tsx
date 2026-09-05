@@ -76,9 +76,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            <Brain className="w-4 h-4" />
-            <span className="hidden sm:inline">Tutor IA</span>
-            <span className="sm:hidden">Tutor</span>
+            <Brain className="w-4 h-4 text-purple-300" />
+            <span>Tutor</span>
           </button>
         </nav>
 

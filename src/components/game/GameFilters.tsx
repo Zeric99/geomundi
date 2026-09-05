@@ -199,7 +199,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                 </span>
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                Tu tutor IA ha preparado una ronda rápida con tus países con mayor tasa de error.
+                El Tutor de Repaso Espaciado ha preparado una ronda rápida con tus países pendientes de memorización.
               </p>
             </div>
           </div>

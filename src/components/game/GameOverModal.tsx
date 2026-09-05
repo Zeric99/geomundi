@@ -162,7 +162,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
               }`}
             >
               <Brain className="w-3.5 h-3.5 text-purple-400" />
-              <span>Tutor IA</span>
+              <span>Tutor de Repaso</span>
               <ArrowRight className="w-3 h-3 text-purple-400" />
             </button>
           </div>
