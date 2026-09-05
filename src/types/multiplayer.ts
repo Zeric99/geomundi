@@ -3,9 +3,9 @@ import { Country } from './country';
 
 export type RankTier = 'bronce' | 'plata' | 'oro' | 'platino' | 'diamante';
 
-export type MultiplayerType = 'friendly' | 'ranked';
+export type MultiplayerType = 'friendly' | 'ranked' | 'custom_room';
 
-export type DuelMode = 'countries' | 'flags' | 'capitals';
+export type DuelMode = 'pinpoint' | 'countries' | 'flags' | 'capitals';
 
 export interface RankInfo {
   tier: RankTier;
@@ -27,12 +27,24 @@ export interface PlayerProfile {
   wins: number;
   losses: number;
   streak: number;
+  xp: number;
+  level: number;
+}
+
+export interface CustomRoomConfig {
+  roomCode: string;
+  mode: DuelMode;
+  continent: string;
+  totalRounds: number; // 3, 5, 10
+  timeLimitSeconds: number; // 15, 30, 60, 0 (sin límite)
+  isHost: boolean;
 }
 
 export interface DuelQuestion {
   country: Country;
   questionType: QuestionType;
   promptText: string;
+  cityTarget?: any; // Para el modo puntería (CityTarget)
 }
 
 export interface PlayerRoundResult {
@@ -40,6 +52,7 @@ export interface PlayerRoundResult {
   userSuccess: boolean;
   timeSpentMs: number;
   points: number;
+  distanceKm?: number;
 }
 
 export interface DuelState {
@@ -57,4 +70,6 @@ export interface DuelState {
   rivalTimeTotalMs: number;
   winner: 'player' | 'rival' | 'tie' | null;
   eloChange: number;
+  xpEarned: number;
+  roomConfig?: CustomRoomConfig;
 }

@@ -83,12 +83,17 @@ export class MultiplayerService {
   /**
    * Carga el perfil multijugador del jugador local
    */
+  /**
+   * Carga el perfil multijugador del jugador local con XP y Nivel
+   */
   getPlayerProfile(): PlayerProfile {
     try {
       const stored = localStorage.getItem(MULTIPLAYER_PROFILE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         const elo = parsed.elo || 1000;
+        const xp = parsed.xp || 0;
+        const level = Math.floor(Math.sqrt(xp / 100)) + 1;
         return {
           id: parsed.id || 'player_local',
           name: parsed.name || 'Tú',
@@ -97,7 +102,9 @@ export class MultiplayerService {
           rank: this.getRankInfo(elo),
           wins: parsed.wins || 0,
           losses: parsed.losses || 0,
-          streak: parsed.streak || 0
+          streak: parsed.streak || 0,
+          xp,
+          level
         };
       }
     } catch (e) {}
@@ -111,7 +118,9 @@ export class MultiplayerService {
       rank: this.getRankInfo(defaultElo),
       wins: 0,
       losses: 0,
-      streak: 0
+      streak: 0,
+      xp: 0,
+      level: 1
     };
   }
 
@@ -122,6 +131,18 @@ export class MultiplayerService {
     try {
       localStorage.setItem(MULTIPLAYER_PROFILE_KEY, JSON.stringify(profile));
     } catch (e) {}
+  }
+
+  /**
+   * Genera un código de sala personalizada corto (ej. ROOM-4921)
+   */
+  generateRoomCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 5; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `ROOM-${code}`;
   }
 
   /**
@@ -140,17 +161,19 @@ export class MultiplayerService {
       rank: this.getRankInfo(rivalElo),
       wins: Math.floor(rivalElo / 20),
       losses: Math.floor(rivalElo / 30),
-      streak: Math.floor(Math.random() * 4)
+      streak: Math.floor(Math.random() * 4),
+      xp: rivalElo * 10,
+      level: Math.floor(Math.sqrt((rivalElo * 10) / 100)) + 1
     };
   }
 
   /**
-   * Genera 10 preguntas estandarizadas para el duelo según la modalidad elegida
+   * Genera N preguntas estandarizadas a 5 rondas para el duelo según la modalidad elegida
    */
-  generateDuelQuestions(countries: Country[], duelMode: DuelMode): DuelQuestion[] {
+  generateDuelQuestions(countries: Country[], duelMode: DuelMode, totalRounds: number = 5): DuelQuestion[] {
     if (countries.length === 0) return [];
 
-    const shuffled = [...countries].sort(() => Math.random() - 0.5).slice(0, 10);
+    const shuffled = [...countries].sort(() => Math.random() - 0.5).slice(0, totalRounds);
 
     return shuffled.map(country => {
       let qType: QuestionType = 'name';
@@ -162,6 +185,9 @@ export class MultiplayerService {
       } else if (duelMode === 'capitals') {
         qType = 'capital';
         promptText = `¿Qué país tiene por capital ${country.capital}?`;
+      } else if (duelMode === 'pinpoint') {
+        qType = 'city-location';
+        promptText = `Ubica con precisión ${country.capital || country.nameEs} (${country.nameEs})`;
       }
 
       return {
@@ -176,7 +202,6 @@ export class MultiplayerService {
    * Simula las respuestas del rival según su ELO (para jugabilidad inmediata 1v1)
    */
   simulateRivalPerformance(questions: DuelQuestion[], rivalElo: number): PlayerRoundResult[] {
-    // A mayor ELO, mayor precisión (0.6 a 0.95) y mejor tiempo promedio (3s a 8s)
     const accuracyProbability = Math.min(0.95, Math.max(0.6, 0.6 + (rivalElo - 800) * 0.00035));
     const baseTimeMs = Math.max(2500, 7500 - (rivalElo - 800) * 3);
 
@@ -196,15 +221,16 @@ export class MultiplayerService {
   }
 
   /**
-   * Actualiza el perfil tras un duelo y calcula el cambio de ELO
+   * Actualiza el perfil tras un duelo, otorga XP y calcula el cambio de ELO
    */
   processDuelResult(
     playerScore: number,
     rivalScore: number,
     playerTimeMs: number,
     rivalTimeMs: number,
-    isRanked: boolean
-  ): { updatedProfile: PlayerProfile; eloChange: number; winner: 'player' | 'rival' | 'tie' } {
+    isRanked: boolean,
+    isCustomRoom: boolean = false
+  ): { updatedProfile: PlayerProfile; eloChange: number; winner: 'player' | 'rival' | 'tie'; xpEarned: number } {
     const profile = this.getPlayerProfile();
 
     let winner: 'player' | 'rival' | 'tie' = 'tie';
@@ -218,6 +244,13 @@ export class MultiplayerService {
     }
 
     let eloChange = 0;
+    let xpEarned = 100; // XP base por jugar
+
+    if (winner === 'player') {
+      xpEarned += 150; // Bonus victoria
+    } else if (winner === 'tie') {
+      xpEarned += 50;
+    }
 
     if (isRanked) {
       if (winner === 'player') {
@@ -228,22 +261,25 @@ export class MultiplayerService {
       } else {
         eloChange = 5;
       }
-
-      const newElo = Math.max(500, profile.elo + eloChange);
-      const updatedProfile: PlayerProfile = {
-        ...profile,
-        elo: newElo,
-        rank: this.getRankInfo(newElo),
-        wins: profile.wins + (winner === 'player' ? 1 : 0),
-        losses: profile.losses + (winner === 'rival' ? 1 : 0),
-        streak: winner === 'player' ? profile.streak + 1 : 0
-      };
-
-      this.savePlayerProfile(updatedProfile);
-      return { updatedProfile, eloChange, winner };
     }
 
-    return { updatedProfile: profile, eloChange: 0, winner };
+    const newElo = isRanked ? Math.max(500, profile.elo + eloChange) : profile.elo;
+    const newXp = profile.xp + xpEarned;
+    const newLevel = Math.floor(Math.sqrt(newXp / 100)) + 1;
+
+    const updatedProfile: PlayerProfile = {
+      ...profile,
+      elo: newElo,
+      rank: this.getRankInfo(newElo),
+      wins: profile.wins + (winner === 'player' ? 1 : 0),
+      losses: profile.losses + (winner === 'rival' ? 1 : 0),
+      streak: winner === 'player' ? profile.streak + 1 : 0,
+      xp: newXp,
+      level: newLevel
+    };
+
+    this.savePlayerProfile(updatedProfile);
+    return { updatedProfile, eloChange, winner, xpEarned };
   }
 }
 

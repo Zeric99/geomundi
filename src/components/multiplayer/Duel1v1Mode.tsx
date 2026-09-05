@@ -182,7 +182,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     const rivalTotalScore = rivalResults.reduce((acc, r) => acc + r.points, 0);
     const rivalTotalTime = rivalResults.reduce((acc, r) => acc + r.timeSpentMs, 0);
 
-    const { updatedProfile, eloChange, winner } = multiplayerService.processDuelResult(
+    const { updatedProfile, eloChange, winner, xpEarned } = multiplayerService.processDuelResult(
       playerTotalScore,
       rivalTotalScore,
       playerTotalTime,
@@ -211,7 +211,8 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
       playerTimeTotalMs: playerTotalTime,
       rivalTimeTotalMs: rivalTotalTime,
       winner,
-      eloChange
+      eloChange,
+      xpEarned
     };
 
     onFinishDuel(state);
@@ -244,7 +245,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
         {/* Centro: Reloj y Pregunta */}
         <div className="flex items-center gap-3">
           <div className="px-3 py-1 bg-zinc-900 rounded-xl border border-zinc-800 font-mono text-xs font-bold text-zinc-300">
-            Pregunta <span className="text-indigo-400 text-sm">{currentIndex + 1}</span> / 10
+            Pregunta <span className="text-indigo-400 text-sm">{currentIndex + 1}</span> / {questions.length}
           </div>
 
           <div className={`px-3 py-1 rounded-xl border font-mono text-sm font-bold flex items-center gap-1.5 ${

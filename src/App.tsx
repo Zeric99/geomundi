@@ -29,7 +29,7 @@ import { Country } from './types/country';
 import { GameConfig, GameSummary } from './types/game';
 import { TutorAdvice } from './types/stats';
 import { Achievement } from './types/achievements';
-import { DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile } from './types/multiplayer';
+import { CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile } from './types/multiplayer';
 import { GEEK_TERRITORIES } from './data/fallbackCountries';
 import { achievementService } from './services/achievementService';
 import { dailyChallengeService, DailyStageQuestion } from './services/dailyChallengeService';
@@ -195,28 +195,50 @@ export function App() {
     }
   }, [countries, startGame]);
 
-  // Iniciar búsqueda de duelo 1v1
-  const handleStartDuel = useCallback((type: MultiplayerType, duelMode: DuelMode) => {
+  // Iniciar búsqueda de duelo 1v1 o sala personalizada
+  const handleStartDuel = useCallback((type: MultiplayerType, duelMode: DuelMode, customConfig?: CustomRoomConfig) => {
     setMatchmakingType(type);
     setMatchmakingMode(duelMode);
-    setIsMatchmakingOpen(true);
-  }, []);
+
+    if (type === 'custom_room' && customConfig) {
+      // Iniciar directamente sala personalizada
+      const rival = multiplayerService.generateRival(playerProfile.elo);
+      const totalRounds = customConfig.totalRounds || 5;
+      const duelQuestions = multiplayerService.generateDuelQuestions(countries, duelMode, totalRounds);
+
+      setActiveRivalProfile(rival);
+      setActiveDuelQuestions(duelQuestions);
+    } else {
+      setIsMatchmakingOpen(true);
+    }
+  }, [countries, playerProfile.elo]);
 
   // Oponente encontrado -> Iniciar Duelo 1v1
   const handleMatchFound = useCallback((rival: PlayerProfile) => {
-    const duelQuestions = multiplayerService.generateDuelQuestions(countries, matchmakingMode);
+    const duelQuestions = multiplayerService.generateDuelQuestions(countries, matchmakingMode, 5);
     setActiveDuelQuestions(duelQuestions);
     setActiveRivalProfile(rival);
     setIsMatchmakingOpen(false);
   }, [countries, matchmakingMode]);
 
-  // Finalizar Duelo 1v1 y mostrar resultados
+  // Finalizar Duelo 1v1 y mostrar resultados (otorgar XP y evaluar logros)
   const handleFinishDuel = useCallback((duelState: DuelState) => {
     setActiveDuelQuestions([]);
     setActiveRivalProfile(null);
     setFinishedDuelResult(duelState);
     setPlayerProfile(duelState.player);
-  }, []);
+
+    // Evaluar logros tras el duelo multijugador
+    const newAchievements = achievementService.evaluateAchievements(stats, {
+      accuracy: Math.round((duelState.playerScore / 500) * 100),
+      maxStreak: duelState.player.streak,
+      isDaily: false
+    });
+
+    if (newAchievements.length > 0) {
+      setUnlockedAchievement(newAchievements[0]);
+    }
+  }, [stats]);
 
   // Manejar acción desde tarjeta del Tutor
   const handleAdviceAction = useCallback((advice: TutorAdvice) => {

@@ -16,7 +16,8 @@ interface MatchmakingModalProps {
 const DUEL_TITLES: Record<DuelMode, string> = {
   countries: '10 Países en el Mapa',
   flags: '10 Banderas del Mundo',
-  capitals: '10 Capitales del Mundo'
+  capitals: '10 Capitales del Mundo',
+  pinpoint: 'Puntería Geográfica (Km)'
 };
 
 export const MatchmakingModal: React.FC<MatchmakingModalProps> = ({

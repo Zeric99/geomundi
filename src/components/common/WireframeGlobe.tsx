@@ -9,18 +9,18 @@ interface WireframeGlobeProps {
 
 export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
   className = '',
-  size = 580
+  size = 600
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [landGeoJson, setLandGeoJson] = useState<any>(null);
   const rotationRef = useRef<number>(0);
   const animFrameRef = useRef<number | null>(null);
 
-  // Pre-generar puntos de rejilla lat/lon para los nodos del mapa (cada 12.5°)
+  // Pre-generar puntos de rejilla lat/lon para la matriz 3D de nodos (cada 10°)
   const geoGridPoints = useMemo(() => {
     const points: [number, number][] = [];
-    for (let lat = -75; lat <= 75; lat += 12.5) {
-      for (let lon = -180; lon < 180; lon += 12.5) {
+    for (let lat = -80; lat <= 80; lat += 10) {
+      for (let lon = -180; lon < 180; lon += 10) {
         points.push([lon, lat]);
       }
     }
@@ -29,16 +29,16 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
 
   // Pre-generar partículas ambientales flotantes (puntitos de constelación de fondo)
   const ambientDots = useMemo(() => {
-    return Array.from({ length: 55 }, () => ({
+    return Array.from({ length: 80 }, () => ({
       xRatio: Math.random(),
       yRatio: Math.random(),
-      size: Math.random() * 1.4 + 0.6,
-      opacity: Math.random() * 0.45 + 0.1,
-      pulseSpeed: Math.random() * 0.002 + 0.001
+      size: Math.random() * 1.8 + 0.6,
+      opacity: Math.random() * 0.6 + 0.15,
+      pulseSpeed: Math.random() * 0.0025 + 0.001
     }));
   }, []);
 
-  // Cargar topojson simplificado de baja poligonización (world-110m.json)
+  // Cargar topojson de continentes
   useEffect(() => {
     let isMounted = true;
     const fetchGeoData = async () => {
@@ -80,7 +80,7 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
     canvas.height = canvasSize * dpr;
 
     const projection = geoOrthographic()
-      .scale((canvasSize / 2) - 25)
+      .scale((canvasSize / 2) - 20)
       .translate([(canvasSize * dpr) / 2, (canvasSize * dpr) / 2])
       .clipAngle(90);
 
@@ -94,17 +94,17 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
       const delta = time - lastTime;
       lastTime = time;
 
-      // Rotación ultra-lenta y serena (0.005°/ms => ~0.3°/segundo)
-      rotationRef.current = (rotationRef.current + delta * 0.005) % 360;
+      // Rotación ultra-lenta (0.003°/ms => ~0.18°/segundo)
+      rotationRef.current = (rotationRef.current + delta * 0.003) % 360;
       const currentRot = rotationRef.current;
 
       projection.rotate([currentRot, -16, 0]);
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 0. Puntitos ambientales flotantes (constelación de fondo)
+      // 0. Puntitos ambientales flotantes (constelaciones por todo el lienzo)
       ambientDots.forEach((dot) => {
-        const pulse = Math.sin(time * dot.pulseSpeed) * 0.15;
+        const pulse = Math.sin(time * dot.pulseSpeed) * 0.2;
         ctx.beginPath();
         ctx.arc(
           dot.xRatio * canvas.width,
@@ -113,28 +113,28 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
           0,
           Math.PI * 2
         );
-        ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.05, dot.opacity + pulse)})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.08, dot.opacity + pulse)})`;
         ctx.fill();
       });
 
-      // 1. Fondo de la esfera
+      // 1. Silueta de la esfera
       ctx.beginPath();
       pathGenerator(sphereFeature);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.01)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
       ctx.fill();
 
       // 2. Borde exterior de la esfera
       ctx.beginPath();
       pathGenerator(sphereFeature);
-      ctx.lineWidth = 1.1 * dpr;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1.3 * dpr;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
       ctx.stroke();
 
       // 3. Malla geométrica de paralelos y meridianos (Graticule)
       ctx.beginPath();
       pathGenerator(graticule);
-      ctx.lineWidth = 0.55 * dpr;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+      ctx.lineWidth = 0.65 * dpr;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.setLineDash([2 * dpr, 4 * dpr]);
       ctx.stroke();
       ctx.setLineDash([]);
@@ -143,15 +143,15 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
       if (landGeoJson) {
         ctx.beginPath();
         pathGenerator(landGeoJson);
-        ctx.lineWidth = 1.1 * dpr;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.42)';
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.2)';
-        ctx.shadowBlur = 5 * dpr;
+        ctx.lineWidth = 1.25 * dpr;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.35)';
+        ctx.shadowBlur = 8 * dpr;
         ctx.stroke();
         ctx.shadowBlur = 0;
       }
 
-      // 5. Puntitos ordenados sobre los nodos de la esfera (Matriz de puntos 3D)
+      // 5. Puntitos brillantes sobre la superficie de la esfera (Matriz 3D)
       const centerLon = -currentRot;
       const centerLat = 16;
 
@@ -160,11 +160,10 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
         if (dist < Math.PI / 2) {
           const pt = projection([lon, lat]);
           if (pt) {
-            // Desvanecimiento esférico 3D progresivo hacia los bordes
-            const alpha = Math.pow(Math.cos(dist), 1.5) * 0.45;
-            if (alpha > 0.02) {
+            const alpha = Math.pow(Math.cos(dist), 1.2) * 0.7;
+            if (alpha > 0.03) {
               ctx.beginPath();
-              ctx.arc(pt[0], pt[1], 1.15 * dpr, 0, Math.PI * 2);
+              ctx.arc(pt[0], pt[1], 1.25 * dpr, 0, Math.PI * 2);
               ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
               ctx.fill();
             }
@@ -172,7 +171,6 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
         }
       });
 
-      // Continuar loop si la pestaña está activa
       if (!document.hidden) {
         animFrameRef.current = requestAnimationFrame(render);
       }
@@ -198,9 +196,9 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
 
   return (
     <div className={`relative flex items-center justify-center pointer-events-none select-none ${className}`}>
-      {/* Resplandor radial sutil de fondo */}
+      {/* Resplandor de aura blanca sutil */}
       <div 
-        className="absolute inset-0 rounded-full bg-gradient-to-tr from-indigo-500/5 via-white/5 to-transparent blur-3xl" 
+        className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/10 via-white/5 to-transparent blur-3xl" 
         style={{ transform: 'scale(0.85)' }}
       />
 
@@ -211,7 +209,7 @@ export const WireframeGlobe: React.FC<WireframeGlobeProps> = ({
           height: `${size}px`,
           maxWidth: '100%',
         }}
-        className="relative z-10 opacity-85 mix-blend-screen transition-opacity duration-1000"
+        className="relative z-10 opacity-95 transition-opacity duration-700"
       />
     </div>
   );
