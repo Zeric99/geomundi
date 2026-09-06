@@ -8,6 +8,7 @@ import { PinpointWorldMap, PinHistoryItem } from '../map/PinpointWorldMap';
 import { calculateHaversineDistance, calculatePinpointScore } from '../../utils/haversineScoring';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { multiplayerService } from '../../services/multiplayerService';
+import { CITIES_DATASET } from '../../data/citiesData';
 import confetti from 'canvas-confetti';
 
 interface Duel1v1ModeProps {
@@ -150,7 +151,8 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     if (!currentQuestion || isEvaluating) return;
 
     setLastPinpointClick(coords);
-    const targetCoords: [number, number] = currentQuestion.cityTarget?.coordinates || [
+    const cityMatch = currentQuestion.cityTarget || CITIES_DATASET.find(c => c.cca3 === currentQuestion.country.cca3);
+    const targetCoords: [number, number] = cityMatch?.coordinates || [
       currentQuestion.country.latlng[1],
       currentQuestion.country.latlng[0]
     ];
@@ -163,7 +165,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     const newScore = playerScore + score;
     setScore(newScore);
 
-    const cityName = currentQuestion.cityTarget?.nameEs || currentQuestion.country.nameEs;
+    const cityName = cityMatch?.nameEs || currentQuestion.country.nameEs;
 
     // Registrar en el historial de pines para que sigan visibles en el Globo 3D
     const historyItem: PinHistoryItem = {
@@ -441,11 +443,11 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
         {duelMode === 'pinpoint' ? (
           <PinpointWorldMap
             clickedCoords={lastPinpointClick}
-            targetCoords={currentQuestion.cityTarget?.coordinates || [currentQuestion.country.latlng[1], currentQuestion.country.latlng[0]]}
+            targetCoords={(currentQuestion.cityTarget || CITIES_DATASET.find(c => c.cca3 === currentQuestion.country.cca3))?.coordinates || [currentQuestion.country.latlng[1], currentQuestion.country.latlng[0]]}
             onMapClick={handlePinpointClick}
             isEvaluated={false}
             previousPins={pinHistory}
-            cityName={currentQuestion.cityTarget?.nameEs || currentQuestion.country.nameEs}
+            cityName={(currentQuestion.cityTarget || CITIES_DATASET.find(c => c.cca3 === currentQuestion.country.cca3))?.nameEs || currentQuestion.country.nameEs}
           />
         ) : (
           <WorldMap

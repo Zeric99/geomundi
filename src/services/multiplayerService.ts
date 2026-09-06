@@ -1,6 +1,7 @@
 import { Country } from '../types/country';
 import { QuestionType } from '../types/game';
 import { DuelMode, DuelQuestion, DuelState, PlayerProfile, PlayerRoundResult, RankInfo, RankTier } from '../types/multiplayer';
+import { getRandomCities } from '../data/citiesData';
 
 const MULTIPLAYER_PROFILE_KEY = 'GEOMUNDI_MULTIPLAYER_PROFILE_V1';
 const MULTIPLAYER_HISTORY_KEY = 'GEOMUNDI_MULTIPLAYER_HISTORY_V1';
@@ -174,6 +175,33 @@ export class MultiplayerService {
   generateDuelQuestions(countries: Country[], duelMode: DuelMode, totalRounds: number = 5): DuelQuestion[] {
     if (countries.length === 0) return [];
 
+    // Modo Puntería (Pinpoint 3D): Seleccionar ciudades reales con coordenadas GPS exactas
+    if (duelMode === 'pinpoint') {
+      const selectedCities = getRandomCities(totalRounds);
+      return selectedCities.map(city => {
+        const matchingCountry = countries.find(c => c.cca3 === city.cca3) || {
+          cca2: '',
+          cca3: city.cca3,
+          nameEs: city.countryNameEs,
+          nameEn: city.countryNameEs,
+          capital: city.nameEs,
+          continent: city.continent as any,
+          continentEs: (city.continent === 'Americas' ? 'América' : city.continent === 'Europe' ? 'Europa' : city.continent === 'Asia' ? 'Asia' : city.continent === 'Africa' ? 'África' : 'Oceanía') as any,
+          population: city.population || 0,
+          flagSvg: '',
+          flagEmoji: city.flagEmoji || '🏳️',
+          latlng: [city.coordinates[1], city.coordinates[0]]
+        };
+
+        return {
+          country: matchingCountry,
+          questionType: 'city-location' as QuestionType,
+          promptText: `Ubica con precisión ${city.nameEs} (${city.countryNameEs})`,
+          cityTarget: city
+        };
+      });
+    }
+
     const shuffled = [...countries].sort(() => Math.random() - 0.5).slice(0, totalRounds);
 
     return shuffled.map(country => {
@@ -186,9 +214,6 @@ export class MultiplayerService {
       } else if (duelMode === 'capitals') {
         qType = 'capital';
         promptText = `¿Qué país tiene por capital ${country.capital}?`;
-      } else if (duelMode === 'pinpoint') {
-        qType = 'city-location';
-        promptText = `Ubica con precisión ${country.capital || country.nameEs} (${country.nameEs})`;
       }
 
       return {

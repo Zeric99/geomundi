@@ -328,16 +328,24 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       if (!container || !rendererRef.current || !cameraRef.current) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
-      cameraRef.current.aspect = w / h;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(w, h);
+      if (w > 0 && h > 0) {
+        cameraRef.current.aspect = w / h;
+        cameraRef.current.updateProjectionMatrix();
+        rendererRef.current.setSize(w, h);
+      }
     };
 
     window.addEventListener('resize', handleResize);
 
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
+    resizeObserver.observe(container);
+
     return () => {
       cancelAnimationFrame(animFrameId);
       window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);
       }
