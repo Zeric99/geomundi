@@ -301,6 +301,7 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
           onMapClick={handleMapClick}
           isEvaluated={isEvaluated}
           continent={continent}
+          cityName={currentCity.nameEs}
         />
 
         {/* Modal / Tarjeta de Evaluación al hacer clic */}

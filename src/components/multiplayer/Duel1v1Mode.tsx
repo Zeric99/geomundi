@@ -445,6 +445,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
             onMapClick={handlePinpointClick}
             isEvaluated={false}
             previousPins={pinHistory}
+            cityName={currentQuestion.cityTarget?.nameEs || currentQuestion.country.nameEs}
           />
         ) : (
           <WorldMap
