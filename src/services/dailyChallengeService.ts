@@ -314,11 +314,11 @@ export class DailyChallengeService {
    */
   generateShareSnippet(score: number, accuracy: number, durationOrResults?: number | GameRoundResult[], dateStr: string = this.getTodayDateString()): string {
     const duration = typeof durationOrResults === 'number' ? durationOrResults : 30;
-    return `🌍 MapTap Desafío Diario #${dateStr}
+    return `🌍 GeoStrike Desafío Diario #${dateStr}
 🎯 Precisión: ${accuracy}% | ⏱️ Tiempo: ${duration}s | 🏆 Puntos: ${score} pts
 🟩🟩🟩🟩🟩 (5/5 Pruebas Superadas)
 
-¡Juega gratis y pon a prueba tu geografía en MapTap! 🗺️✨`;
+¡Juega gratis y pon a prueba tu geografía en GeoStrike! 🗺️✨`;
   }
 }
 

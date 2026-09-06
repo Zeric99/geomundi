@@ -67,7 +67,7 @@ export class ChallengeService {
    * Genera el mensaje para compartir en WhatsApp o redes sociales
    */
   generateShareSnippet(creatorName: string, creatorScore: number, url: string): string {
-    return `⚔️ ¡${creatorName || 'Un amigo'} te ha desafiado en MapTap!
+    return `⚔️ ¡${creatorName || 'Un amigo'} te ha desafiado en GeoStrike!
 🏆 Puntuación a superar: ${creatorScore} pts
 
 ¿Puedes superarlo? Juega gratis aquí:

@@ -36,11 +36,11 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
       snippet = dailyChallengeService.generateShareSnippet(summary.score, summary.accuracy, summary.results);
     } else {
       const blocks = summary.results.map(r => r.firstTry ? '🟩' : (r.userSuccess ? '🟨' : '🟥')).join('');
-      snippet = `🌍 Partida de MapTap (${summary.continent === 'World' ? 'Mundo' : summary.continent})
+      snippet = `🌍 Partida de GeoStrike (${summary.continent === 'World' ? 'Mundo' : summary.continent})
 🎯 Precisión: ${summary.accuracy}% | 🏆 Puntos: ${summary.score} pts
 ${blocks}
 
-¡Juega gratis en MapTap! 🗺️✨`;
+¡Juega gratis en GeoStrike! 🗺️✨`;
     }
 
     try {

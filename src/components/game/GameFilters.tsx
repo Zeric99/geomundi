@@ -70,7 +70,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   }[] = [
     {
       id: 'city-pinpoint',
-      title: '🎯 Puntería Geográfica (MapTap)',
+      title: '🎯 Puntería Geográfica (GeoStrike)',
       desc: 'Te damos una ciudad y debes hacer clic lo más cerca posible para ganar hasta 1,000 pts.',
       bgEmoji: '🎯',
       cardGradient: 'from-cyan-950/50 via-[#18181B] to-[#121214]',

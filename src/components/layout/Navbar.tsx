@@ -38,7 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="hidden sm:block">
             <div className="flex items-center gap-1.5">
               <span className="font-display font-bold text-xl sm:text-2xl tracking-wide text-zinc-100">
-                Map<span className="text-indigo-400">Tap</span>
+                Geo<span className="text-cyan-400">Strike</span>
               </span>
             </div>
             <p className="text-[11px] text-zinc-400 font-sans">

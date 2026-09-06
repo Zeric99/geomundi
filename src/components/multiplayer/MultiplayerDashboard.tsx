@@ -64,7 +64,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
     {
       id: 'pinpoint',
       title: '🎯 Puntería Geográfica',
-      desc: 'El modo de MapTap. Haz clic libre en el mapa para situar la ciudad objetivo (hasta 1,000 pts/ronda).',
+      desc: 'El modo GeoStrike. Haz clic libre en el mapa para situar la ciudad objetivo (hasta 1,000 pts/ronda).',
       icon: <Target className="w-6 h-6 text-cyan-400" />,
       color: 'border-cyan-500/70 bg-cyan-950/30'
     },

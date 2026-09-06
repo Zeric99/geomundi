@@ -12,8 +12,8 @@ export const Footer: React.FC<FooterProps> = ({ isCompact = false }) => {
     }`}>
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 flex-wrap text-zinc-400 font-sans">
         <div className="flex items-center gap-1.5">
-          <Globe className="w-3 h-3 text-indigo-400 shrink-0" />
-          <span className="font-bold text-zinc-200">MapTap</span>
+          <Globe className="w-3 h-3 text-cyan-400 shrink-0" />
+          <span className="font-bold text-zinc-200">GeoStrike</span>
           <span className="hidden sm:inline">— Plataforma Gamificada de Aprendizaje Geográfico</span>
         </div>
 

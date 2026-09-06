@@ -46,10 +46,10 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
               100% Gratuito y sin anuncios molestos
             </span>
             <h2 className="text-2xl sm:text-3xl font-serif font-bold text-zinc-100 mt-2">
-              Apoya el Proyecto MapTap ☕
+              Apoya el Proyecto GeoStrike ☕
             </h2>
             <p className="text-xs sm:text-sm text-zinc-300 mt-2 leading-relaxed font-sans">
-              MapTap nació con la misión de ser un recurso educativo, divertido y apto para toda la familia. Queremos mantener esta plataforma siempre **100% gratuita y libre de publicidad intrusiva**.
+              GeoStrike nació con la misión de ser un recurso educativo, divertido y apto para toda la familia. Queremos mantener esta plataforma siempre **100% gratuita y libre de publicidad intrusiva**.
             </p>
           </div>
 

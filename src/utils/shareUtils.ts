@@ -34,7 +34,7 @@ export function generateEmojiGrid(
 export function generateShareText(options: ShareOptions): string {
   const { score, maxScore, gameTitle, results, totalDistanceKm } = options;
 
-  let text = `🎯 GEOMUNDI - ${gameTitle}\n`;
+  let text = `🎯 GeoStrike - ${gameTitle}\n`;
   text += `Puntuación: ${score.toLocaleString()} / ${maxScore.toLocaleString()} pts\n`;
 
   if (results && results.length > 0) {
