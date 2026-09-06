@@ -310,15 +310,44 @@ export class DailyChallengeService {
   }
 
   /**
+   * Genera el texto específico optimizado para compartir el Reto Diario en X / Twitter
+   */
+  generateDailyTweetText(
+    correctCount: number,
+    totalStages: number,
+    score: number,
+    durationSeconds: number,
+    stageResults: boolean[],
+    dateStr: string = this.getTodayDateString()
+  ): string {
+    const emojis = stageResults.map(r => r ? '🟩' : '🟥').join('');
+    const pct = Math.round((correctCount / totalStages) * 100);
+
+    return `🌍 Reto Diario GeoStrike #${dateStr}
+📊 Aciertos: ${correctCount}/${totalStages} (${pct}%)
+${emojis}
+⏱️ Tiempo: ${durationSeconds}s | 🏆 Puntos: ${score.toLocaleString()} pts
+
+¿Puedes superarme? Juega gratis aquí:
+https://zeric99.github.io/geomundi/ #GeoStrike`;
+  }
+
+  /**
    * Genera el texto copiable estilo Wordle para compartir en redes/WhatsApp
    */
-  generateShareSnippet(score: number, accuracy: number, durationOrResults?: number | GameRoundResult[], dateStr: string = this.getTodayDateString()): string {
+  generateShareSnippet(
+    score: number,
+    accuracy: number,
+    durationOrResults?: number | GameRoundResult[],
+    dateStr: string = this.getTodayDateString()
+  ): string {
     const duration = typeof durationOrResults === 'number' ? durationOrResults : 30;
     return `🌍 GeoStrike Desafío Diario #${dateStr}
-🎯 Precisión: ${accuracy}% | ⏱️ Tiempo: ${duration}s | 🏆 Puntos: ${score} pts
+🎯 Precisión: ${accuracy}% | ⏱️ Tiempo: ${duration}s | 🏆 Puntos: ${score.toLocaleString()} pts
 🟩🟩🟩🟩🟩 (5/5 Pruebas Superadas)
 
-¡Juega gratis y pon a prueba tu geografía en GeoStrike! 🗺️✨`;
+¡Juega gratis y pon a prueba tu geografía en GeoStrike! 🗺️✨
+https://zeric99.github.io/geomundi/`;
   }
 }
 
