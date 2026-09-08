@@ -91,12 +91,23 @@ export class DailyChallengeService {
     const seed = hashString(dateStr);
     const rng = seededRandom(seed);
 
-    // Seleccionar 5 países únicos evitando repetirlos en la misma sesión
-    const shuffledCountries = [...countries].sort(() => rng() - 0.5);
+    // Ordenar países de manera determinista por cca3 para evitar cualquier variación en la carga inicial
+    const baseCountries = [...countries].sort((a, b) => a.cca3.localeCompare(b.cca3));
+
+    // Algoritmo Fisher-Yates determinista con el PRNG
+    const shuffledCountries = [...baseCountries];
+    for (let i = shuffledCountries.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [shuffledCountries[i], shuffledCountries[j]] = [shuffledCountries[j], shuffledCountries[i]];
+    }
     const selectedCountries = shuffledCountries.slice(0, 5);
 
-    // Seleccionar 1 pregunta de trivia determinista de la pool
-    const triviaPoolShuffled = [...TRIVIA_POOL].sort(() => rng() - 0.5);
+    // Seleccionar 1 pregunta de trivia determinista de la pool con Fisher-Yates
+    const triviaPoolShuffled = [...TRIVIA_POOL];
+    for (let i = triviaPoolShuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [triviaPoolShuffled[i], triviaPoolShuffled[j]] = [triviaPoolShuffled[j], triviaPoolShuffled[i]];
+    }
     const selectedTrivia = triviaPoolShuffled[0];
     const triviaCountry = countries.find(c => c.cca3 === selectedTrivia.countryCode) || selectedCountries[4];
 

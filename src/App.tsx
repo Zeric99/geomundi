@@ -368,6 +368,7 @@ export function App() {
             {isDailyChallengeActive && activeDailyQuestions.length > 0 ? (
               <DailyChallengeMode
                 questions={activeDailyQuestions}
+                targetDateStr={activeDailyDateStr || undefined}
                 onFinishChallenge={handleFinishDailyChallenge}
                 onQuit={() => {
                   setIsDailyChallengeActive(false);

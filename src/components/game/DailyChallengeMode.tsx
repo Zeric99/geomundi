@@ -9,6 +9,7 @@ import { copyToClipboard } from '../../utils/shareUtils';
 
 interface DailyChallengeModeProps {
   questions: DailyStageQuestion[];
+  targetDateStr?: string;
   onFinishChallenge: (score: number, accuracy: number, durationSeconds: number) => void;
   onQuit: () => void;
   onOpenFlagModal?: (country: Country) => void;
@@ -26,10 +27,12 @@ interface ChallengeFinalSummary {
 
 export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
   questions,
+  targetDateStr,
   onFinishChallenge,
   onQuit,
   onOpenFlagModal
 }) => {
+  const activeDate = targetDateStr || dailyChallengeService.getTodayDateString();
   const { countries } = useCountriesData();
   const [currentStageIdx, setCurrentStageIdx] = useState<number>(0);
   const [stageResults, setStageResults] = useState<{ success: boolean; timeMs: number }[]>([]);
@@ -105,7 +108,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
       const stageSuccessBools = updatedResults.map(r => r.success);
 
       // Guardar el registro en el almacenamiento local
-      const streakState = dailyChallengeService.recordDailyCompletion(score, accuracy, totalSeconds);
+      const streakState = dailyChallengeService.recordDailyCompletion(score, accuracy, totalSeconds, activeDate);
 
       if (correctCount >= 3) {
         try {
@@ -202,7 +205,8 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
       finalSummary.totalQuestions,
       finalSummary.score,
       finalSummary.durationSeconds,
-      finalSummary.stageResults
+      finalSummary.stageResults,
+      activeDate
     );
 
     const success = await copyToClipboard(tweetText);
@@ -220,7 +224,8 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
       finalSummary.totalQuestions,
       finalSummary.score,
       finalSummary.durationSeconds,
-      finalSummary.stageResults
+      finalSummary.stageResults,
+      activeDate
     );
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
     window.open(tweetUrl, '_blank', 'noopener,noreferrer');
@@ -353,7 +358,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
 
             {/* Vista previa del Tweet */}
             <div className="bg-[#0e0e10] border border-zinc-800 rounded-xl p-3 font-mono text-xs text-zinc-300 space-y-1 select-all">
-              <p>🌍 Reto Diario GeoStrike #{dailyChallengeService.getTodayDateString()}</p>
+              <p>🌍 Reto Diario GeoStrike #{activeDate}</p>
               <p className="font-bold text-emerald-400">
                 📊 Aciertos: {finalSummary.correctCount}/{finalSummary.totalQuestions} ({finalSummary.accuracy}%)
               </p>
@@ -430,7 +435,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono font-bold uppercase tracking-widest bg-amber-950/60 text-amber-400 border border-amber-800/60 px-2 py-0.5 rounded">
-                Desafío Diario Oficial
+                Desafío Diario Oficial · #{activeDate}
               </span>
               <span className="text-xs font-mono text-zinc-400">
                 5 Pruebas Diarias
