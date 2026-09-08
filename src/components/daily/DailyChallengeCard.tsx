@@ -72,7 +72,7 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ onStartD
             </div>
           ) : (
             <button
-              onClick={onStartDaily}
+              onClick={() => onStartDaily()}
               className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md transition-all flex items-center gap-2 active:scale-95 border border-indigo-500"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />

@@ -31,7 +31,9 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
   onQuit,
   onOpenFlagModal
 }) => {
-  const activeDate = targetDateStr || dailyChallengeService.getTodayDateString();
+  const activeDate = typeof targetDateStr === 'string' && targetDateStr.trim().length >= 8
+    ? targetDateStr.trim()
+    : dailyChallengeService.getTodayDateString();
   const [currentStageIdx, setCurrentStageIdx] = useState<number>(0);
   const [stageResults, setStageResults] = useState<{ success: boolean; timeMs: number }[]>([]);
   const [inputText, setInputText] = useState<string>('');

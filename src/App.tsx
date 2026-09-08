@@ -162,11 +162,14 @@ export function App() {
   }, [getFocusedPracticeCountries, startGame]);
 
   // Iniciar Desafío Diario
-  const handleStartDailyChallenge = useCallback((dateStr?: string) => {
+  const handleStartDailyChallenge = useCallback((dateStr?: string | unknown) => {
+    const safeDateStr = (typeof dateStr === 'string' && dateStr.trim().length >= 8)
+      ? dateStr.trim()
+      : dailyChallengeService.getTodayDateString();
     const list = (countries && countries.length >= 5) ? countries : FALLBACK_COUNTRIES;
-    const dailyQuestions = dailyChallengeService.generateDailyQuestions(list, dateStr);
+    const dailyQuestions = dailyChallengeService.generateDailyQuestions(list, safeDateStr);
     setActiveDailyQuestions(dailyQuestions);
-    setActiveDailyDateStr(dateStr || '');
+    setActiveDailyDateStr(safeDateStr);
     setIsDailyChallengeActive(true);
     setActiveTab('singleplayer');
   }, [countries]);
@@ -393,7 +396,7 @@ export function App() {
                 blindSpots={blindSpots}
                 onStartFocusedPractice={() => handleStartFocusedPractice()}
                 onGoToTutor={() => setActiveTab('tutor')}
-                onStartDaily={handleStartDailyChallenge}
+                onStartDaily={() => handleStartDailyChallenge()}
                 onOpenDailyArchive={() => setIsDailyArchiveOpen(true)}
               />
             ) : (

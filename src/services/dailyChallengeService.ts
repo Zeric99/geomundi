@@ -56,10 +56,11 @@ function seededRandom(seed: number) {
   };
 }
 
-function hashString(str: string): number {
+function hashString(str: any): number {
+  const cleanStr = typeof str === 'string' ? str : String(str || '');
   let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
+  for (let i = 0; i < cleanStr.length; i++) {
+    const char = cleanStr.charCodeAt(i);
     hash = (hash << 5) - hash + char;
     hash |= 0;
   }
@@ -86,14 +87,18 @@ export class DailyChallengeService {
    * 4. Resaltado en mapa -> Escribir nombre
    * 5. Trivia / Curiosidad -> Clicar en mapa
    */
-  generateDailyQuestions(countries: Country[], dateStr: string = this.getTodayDateString()): DailyStageQuestion[] {
+  generateDailyQuestions(countries: Country[], dateStr?: string | unknown): DailyStageQuestion[] {
+    const safeDateStr = (typeof dateStr === 'string' && dateStr.trim().length >= 8)
+      ? dateStr.trim()
+      : this.getTodayDateString();
+
     // Asegurar que siempre disponemos de una lista rica y válida de países
     const validCountries = Array.isArray(countries)
       ? countries.filter(c => c && typeof c === 'object' && c.cca3 && c.nameEs)
       : [];
     const pool = validCountries.length >= 10 ? validCountries : FALLBACK_COUNTRIES;
 
-    const seed = hashString(dateStr);
+    const seed = hashString(safeDateStr);
     const rng = seededRandom(seed);
 
     // Ordenar países de manera determinista por cca3 para evitar cualquier variación en la carga inicial
