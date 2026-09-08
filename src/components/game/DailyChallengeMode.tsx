@@ -4,7 +4,6 @@ import confetti from 'canvas-confetti';
 import { Country, CountryMapStatus } from '../../types/country';
 import { DailyStageQuestion, dailyChallengeService } from '../../services/dailyChallengeService';
 import { WorldMap } from '../map/WorldMap';
-import { useCountriesData } from '../../hooks/useCountriesData';
 import { copyToClipboard } from '../../utils/shareUtils';
 
 interface DailyChallengeModeProps {
@@ -33,7 +32,6 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
   onOpenFlagModal
 }) => {
   const activeDate = targetDateStr || dailyChallengeService.getTodayDateString();
-  const { countries } = useCountriesData();
   const [currentStageIdx, setCurrentStageIdx] = useState<number>(0);
   const [stageResults, setStageResults] = useState<{ success: boolean; timeMs: number }[]>([]);
   const [inputText, setInputText] = useState<string>('');
@@ -44,7 +42,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
   const [finalSummary, setFinalSummary] = useState<ChallengeFinalSummary | null>(null);
   const [copiedTweet, setCopiedTweet] = useState<boolean>(false);
 
-  const currentQuestion = questions[currentStageIdx] || questions[0];
+  const currentQuestion = (questions && questions.length > 0) ? (questions[currentStageIdx] || questions[0]) : null;
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const stageStartTimeRef = useRef<number>(Date.now());
 
@@ -74,18 +72,20 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
   // Estado visual de países en el mapa
   const countryStatuses = useMemo(() => {
     const statuses: Record<string, CountryMapStatus> = {};
-    if (!currentQuestion) return statuses;
+    if (!currentQuestion?.country?.cca3) return statuses;
+
+    const targetCca3 = currentQuestion.country.cca3;
 
     if (currentQuestion.stageType === 'map-to-input') {
       // En la etapa 4, el país objetivo se resalta claramente en amarillo en el mapa
-      statuses[currentQuestion.country.cca3] = 'hint';
+      statuses[targetCca3] = 'hint';
     }
 
     if (feedback) {
       if (feedback.isCorrect) {
-        statuses[currentQuestion.country.cca3] = 'correct';
+        statuses[targetCca3] = 'correct';
       } else {
-        statuses[currentQuestion.country.cca3] = 'wrong';
+        statuses[targetCca3] = 'wrong';
       }
     }
 
@@ -135,7 +135,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
 
   // Manejar clic en mapa (para etapas 1, 2, 3, 5)
   const handleCountryClick = (clickedCountry: Country) => {
-    if (isEvaluating || !currentQuestion || currentQuestion.stageType === 'map-to-input') return;
+    if (isEvaluating || !currentQuestion?.country || currentQuestion.stageType === 'map-to-input') return;
 
     setIsEvaluating(true);
     const isCorrect = clickedCountry.cca3 === currentQuestion.country.cca3;
@@ -148,7 +148,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
     } else {
       setFeedback({
         isCorrect: false,
-        message: `Incorrecto. Has marcado ${clickedCountry.nameEs}.`,
+        message: `Incorrecto. Has marcado ${clickedCountry.nameEs || clickedCountry.nameEn || 'otro país'}.`,
         answerName: currentQuestion.country.nameEs
       });
     }
@@ -170,14 +170,14 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
   // Manejar respuesta escrita (para etapa 4: mapa -> escribir)
   const handleInputSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (isEvaluating || !inputText.trim() || !currentQuestion) return;
+    if (isEvaluating || !inputText.trim() || !currentQuestion?.country) return;
 
     setIsEvaluating(true);
     const userClean = normalizeStr(inputText);
-    const targetNameEs = normalizeStr(currentQuestion.country.nameEs);
-    const targetNameEn = normalizeStr(currentQuestion.country.nameEn);
+    const targetNameEs = normalizeStr(currentQuestion.country.nameEs || '');
+    const targetNameEn = normalizeStr(currentQuestion.country.nameEn || '');
 
-    const isCorrect = userClean === targetNameEs || userClean === targetNameEn;
+    const isCorrect = Boolean((targetNameEs && userClean === targetNameEs) || (targetNameEn && userClean === targetNameEn));
 
     if (isCorrect) {
       setFeedback({
@@ -299,11 +299,11 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
                     <div className="flex items-center gap-1.5 sm:flex-col">
                       <span className="text-base">{isSuccess ? '🟩' : '🟥'}</span>
                       <span className="text-xs font-mono font-bold uppercase text-zinc-300">
-                        Prueba {q.stage}
+                        Prueba {q?.stage || (idx + 1)}
                       </span>
                     </div>
                     <span className="text-xs truncate max-w-[120px] font-medium text-zinc-300">
-                      {q.country.nameEs}
+                      {q?.country?.nameEs || 'País'}
                     </span>
                   </div>
                 );
@@ -424,6 +424,27 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
     );
   }
 
+  // Protección si no hay preguntas cargadas o la pregunta actual no está disponible
+  if (!questions || questions.length === 0 || !currentQuestion || !currentQuestion.country) {
+    return (
+      <div className="w-full max-w-xl mx-auto py-12 px-4 text-center space-y-4">
+        <div className="bg-[#18181B] border border-zinc-800 rounded-3xl p-8 shadow-2xl space-y-4">
+          <div className="p-3.5 bg-amber-500/15 border border-amber-500/30 rounded-2xl text-amber-400 inline-flex">
+            <Trophy className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-serif font-bold text-zinc-100">Desafío Diario</h3>
+          <p className="text-sm text-zinc-400">Preparando los datos geográficos para el reto de hoy...</p>
+          <button
+            onClick={onQuit}
+            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs rounded-xl transition"
+          >
+            Volver al Menú
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-4 animate-in fade-in duration-200">
       {/* BARRA SUPERIOR: STEPPER Y TIMER */}
@@ -518,12 +539,12 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
 
             {currentQuestion.stageType === 'flag-to-map' && (
               <div
-                onClick={() => onOpenFlagModal?.(currentQuestion.country)}
+                onClick={() => currentQuestion.country && onOpenFlagModal?.(currentQuestion.country)}
                 className="w-16 h-11 rounded-lg overflow-hidden border border-zinc-700 bg-zinc-900 cursor-pointer hover:scale-105 transition-transform"
                 title="Ampliar Bandera"
               >
                 <img
-                  src={currentQuestion.country.flagSvg}
+                  src={currentQuestion.country.flagSvg || ''}
                   alt="Bandera"
                   className="w-full h-full object-cover"
                 />
@@ -561,7 +582,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
           {/* Detalles específicos */}
           {currentQuestion.stageType === 'capital-to-map' && (
             <div className="px-4 py-2 bg-amber-950/40 border border-amber-500/30 rounded-xl font-serif text-amber-300 font-bold text-sm sm:text-base">
-              Capital: {currentQuestion.country.capital}
+              Capital: {currentQuestion.country.capital || 'N/A'}
             </div>
           )}
         </div>

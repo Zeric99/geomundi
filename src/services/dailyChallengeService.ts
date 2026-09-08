@@ -1,6 +1,7 @@
 import { Country } from '../types/country';
 import { GameRoundResult, Question, TriviaItem } from '../types/game';
 import { TRIVIA_POOL } from '../data/triviaPool';
+import { FALLBACK_COUNTRIES } from '../data/fallbackCountries';
 
 const DAILY_STORAGE_KEY = 'GEOMUNDI_DAILY_CHALLENGE_V1';
 
@@ -86,13 +87,17 @@ export class DailyChallengeService {
    * 5. Trivia / Curiosidad -> Clicar en mapa
    */
   generateDailyQuestions(countries: Country[], dateStr: string = this.getTodayDateString()): DailyStageQuestion[] {
-    if (countries.length === 0) return [];
+    // Asegurar que siempre disponemos de una lista rica y válida de países
+    const validCountries = Array.isArray(countries)
+      ? countries.filter(c => c && typeof c === 'object' && c.cca3 && c.nameEs)
+      : [];
+    const pool = validCountries.length >= 10 ? validCountries : FALLBACK_COUNTRIES;
 
     const seed = hashString(dateStr);
     const rng = seededRandom(seed);
 
     // Ordenar países de manera determinista por cca3 para evitar cualquier variación en la carga inicial
-    const baseCountries = [...countries].sort((a, b) => a.cca3.localeCompare(b.cca3));
+    const baseCountries = [...pool].sort((a, b) => (a.cca3 || '').localeCompare(b.cca3 || ''));
 
     // Algoritmo Fisher-Yates determinista con el PRNG
     const shuffledCountries = [...baseCountries];
@@ -108,8 +113,24 @@ export class DailyChallengeService {
       const j = Math.floor(rng() * (i + 1));
       [triviaPoolShuffled[i], triviaPoolShuffled[j]] = [triviaPoolShuffled[j], triviaPoolShuffled[i]];
     }
-    const selectedTrivia = triviaPoolShuffled[0];
-    const triviaCountry = countries.find(c => c.cca3 === selectedTrivia.countryCode) || selectedCountries[4];
+    const selectedTrivia = triviaPoolShuffled[0] || TRIVIA_POOL[0];
+    const triviaCountry = pool.find(c => c.cca3 === selectedTrivia.countryCode)
+      || selectedCountries[4]
+      || pool[4 % pool.length]
+      || FALLBACK_COUNTRIES[0];
+
+    // Asignar países garantizando que ninguno sea undefined y que etapa 3 tenga capital válida
+    const stage1Country = selectedCountries[0] || pool[0] || FALLBACK_COUNTRIES[0];
+    const stage2Country = selectedCountries[1] || pool[1 % pool.length] || FALLBACK_COUNTRIES[1];
+    
+    // Para etapa 3 (capital), buscar preferentemente un país con capital reconocida
+    const stage3Candidate = selectedCountries[2] || pool[2 % pool.length] || FALLBACK_COUNTRIES[2];
+    const stage3Country = (stage3Candidate.capital && stage3Candidate.capital !== 'N/A')
+      ? stage3Candidate
+      : (pool.find(c => c.capital && c.capital !== 'N/A' && c.cca3 !== stage1Country.cca3 && c.cca3 !== stage2Country.cca3) || stage3Candidate);
+
+    const stage4Country = selectedCountries[3] || pool[3 % pool.length] || FALLBACK_COUNTRIES[3];
+    const stage5Country = triviaCountry;
 
     return [
       {
@@ -117,33 +138,33 @@ export class DailyChallengeService {
         stageTitle: 'Etapa 1: Nombre ➔ Mapa',
         stageSubtitle: 'Haz clic en el mapa donde está el país especificado',
         stageType: 'name-to-map',
-        country: selectedCountries[0],
-        promptText: `¿Dónde se ubica ${selectedCountries[0].nameEs} en el mapa mundial?`
+        country: stage1Country,
+        promptText: `¿Dónde se ubica ${stage1Country.nameEs} en el mapa mundial?`
       },
       {
         stage: 2,
         stageTitle: 'Etapa 2: Bandera ➔ Mapa',
         stageSubtitle: 'Identifica esta bandera y búscala en el mapa',
         stageType: 'flag-to-map',
-        country: selectedCountries[1],
+        country: stage2Country,
         promptText: `¿A qué país corresponde esta bandera nacional?`,
-        detailText: selectedCountries[1].flagSvg
+        detailText: stage2Country.flagSvg || `https://flagcdn.com/${stage2Country.cca2?.toLowerCase() || 'xx'}.svg`
       },
       {
         stage: 3,
         stageTitle: 'Etapa 3: Capital ➔ Mapa',
         stageSubtitle: 'Ubica el país al que pertenece la capital',
         stageType: 'capital-to-map',
-        country: selectedCountries[2],
-        promptText: `¿En qué país se encuentra la capital ${selectedCountries[2].capital}?`,
-        detailText: selectedCountries[2].capital
+        country: stage3Country,
+        promptText: `¿En qué país se encuentra la capital ${stage3Country.capital || 'indicada'}?`,
+        detailText: stage3Country.capital || 'Capital'
       },
       {
         stage: 4,
         stageTitle: 'Etapa 4: Mapa ➔ Escribir Nombre',
         stageSubtitle: 'El país está marcado en el mapa. Escribe su nombre',
         stageType: 'map-to-input',
-        country: selectedCountries[3],
+        country: stage4Country,
         promptText: `¿Qué país es el que aparece seleccionado en amarillo en el mapa?`
       },
       {
@@ -151,9 +172,9 @@ export class DailyChallengeService {
         stageTitle: 'Etapa 5: Trivia ➔ País',
         stageSubtitle: 'Resuelve la curiosidad seleccionando el país correcto',
         stageType: 'trivia-to-country',
-        country: triviaCountry,
-        promptText: selectedTrivia.question,
-        detailText: selectedTrivia.hint,
+        country: stage5Country,
+        promptText: selectedTrivia?.question || '¿A qué país corresponde esta curiosidad?',
+        detailText: selectedTrivia?.hint || '',
         triviaItem: selectedTrivia
       }
     ];

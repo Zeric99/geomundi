@@ -33,7 +33,8 @@ import { TutorAdvice } from './types/stats';
 import { Achievement } from './types/achievements';
 import { CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile } from './types/multiplayer';
 import { DailyArchiveModal } from './components/daily/DailyArchiveModal';
-import { GEEK_TERRITORIES } from './data/fallbackCountries';
+import { FALLBACK_COUNTRIES, GEEK_TERRITORIES } from './data/fallbackCountries';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { achievementService } from './services/achievementService';
 import { dailyChallengeService, DailyStageQuestion } from './services/dailyChallengeService';
 import { challengeService } from './services/challengeService';
@@ -162,8 +163,8 @@ export function App() {
 
   // Iniciar Desafío Diario
   const handleStartDailyChallenge = useCallback((dateStr?: string) => {
-    if (countries.length === 0) return;
-    const dailyQuestions = dailyChallengeService.generateDailyQuestions(countries, dateStr);
+    const list = (countries && countries.length >= 5) ? countries : FALLBACK_COUNTRIES;
+    const dailyQuestions = dailyChallengeService.generateDailyQuestions(list, dateStr);
     setActiveDailyQuestions(dailyQuestions);
     setActiveDailyDateStr(dateStr || '');
     setIsDailyChallengeActive(true);
@@ -360,22 +361,27 @@ export function App() {
 
       {/* Contenido Principal */}
       <main className={`flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col ${
-        isPlaying ? 'px-1 sm:px-2 pt-1 pb-1 overflow-hidden' : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-8'
+        isPlaying ? 'px-1 sm:px-2 pt-1 pb-1 overflow-hidden' : isDailyChallengeActive ? 'px-2 sm:px-4 pt-3 pb-8 overflow-y-auto' : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-8'
       }`}>
         {/* PESTAÑA 1: UN JUGADOR (SINGLEPLAYER) */}
         {(activeTab === 'game' || activeTab === 'singleplayer') && (
-          <div className={isPlaying || isDailyChallengeActive ? 'h-full flex flex-col min-h-0 overflow-hidden' : ''}>
+          <div className={isPlaying ? 'h-full flex flex-col min-h-0 overflow-hidden' : isDailyChallengeActive ? 'w-full flex-1 flex flex-col min-h-0' : ''}>
             {isDailyChallengeActive && activeDailyQuestions.length > 0 ? (
-              <DailyChallengeMode
-                questions={activeDailyQuestions}
-                targetDateStr={activeDailyDateStr || undefined}
-                onFinishChallenge={handleFinishDailyChallenge}
-                onQuit={() => {
-                  setIsDailyChallengeActive(false);
-                  setActiveDailyQuestions([]);
-                }}
-                onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
-              />
+              <ErrorBoundary onReset={() => {
+                setIsDailyChallengeActive(false);
+                setActiveDailyQuestions([]);
+              }}>
+                <DailyChallengeMode
+                  questions={activeDailyQuestions}
+                  targetDateStr={activeDailyDateStr || undefined}
+                  onFinishChallenge={handleFinishDailyChallenge}
+                  onQuit={() => {
+                    setIsDailyChallengeActive(false);
+                    setActiveDailyQuestions([]);
+                  }}
+                  onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
+                />
+              </ErrorBoundary>
             ) : !isPlaying ? (
               <GameFilters
                 config={config}
