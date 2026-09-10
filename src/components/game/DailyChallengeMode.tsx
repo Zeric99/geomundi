@@ -640,6 +640,8 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
           continent="World"
           countryStatuses={countryStatuses}
           onCountryClick={(country) => handleCountryClick(country)}
+          enableTooltip={false}
+          isCompetitive={true}
         />
       </div>
     </div>

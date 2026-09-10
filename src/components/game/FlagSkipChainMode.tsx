@@ -483,7 +483,7 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
           onCountryClick={handleCountryClick}
           interactive={!isEvaluating}
           isGeekMode={isGeekMode}
-          enableTooltip={true}
+          enableTooltip={false}
         />
       </div>
 

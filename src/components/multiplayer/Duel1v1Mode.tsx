@@ -456,7 +456,8 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
             onCountryClick={handleCountryClick}
             interactive={!isEvaluating}
             isGeekMode={isGeekMode}
-            enableTooltip={true}
+            enableTooltip={false}
+            isCompetitive={true}
           />
         )}
       </div>

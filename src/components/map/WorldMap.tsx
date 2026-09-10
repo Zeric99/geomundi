@@ -72,6 +72,7 @@ interface WorldMapProps {
   className?: string;
   onSelectContinent?: (continent: Continent) => void;
   isGeekMode?: boolean;
+  isCompetitive?: boolean;
 }
 
 export const WorldMap: React.FC<WorldMapProps> = ({
@@ -85,11 +86,15 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   interactive = true,
   className = '',
   onSelectContinent,
-  isGeekMode = false
+  isGeekMode = false,
+  isCompetitive = false
 }) => {
+  // En modos competitivos nunca se permiten pistas ni tooltips
+  const hintsAllowed = Boolean(enableTooltip && !isCompetitive);
+
   const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
   const [hoveredCountry, setHoveredCountry] = useState<Country | null>(null);
-  const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isCardPinned, setIsCardPinned] = useState<boolean>(false);
 
   // Estados de visibilidad de las ventanas de Inset (Caribe y Oceanía)
   const [showCaribbeanInset, setShowCaribbeanInset] = useState<boolean>(true);
@@ -118,7 +123,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       } catch (e) {}
       if (!next) {
         setHoveredCountry(null);
-        setHoverPosition(null);
+        setIsCardPinned(false);
       }
       return next;
     });
@@ -198,10 +203,6 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         isDraggingRef.current = true;
       }
     }
-    // Durante el arrastre NO actualizamos coordenadas de tooltip para evitar re-renderizados continuos
-    if (!isDraggingRef.current && 'clientX' in e) {
-      handleMouseMove(e as React.MouseEvent);
-    }
   };
 
   const handlePointerUp = () => {
@@ -265,35 +266,40 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         latlng: [0, 0],
         altSpellings: []
       } as Country);
+
+      if (hintsAllowed && tooltipsEnabled) {
+        setHoveredCountry(country);
+        setIsCardPinned(true);
+      }
+
       onCountryClick(country, cca3);
     }
   };
 
   const handleDirectCountryClick = (country: Country) => {
     if (!interactive || !onCountryClick || isDraggingRef.current) return;
+    if (hintsAllowed && tooltipsEnabled) {
+      setHoveredCountry(country);
+      setIsCardPinned(true);
+    }
     onCountryClick(country, country.cca3);
   };
 
-  const handleMouseEnter = (geo: any, e: React.MouseEvent) => {
-    if (!enableTooltip || !tooltipsEnabled || isDraggingRef.current) return;
+  const handleMouseEnter = (geo: any) => {
+    if (!hintsAllowed || !tooltipsEnabled || isDraggingRef.current) return;
     const cca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
     if (cca3) {
       const country = countriesService.getCountryByCode(cca3);
       if (country) {
         setHoveredCountry(country);
-        setHoverPosition({ x: e.clientX, y: e.clientY });
       }
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!enableTooltip || !tooltipsEnabled || !hoveredCountry || isDraggingRef.current) return;
-    setHoverPosition({ x: e.clientX, y: e.clientY });
-  };
-
   const handleMouseLeave = () => {
-    setHoveredCountry(null);
-    setHoverPosition(null);
+    if (!isCardPinned) {
+      setHoveredCountry(null);
+    }
   };
 
   // Microestados a renderizar en el mapa global (excluyendo Caribe y Pacífico para que no se solapen con las ventanas Inset)
@@ -380,7 +386,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     key={geo.rsmKey || geo.id || cca3}
                     geography={geo}
                     onClick={() => handleGeographyClick(geo)}
-                    onMouseEnter={(e: any) => handleMouseEnter(geo, e)}
+                    onMouseEnter={() => handleMouseEnter(geo)}
                     onMouseLeave={handleMouseLeave}
                     style={{
                       default: {
@@ -440,10 +446,9 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     e.stopPropagation();
                     handleDirectCountryClick(country);
                   }}
-                  onMouseEnter={(e: any) => {
-                    if (enableTooltip && tooltipsEnabled && !isDraggingRef.current) {
+                  onMouseEnter={() => {
+                    if (hintsAllowed && tooltipsEnabled && !isDraggingRef.current) {
                       setHoveredCountry(country);
-                      setHoverPosition({ x: e.clientX, y: e.clientY });
                     }
                   }}
                   onMouseLeave={handleMouseLeave}
@@ -516,8 +521,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         currentContinent={continent}
         onSelectContinent={onSelectContinent}
         zoomLevel={position.zoom}
-        tooltipsEnabled={tooltipsEnabled}
-        onToggleTooltips={toggleTooltips}
+        tooltipsEnabled={hintsAllowed && tooltipsEnabled}
+        onToggleTooltips={hintsAllowed ? toggleTooltips : undefined}
       />
 
       {/* 3. Leyenda rápida interactiva (esquina superior central) */}
@@ -669,12 +674,16 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         </button>
       </div>
 
-      {/* 7. Tooltip con información del país al pasar el cursor */}
-      {enableTooltip && tooltipsEnabled && !isDraggingRef.current && (
+      {/* 7. Ficha de pista con información del país fijada arriba a la izquierda */}
+      {hintsAllowed && tooltipsEnabled && hoveredCountry && !isDraggingRef.current && (
         <MapTooltip
           country={hoveredCountry}
-          position={hoverPosition}
-          status={hoveredCountry ? countryStatuses[hoveredCountry.cca3.toUpperCase()] : undefined}
+          status={countryStatuses[hoveredCountry.cca3.toUpperCase()]}
+          isPinned={isCardPinned}
+          onClose={() => {
+            setHoveredCountry(null);
+            setIsCardPinned(false);
+          }}
         />
       )}
     </div>
