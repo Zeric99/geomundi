@@ -1,6 +1,7 @@
 import React from 'react';
 import { Globe2, Brain, Compass, Gamepad2, Volume2, VolumeX, Trophy, Award, Coffee, Swords, User } from 'lucide-react';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
+import { UserMenu } from '../auth/UserMenu';
 
 export type ActiveTab = 'game' | 'singleplayer' | 'multiplayer' | 'explore' | 'tutor' | 'leaderboard';
 
@@ -11,6 +12,7 @@ interface NavbarProps {
   bestStreak: number;
   onOpenAchievements?: () => void;
   onOpenDonate?: () => void;
+  onOpenLeaderboard?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -19,7 +21,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   totalScore,
   bestStreak,
   onOpenAchievements,
-  onOpenDonate
+  onOpenDonate,
+  onOpenLeaderboard
 }) => {
   const { soundEnabled, toggleSound } = useAudioFeedback();
   const isSingle = activeTab === 'game' || activeTab === 'singleplayer';
@@ -146,6 +149,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             {soundEnabled ? <Volume2 className="w-4 h-4 text-zinc-300" /> : <VolumeX className="w-4 h-4 text-zinc-500" />}
           </button>
+
+          {/* Menú de Usuario y Google Auth */}
+          <UserMenu onOpenLeaderboard={onOpenLeaderboard} />
         </div>
       </div>
     </header>
