@@ -222,10 +222,14 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     }
 
     const upper = cca3.toUpperCase();
-    const isPulsing = pulsingCountryCode?.toUpperCase() === upper;
-    const status = countryStatuses[upper];
-    const isSelected = selectedCountryCode?.toUpperCase() === upper;
-    const isTarget = targetCountryCode?.toUpperCase() === upper;
+    // En modo normal, Guayana Francesa (GUF) forma parte de Francia (FRA) y se colorea con Francia.
+    // En modo friki (isGeekMode = true), Guayana Francesa es independiente y NO se colorea con Francia.
+    const effectiveCode = (!isGeekMode && upper === 'GUF') ? 'FRA' : upper;
+
+    const isPulsing = pulsingCountryCode?.toUpperCase() === effectiveCode;
+    const status = countryStatuses[effectiveCode];
+    const isSelected = selectedCountryCode?.toUpperCase() === effectiveCode;
+    const isTarget = targetCountryCode?.toUpperCase() === effectiveCode;
 
     if (isPulsing) {
       return { fill: '#EF4444', stroke: '#FEE2E2', strokeWidth: 0.9 };
@@ -244,12 +248,14 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     }
 
     return BASE_STYLES.neutral;
-  }, [countryStatuses, selectedCountryCode, targetCountryCode, pulsingCountryCode]);
+  }, [countryStatuses, selectedCountryCode, targetCountryCode, pulsingCountryCode, isGeekMode]);
 
   const handleGeographyClick = (geo: any) => {
     if (!interactive || !onCountryClick || isDraggingRef.current) return;
-    const cca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
-    if (cca3) {
+    const rawCca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
+    if (rawCca3) {
+      // En modo normal, hacer clic en Guayana Francesa se interpreta como hacer clic en Francia
+      const cca3 = (!isGeekMode && rawCca3.toUpperCase() === 'GUF') ? 'FRA' : rawCca3;
       const country = countriesService.getCountryByCode(cca3) || ({
         cca2: '',
         cca3,
@@ -287,8 +293,9 @@ export const WorldMap: React.FC<WorldMapProps> = ({
 
   const handleMouseEnter = (geo: any) => {
     if (!hintsAllowed || !tooltipsEnabled || isDraggingRef.current) return;
-    const cca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
-    if (cca3) {
+    const rawCca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
+    if (rawCca3) {
+      const cca3 = (!isGeekMode && rawCca3.toUpperCase() === 'GUF') ? 'FRA' : rawCca3;
       const country = countriesService.getCountryByCode(cca3);
       if (country) {
         setHoveredCountry(country);
@@ -377,7 +384,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           >
             {({ geographies }: { geographies: any[] }) =>
               geographies.map((geo: any) => {
-                const cca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
+                const rawCca3 = countriesService.resolveGeoCode(geo.properties, geo.id);
+                const cca3 = (!isGeekMode && rawCca3?.toUpperCase() === 'GUF') ? 'FRA' : rawCca3;
                 const styles = getCountryStyles(cca3);
                 const isHovered = hoveredCountry?.cca3?.toUpperCase() === cca3?.toUpperCase();
 
@@ -678,7 +686,11 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       {hintsAllowed && tooltipsEnabled && hoveredCountry && !isDraggingRef.current && (
         <MapTooltip
           country={hoveredCountry}
-          status={countryStatuses[hoveredCountry.cca3.toUpperCase()]}
+          status={
+            !isGeekMode && hoveredCountry.cca3.toUpperCase() === 'GUF'
+              ? countryStatuses['FRA']
+              : countryStatuses[hoveredCountry.cca3.toUpperCase()]
+          }
           isPinned={isCardPinned}
           onClose={() => {
             setHoveredCountry(null);
