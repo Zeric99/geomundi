@@ -1,7 +1,7 @@
 # GeoStrike - Reglas del Proyecto y Memoria
 
 ## Cuentas y Servicios
-- **Cuenta de Supabase del proyecto**: `trapinstahalfo@gmail.com`
+- **Cuenta de Supabase del proyecto**: `geostrikeapp@gmail.com`
 - **Proyecto Supabase**: `mklofgtmjbhvqrnnmris` (`https://mklofgtmjbhvqrnnmris.supabase.co`)
 
 ## Directrices Clave
