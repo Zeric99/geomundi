@@ -2,7 +2,7 @@
 
 ## Cuentas y Servicios
 - **Cuenta de Supabase del proyecto**: `trapinstahalfo@gmail.com`
-- **Proyecto Supabase**: `dfeueaiojhppvyyvnjts` (`https://dfeueaiojhppvyyvnjts.supabase.co`)
+- **Proyecto Supabase**: `mklofgtmjbhvqrnnmris` (`https://mklofgtmjbhvqrnnmris.supabase.co`)
 
 ## Directrices Clave
 - En modos competitivos (Desafío Diario / Wordle, Duelos 1v1, etc.) NO deben mostrarse pistas ni el botón de pistas.
