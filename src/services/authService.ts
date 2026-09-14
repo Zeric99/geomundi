@@ -31,10 +31,11 @@ export const authService = {
       return { error: new Error('Supabase no está configurado. Añade las claves en .env.local') };
     }
     try {
+      const redirectUrl = window.location.origin + window.location.pathname;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: redirectUrl
         }
       });
       return { error: error ? new Error(error.message) : null };
