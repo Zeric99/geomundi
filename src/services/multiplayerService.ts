@@ -405,7 +405,11 @@ export class MultiplayerService {
           .order('created_at', { ascending: false })
           .limit(limit);
 
-        if (!error && data && data.length > 0) {
+        if (error) {
+          // Log detallado para depurar errores de RLS o esquema
+          console.warn('[community_challenges] Error Supabase:', error.code, error.message, error.details);
+        } else if (data) {
+          // Funciona aunque data sea array vacío (tablón legítimamente vacío)
           const mapped: CommunityChallenge[] = data.map((row: any) => ({
             id: row.id,
             creatorId: row.creator_id,
@@ -415,8 +419,8 @@ export class MultiplayerService {
             mode: row.mode,
             score: row.score,
             totalTimeMs: row.total_time_ms,
-            questions: row.questions,
-            roundResults: row.round_results,
+            questions: Array.isArray(row.questions) ? row.questions : [],
+            roundResults: Array.isArray(row.round_results) ? row.round_results : [],
             createdAt: row.created_at,
             status: row.status || 'open',
             roomCode: row.room_code
@@ -427,10 +431,11 @@ export class MultiplayerService {
           return mapped;
         }
       } catch (e) {
-        console.warn('No se pudo consultar community_challenges de Supabase:', e);
+        console.warn('[community_challenges] Excepción inesperada:', e);
       }
     }
 
+    // Fallback local (solo útil para el propio creador sin conexión)
     try {
       const cached = localStorage.getItem(COMMUNITY_CHALLENGES_KEY);
       if (cached) {
@@ -452,6 +457,7 @@ export class MultiplayerService {
       creatorNotified: false
     };
 
+    // Guardar en localStorage del creador como caché
     try {
       const cached = await this.getCommunityChallenges();
       const updated = [enrichedChallenge, ...cached.filter(c => c.id !== challenge.id)].slice(0, 30);
@@ -479,12 +485,13 @@ export class MultiplayerService {
           });
 
         if (error) {
-          console.warn('Error insertando en community_challenges (Supabase):', error);
+          console.warn('[community_challenges] Error guardando desafío:', error.code, error.message, error.details);
           return false;
         }
+        console.log('[community_challenges] Desafío publicado correctamente en Supabase:', enrichedChallenge.id);
         return true;
       } catch (e) {
-        console.warn('Excepción guardando desafío en Supabase:', e);
+        console.warn('[community_challenges] Excepción guardando desafío:', e);
         return false;
       }
     }

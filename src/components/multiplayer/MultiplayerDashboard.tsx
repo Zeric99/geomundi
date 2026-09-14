@@ -92,6 +92,13 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
   // Reclamar desafío asegurando exclusividad (1 solo jugador)
   const handleChallengeClick = async (chal: CommunityChallenge) => {
     if (!onStartChallenge) return;
+
+    // Validar que el desafío tiene preguntas válidas antes de intentar reclamarlo
+    if (!chal.questions || chal.questions.length === 0) {
+      setClaimError('Este desafío no tiene preguntas válidas. Puede que esté corrupto o sea de una versión antigua.');
+      return;
+    }
+
     setClaimingChallengeId(chal.id);
     setClaimError(null);
     try {
