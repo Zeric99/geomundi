@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Trophy, Flame, Swords, Calendar, RefreshCw, User, Medal } from 'lucide-react';
 import { cloudSyncService, LeaderboardEntry, DailyLeaderboardEntry } from '../../services/cloudSyncService';
 import { useAuth } from '../../contexts/AuthContext';
+import { DuelMode } from '../../types/multiplayer';
 
 interface LeaderboardModalProps {
   isOpen: boolean;
@@ -11,17 +12,18 @@ interface LeaderboardModalProps {
 export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'daily' | 'elo'>('daily');
+  const [activeEloMode, setActiveEloMode] = useState<'all' | DuelMode>('all');
   const [dailyLeaders, setDailyLeaders] = useState<DailyLeaderboardEntry[]>([]);
   const [eloLeaders, setEloLeaders] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const loadData = async () => {
+  const loadData = async (mode: 'all' | DuelMode = activeEloMode) => {
     setLoading(true);
     if (activeTab === 'daily') {
       const data = await cloudSyncService.getTodayDailyLeaderboard();
       setDailyLeaders(data);
     } else {
-      const data = await cloudSyncService.getEloLeaderboard();
+      const data = await cloudSyncService.getEloLeaderboardByMode(mode);
       setEloLeaders(data);
     }
     setLoading(false);
@@ -29,9 +31,9 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
 
   useEffect(() => {
     if (isOpen) {
-      loadData();
+      loadData(activeEloMode);
     }
-  }, [isOpen, activeTab]);
+  }, [isOpen, activeTab, activeEloMode]);
 
   if (!isOpen) return null;
 
@@ -56,7 +58,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
 
           <div className="flex items-center gap-2">
             <button
-              onClick={loadData}
+              onClick={() => loadData(activeEloMode)}
               disabled={loading}
               className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/80 rounded-xl transition-colors disabled:opacity-50"
               title="Recargar clasificación"
@@ -97,6 +99,67 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
             <span>Ranking 1v1 (Elo)</span>
           </button>
         </div>
+
+        {/* Si está en la pestaña Elo, selector de minijuego */}
+        {activeTab === 'elo' && (
+          <div className="px-4 pt-3 pb-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar border-b border-zinc-800/80 bg-zinc-900/30">
+            <button
+              onClick={() => setActiveEloMode('all')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 ${
+                activeEloMode === 'all'
+                  ? 'bg-zinc-100 text-zinc-950 font-bold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <span>🌐</span>
+              <span>General</span>
+            </button>
+            <button
+              onClick={() => setActiveEloMode('pinpoint')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 ${
+                activeEloMode === 'pinpoint'
+                  ? 'bg-cyan-500 text-zinc-950 font-bold'
+                  : 'text-cyan-400 hover:bg-cyan-950/40'
+              }`}
+            >
+              <span>🎯</span>
+              <span>Puntería</span>
+            </button>
+            <button
+              onClick={() => setActiveEloMode('countries')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 ${
+                activeEloMode === 'countries'
+                  ? 'bg-indigo-500 text-white font-bold'
+                  : 'text-indigo-400 hover:bg-indigo-950/40'
+              }`}
+            >
+              <span>🗺️</span>
+              <span>Países</span>
+            </button>
+            <button
+              onClick={() => setActiveEloMode('capitals')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 ${
+                activeEloMode === 'capitals'
+                  ? 'bg-purple-500 text-white font-bold'
+                  : 'text-purple-400 hover:bg-purple-950/40'
+              }`}
+            >
+              <span>🏛️</span>
+              <span>Capitales</span>
+            </button>
+            <button
+              onClick={() => setActiveEloMode('flags')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 ${
+                activeEloMode === 'flags'
+                  ? 'bg-amber-500 text-zinc-950 font-bold'
+                  : 'text-amber-400 hover:bg-amber-950/40'
+              }`}
+            >
+              <span>🚩</span>
+              <span>Banderas</span>
+            </button>
+          </div>
+        )}
 
         {/* Cuerpo / Lista de clasificados */}
         <div className="p-4 overflow-y-auto flex-1 space-y-2.5">
@@ -170,12 +233,17 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
           ) : eloLeaders.length === 0 ? (
             <div className="py-16 text-center text-zinc-500 space-y-2">
               <Swords className="w-10 h-10 mx-auto text-zinc-600" />
-              <p className="text-zinc-300 font-semibold">Aún no hay jugadores con partidas 1v1 registradas.</p>
+              <p className="text-zinc-300 font-semibold">Aún no hay jugadores registrados en esta modalidad.</p>
               <p className="text-xs text-zinc-500">Juega un duelo para aparecer en el ranking Elo mundial.</p>
             </div>
           ) : (
             eloLeaders.map((player, idx) => {
               const isCurrentUser = user && user.id === player.id;
+              let eloColor = 'text-cyan-400';
+              if (activeEloMode === 'countries') eloColor = 'text-indigo-400';
+              else if (activeEloMode === 'capitals') eloColor = 'text-purple-400';
+              else if (activeEloMode === 'flags') eloColor = 'text-amber-400';
+
               return (
                 <div
                   key={player.id || idx}
@@ -218,7 +286,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ isOpen, onCl
                   </div>
 
                   <div className="text-right">
-                    <span className="font-mono font-bold text-cyan-400 text-sm">
+                    <span className={`font-mono font-bold ${eloColor} text-sm`}>
                       {player.elo} <span className="text-[10px] text-zinc-500 font-sans">Elo</span>
                     </span>
                   </div>

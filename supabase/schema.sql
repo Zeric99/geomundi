@@ -21,6 +21,20 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   best_win_streak INTEGER DEFAULT 0,
   daily_streak INTEGER DEFAULT 0,
   best_daily_streak INTEGER DEFAULT 0,
+  -- Calificaciones ELO por Minijuego
+  elo_pinpoint INTEGER DEFAULT 1200,
+  elo_countries INTEGER DEFAULT 1200,
+  elo_capitals INTEGER DEFAULT 1200,
+  elo_flags INTEGER DEFAULT 1200,
+  -- Desgloses de duelos y victorias por modo
+  duels_pinpoint INTEGER DEFAULT 0,
+  wins_pinpoint INTEGER DEFAULT 0,
+  duels_countries INTEGER DEFAULT 0,
+  wins_countries INTEGER DEFAULT 0,
+  duels_capitals INTEGER DEFAULT 0,
+  wins_capitals INTEGER DEFAULT 0,
+  duels_flags INTEGER DEFAULT 0,
+  wins_flags INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -255,3 +269,61 @@ FROM public.daily_challenge_attempts d
 JOIN public.profiles p ON d.user_id = p.id
 WHERE d.challenge_date = CURRENT_DATE AND d.solved = true
 ORDER BY rank_position ASC;
+
+-- Ranking de ELO Puntería Geográfica (pinpoint)
+CREATE OR REPLACE VIEW public.leaderboard_elo_pinpoint AS
+SELECT 
+  id, nickname, avatar_url, elo_pinpoint as elo, rank_tier, level, xp,
+  wins_pinpoint as wins, (duels_pinpoint - wins_pinpoint) as losses, duels_pinpoint as total_duels,
+  RANK() OVER (ORDER BY elo_pinpoint DESC) as rank_position
+FROM public.profiles
+WHERE duels_pinpoint > 0
+ORDER BY elo_pinpoint DESC;
+
+-- Ranking de ELO Países en Mapa (countries)
+CREATE OR REPLACE VIEW public.leaderboard_elo_countries AS
+SELECT 
+  id, nickname, avatar_url, elo_countries as elo, rank_tier, level, xp,
+  wins_countries as wins, (duels_countries - wins_countries) as losses, duels_countries as total_duels,
+  RANK() OVER (ORDER BY elo_countries DESC) as rank_position
+FROM public.profiles
+WHERE duels_countries > 0
+ORDER BY elo_countries DESC;
+
+-- Ranking de ELO Capitales Mundiales (capitals)
+CREATE OR REPLACE VIEW public.leaderboard_elo_capitals AS
+SELECT 
+  id, nickname, avatar_url, elo_capitals as elo, rank_tier, level, xp,
+  wins_capitals as wins, (duels_capitals - wins_capitals) as losses, duels_capitals as total_duels,
+  RANK() OVER (ORDER BY elo_capitals DESC) as rank_position
+FROM public.profiles
+WHERE duels_capitals > 0
+ORDER BY elo_capitals DESC;
+
+-- Ranking de ELO Banderas del Mundo (flags)
+CREATE OR REPLACE VIEW public.leaderboard_elo_flags AS
+SELECT 
+  id, nickname, avatar_url, elo_flags as elo, rank_tier, level, xp,
+  wins_flags as wins, (duels_flags - wins_flags) as losses, duels_flags as total_duels,
+  RANK() OVER (ORDER BY elo_flags DESC) as rank_position
+FROM public.profiles
+WHERE duels_flags > 0
+ORDER BY elo_flags DESC;
+
+-- ==========================================================
+-- SCRIPT DE MIGRACIÓN PARA PROYECTOS YA EXISTENTES EN SUPABASE
+-- (Si ya creaste la tabla 'profiles' anteriormente, ejecuta esto en el SQL Editor)
+-- ==========================================================
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS elo_pinpoint INTEGER DEFAULT 1200;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS elo_countries INTEGER DEFAULT 1200;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS elo_capitals INTEGER DEFAULT 1200;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS elo_flags INTEGER DEFAULT 1200;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS duels_pinpoint INTEGER DEFAULT 0;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wins_pinpoint INTEGER DEFAULT 0;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS duels_countries INTEGER DEFAULT 0;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wins_countries INTEGER DEFAULT 0;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS duels_capitals INTEGER DEFAULT 0;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wins_capitals INTEGER DEFAULT 0;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS duels_flags INTEGER DEFAULT 0;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wins_flags INTEGER DEFAULT 0;
+

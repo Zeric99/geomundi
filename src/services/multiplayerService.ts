@@ -1,12 +1,63 @@
 import { Country } from '../types/country';
 import { QuestionType } from '../types/game';
-import { CommunityChallenge, DuelMode, DuelQuestion, DuelState, PlayerProfile, PlayerRoundResult, RankInfo, RankTier } from '../types/multiplayer';
+import { CommunityChallenge, DuelMode, DuelQuestion, DuelState, ModeEloConfig, PlayerProfile, PlayerRoundResult, RankInfo, RankTier } from '../types/multiplayer';
 import { getRandomCities } from '../data/citiesData';
 import { supabase } from '../lib/supabase';
 
 const MULTIPLAYER_PROFILE_KEY = 'GEOMUNDI_MULTIPLAYER_PROFILE_V1';
 const MULTIPLAYER_HISTORY_KEY = 'GEOMUNDI_MULTIPLAYER_HISTORY_V1';
 const COMMUNITY_CHALLENGES_KEY = 'GEOMUNDI_COMMUNITY_CHALLENGES_V1';
+
+export const MODE_ELO_CONFIGS: Record<DuelMode, ModeEloConfig> = {
+  pinpoint: {
+    mode: 'pinpoint',
+    name: 'Puntería Geográfica',
+    subtitle: 'Precisión milimétrica sobre el mapa 3D',
+    icon: '🎯',
+    colorHex: '#06B6D4',
+    textClass: 'text-cyan-400',
+    borderClass: 'border-cyan-500/50',
+    bgClass: 'bg-cyan-950/40',
+    badgeClass: 'bg-cyan-950/80 text-cyan-300 border border-cyan-700/60',
+    glowClass: 'shadow-[0_0_15px_rgba(6,182,212,0.25)]'
+  },
+  countries: {
+    mode: 'countries',
+    name: 'Países en Mapa',
+    subtitle: 'Localización rápida de países por contorno',
+    icon: '🗺️',
+    colorHex: '#6366F1',
+    textClass: 'text-indigo-400',
+    borderClass: 'border-indigo-500/50',
+    bgClass: 'bg-indigo-950/40',
+    badgeClass: 'bg-indigo-950/80 text-indigo-300 border border-indigo-700/60',
+    glowClass: 'shadow-[0_0_15px_rgba(99,102,241,0.25)]'
+  },
+  capitals: {
+    mode: 'capitals',
+    name: 'Capitales Mundiales',
+    subtitle: 'Asociación de sedes de gobierno y estados',
+    icon: '🏛️',
+    colorHex: '#A855F7',
+    textClass: 'text-purple-400',
+    borderClass: 'border-purple-500/50',
+    bgClass: 'bg-purple-950/40',
+    badgeClass: 'bg-purple-950/80 text-purple-300 border border-purple-700/60',
+    glowClass: 'shadow-[0_0_15px_rgba(168,85,247,0.25)]'
+  },
+  flags: {
+    mode: 'flags',
+    name: 'Banderas del Mundo',
+    subtitle: 'Reconocimiento de vexilología nacional',
+    icon: '🚩',
+    colorHex: '#F59E0B',
+    textClass: 'text-amber-400',
+    borderClass: 'border-amber-500/50',
+    bgClass: 'bg-amber-950/40',
+    badgeClass: 'bg-amber-950/80 text-amber-300 border border-amber-700/60',
+    glowClass: 'shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+  }
+};
 
 export const RANKS: Record<RankTier, RankInfo> = {
   bronce: {
@@ -85,19 +136,43 @@ export class MultiplayerService {
   }
 
   /**
-   * Carga el perfil multijugador del jugador local
-   */
-  /**
-   * Carga el perfil multijugador del jugador local con XP y Nivel
+   * Carga el perfil multijugador del jugador local con los 4 ELOs independientes
    */
   getPlayerProfile(): PlayerProfile {
+    const defaultElos: Record<DuelMode, number> = {
+      pinpoint: 1200,
+      countries: 1200,
+      capitals: 1200,
+      flags: 1200
+    };
+
+    const defaultStatsByMode: Record<DuelMode, { wins: number; losses: number; duels: number }> = {
+      pinpoint: { wins: 0, losses: 0, duels: 0 },
+      countries: { wins: 0, losses: 0, duels: 0 },
+      capitals: { wins: 0, losses: 0, duels: 0 },
+      flags: { wins: 0, losses: 0, duels: 0 }
+    };
+
     try {
       const stored = localStorage.getItem(MULTIPLAYER_PROFILE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        const elo = parsed.elo || 1200;
+        const elos: Record<DuelMode, number> = {
+          ...defaultElos,
+          ...(parsed.elos || {})
+        };
+        const statsByMode = {
+          ...defaultStatsByMode,
+          ...(parsed.statsByMode || {})
+        };
+
+        // El ELO general es el promedio ponderado o el guardado
+        const elo = parsed.elo || Math.round(
+          (elos.pinpoint + elos.countries + elos.capitals + elos.flags) / 4
+        );
         const xp = parsed.xp || 0;
         const level = Math.floor(Math.sqrt(xp / 100)) + 1;
+
         return {
           id: parsed.id || 'player_local',
           name: parsed.name || 'Tú',
@@ -108,7 +183,9 @@ export class MultiplayerService {
           losses: parsed.losses || 0,
           streak: parsed.streak || 0,
           xp,
-          level
+          level,
+          elos,
+          statsByMode
         };
       }
     } catch (e) {}
@@ -124,9 +201,10 @@ export class MultiplayerService {
       losses: 0,
       streak: 0,
       xp: 0,
-      level: 1
+      level: 1,
+      elos: defaultElos,
+      statsByMode: defaultStatsByMode
     };
-
   }
 
   /**
@@ -383,7 +461,7 @@ export class MultiplayerService {
   }
 
   /**
-   * Actualiza el perfil tras un duelo, otorga XP y calcula el cambio de ELO
+   * Actualiza el perfil tras un duelo, otorga XP y calcula el cambio de ELO para la modalidad específica
    */
   processDuelResult(
     playerScore: number,
@@ -392,8 +470,16 @@ export class MultiplayerService {
     rivalTimeMs: number,
     isRanked: boolean,
     isCustomRoom: boolean = false,
-    rivalEloOverride?: number
-  ): { updatedProfile: PlayerProfile; eloChange: number; winner: 'player' | 'rival' | 'tie'; xpEarned: number } {
+    rivalEloOverride?: number,
+    duelMode: DuelMode = 'pinpoint'
+  ): { 
+    updatedProfile: PlayerProfile; 
+    eloChange: number; 
+    winner: 'player' | 'rival' | 'tie'; 
+    xpEarned: number;
+    modeEloChange: number;
+    newModeElo: number;
+  } {
     const profile = this.getPlayerProfile();
 
     let winner: 'player' | 'rival' | 'tie' = 'tie';
@@ -415,28 +501,75 @@ export class MultiplayerService {
       xpEarned += 50;
     }
 
+    const currentElos = profile.elos || {
+      pinpoint: 1200,
+      countries: 1200,
+      capitals: 1200,
+      flags: 1200
+    };
+
+    const currentModeElo = currentElos[duelMode] ?? 1200;
+
     if (isRanked) {
-      const rivalElo = rivalEloOverride ?? (profile.elo || 1200);
-      eloChange = this.calculateEloChange(profile.elo, rivalElo, winner, playerScore, rivalScore);
+      const rivalElo = rivalEloOverride ?? currentModeElo;
+      eloChange = this.calculateEloChange(currentModeElo, rivalElo, winner, playerScore, rivalScore);
     }
 
-    const newElo = isRanked ? Math.max(500, profile.elo + eloChange) : profile.elo;
+    const newModeElo = isRanked ? Math.max(500, currentModeElo + eloChange) : currentModeElo;
+
+    const updatedElos: Record<DuelMode, number> = {
+      ...currentElos,
+      [duelMode]: newModeElo
+    };
+
+    // Actualizar estadísticas por modalidad
+    const currentStatsByMode = profile.statsByMode || {
+      pinpoint: { wins: 0, losses: 0, duels: 0 },
+      countries: { wins: 0, losses: 0, duels: 0 },
+      capitals: { wins: 0, losses: 0, duels: 0 },
+      flags: { wins: 0, losses: 0, duels: 0 }
+    };
+
+    const prevModeStats = currentStatsByMode[duelMode] || { wins: 0, losses: 0, duels: 0 };
+    const updatedStatsByMode = {
+      ...currentStatsByMode,
+      [duelMode]: {
+        duels: prevModeStats.duels + 1,
+        wins: prevModeStats.wins + (winner === 'player' ? 1 : 0),
+        losses: prevModeStats.losses + (winner === 'rival' ? 1 : 0)
+      }
+    };
+
+    // ELO general promedio
+    const newGeneralElo = Math.round(
+      (updatedElos.pinpoint + updatedElos.countries + updatedElos.capitals + updatedElos.flags) / 4
+    );
+
     const newXp = profile.xp + xpEarned;
     const newLevel = Math.floor(Math.sqrt(newXp / 100)) + 1;
 
     const updatedProfile: PlayerProfile = {
       ...profile,
-      elo: newElo,
-      rank: this.getRankInfo(newElo),
+      elo: newGeneralElo,
+      rank: this.getRankInfo(newGeneralElo),
       wins: profile.wins + (winner === 'player' ? 1 : 0),
       losses: profile.losses + (winner === 'rival' ? 1 : 0),
       streak: winner === 'player' ? profile.streak + 1 : 0,
       xp: newXp,
-      level: newLevel
+      level: newLevel,
+      elos: updatedElos,
+      statsByMode: updatedStatsByMode
     };
 
     this.savePlayerProfile(updatedProfile);
-    return { updatedProfile, eloChange, winner, xpEarned };
+    return { 
+      updatedProfile, 
+      eloChange, 
+      winner, 
+      xpEarned,
+      modeEloChange: eloChange,
+      newModeElo 
+    };
   }
 }
 

@@ -29,7 +29,7 @@ import { useStatsManager } from './hooks/useStatsManager';
 import { useGameState } from './hooks/useGameState';
 import { Country } from './types/country';
 import { GameConfig, GameSummary } from './types/game';
-import { TutorAdvice } from './types/stats';
+import { TutorAdvice, UserStatsState } from './types/stats';
 import { Achievement } from './types/achievements';
 import { CommunityChallenge, CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile, PlayerRoundResult } from './types/multiplayer';
 import { DailyArchiveModal } from './components/daily/DailyArchiveModal';
@@ -43,6 +43,7 @@ import { challengeService } from './services/challengeService';
 import { multiplayerService } from './services/multiplayerService';
 import { authService } from './services/authService';
 import { cloudSyncService } from './services/cloudSyncService';
+import { storageService } from './services/storageService';
 import { useAuth } from './contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -383,45 +384,79 @@ export function App() {
     if (!duelState.isChallengeCreation && duelState.type === 'ranked') {
       const isWin = duelState.winner === 'player';
       const isDraw = duelState.winner === 'tie';
-      const currentElo = profile?.elo || playerProfile.elo || 1200;
+      const currentModeElo = (profile as any)?.[`elo_${duelState.duelMode}`] 
+        ?? playerProfile.elos?.[duelState.duelMode] 
+        ?? 1200;
       const rivalElo = duelState.rival?.elo || 1200;
 
       const eloChange = multiplayerService.calculateEloChange(
-        currentElo,
+        currentModeElo,
         rivalElo,
         duelState.winner || 'tie',
         duelState.playerScore,
         duelState.rivalScore
       );
-      const newElo = Math.max(500, currentElo + eloChange);
-      const rankTier = multiplayerService.getRankInfo(newElo).tier;
+      const newModeElo = Math.max(500, currentModeElo + eloChange);
+
+      const updatedElos: Record<DuelMode, number> = {
+        pinpoint: (profile as any)?.elo_pinpoint ?? playerProfile.elos?.pinpoint ?? 1200,
+        countries: (profile as any)?.elo_countries ?? playerProfile.elos?.countries ?? 1200,
+        capitals: (profile as any)?.elo_capitals ?? playerProfile.elos?.capitals ?? 1200,
+        flags: (profile as any)?.elo_flags ?? playerProfile.elos?.flags ?? 1200,
+        [duelState.duelMode]: newModeElo
+      };
+
+      const newGeneralElo = Math.round(
+        (updatedElos.pinpoint + updatedElos.countries + updatedElos.capitals + updatedElos.flags) / 4
+      );
+      const rankTier = multiplayerService.getRankInfo(newGeneralElo).tier;
 
       if (user) {
         await authService.updateDuelStats(
           user.id,
-          newElo,
+          newGeneralElo,
           isWin,
           isDraw,
           duelState.xpEarned || 150,
-          rankTier
+          rankTier,
+          duelState.duelMode,
+          newModeElo
         );
         await refreshProfile();
       }
 
       setPlayerProfile(prev => ({
         ...prev,
-        elo: newElo,
-        rank: multiplayerService.getRankInfo(newElo),
+        elo: newGeneralElo,
+        rank: multiplayerService.getRankInfo(newGeneralElo),
         wins: prev.wins + (isWin ? 1 : 0),
         losses: prev.losses + (!isWin && !isDraw ? 1 : 0),
-        streak: isWin ? prev.streak + 1 : 0
+        streak: isWin ? prev.streak + 1 : 0,
+        elos: updatedElos
       }));
     }
 
+    // Actualizar contador en stats.modeStats para los logros y visualización
+    const updatedStats = storageService.getUserStats();
+    const prevMultiStats = updatedStats.modeStats?.['multiplayer'] || { gamesPlayed: 0, totalScore: 0, bestScore: 0 };
+    const newStatsWithDuel: UserStatsState = {
+      ...updatedStats,
+      modeStats: {
+        ...(updatedStats.modeStats || {}),
+        multiplayer: {
+          gamesPlayed: prevMultiStats.gamesPlayed + 1,
+          totalScore: prevMultiStats.totalScore + duelState.playerScore,
+          bestScore: Math.max(prevMultiStats.bestScore, duelState.playerScore)
+        }
+      }
+    };
+    storageService.saveUserStats(newStatsWithDuel);
+
     // Evaluar logros tras el duelo multijugador
     const isWin = duelState.winner === 'player';
+    const totalDuelCount = (profile?.total_duels || 0) + 1;
     const newAchievements = achievementService.evaluateAchievements(
-      stats,
+      newStatsWithDuel,
       {
         mode: 'multiplayer',
         accuracy: Math.round((duelState.playerScore / 500) * 100),
@@ -429,7 +464,8 @@ export function App() {
         duelResult: isWin ? 'win' : (duelState.winner === 'rival' ? 'loss' : 'draw'),
         duelStreak: duelState.player.streak,
         elo: duelState.player.elo,
-        isDaily: false
+        isDaily: false,
+        totalQuestions: 5
       },
       user?.id
     );
@@ -437,7 +473,7 @@ export function App() {
     if (newAchievements.length > 0) {
       setUnlockedAchievement(newAchievements[0]);
     }
-  }, [profile, user, playerProfile.elo, refreshProfile, stats]);
+  }, [profile, user, playerProfile.elos, refreshProfile, stats]);
 
 
   // Manejar acción desde tarjeta del Tutor

@@ -120,6 +120,33 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     category: 'pinpoint',
     xpReward: 100
   },
+  {
+    id: 'pinpoint_games_10',
+    title: 'Puntería de Bronce',
+    description: 'Juega 10 partidas en el modo Puntería Geográfica.',
+    icon: '🥉',
+    tier: 'bronze',
+    category: 'pinpoint',
+    xpReward: 50
+  },
+  {
+    id: 'pinpoint_games_50',
+    title: 'Puntería de Plata',
+    description: 'Juega 50 partidas en el modo Puntería Geográfica.',
+    icon: '🥈',
+    tier: 'silver',
+    category: 'pinpoint',
+    xpReward: 150
+  },
+  {
+    id: 'pinpoint_games_100',
+    title: 'Puntería de Oro',
+    description: 'Juega 100 partidas en el modo Puntería Geográfica.',
+    icon: '🥇',
+    tier: 'gold',
+    category: 'pinpoint',
+    xpReward: 300
+  },
 
   // =================================================================
   // 3. 🚩 BANDERAS Y VEXILOLOGÍA (flags)
@@ -169,6 +196,33 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     category: 'flags',
     xpReward: 250
   },
+  {
+    id: 'flag_games_10',
+    title: 'Banderas de Bronce',
+    description: 'Juega 10 partidas en el modo Banderas.',
+    icon: '🥉',
+    tier: 'bronze',
+    category: 'flags',
+    xpReward: 50
+  },
+  {
+    id: 'flag_games_50',
+    title: 'Banderas de Plata',
+    description: 'Juega 50 partidas en el modo Banderas.',
+    icon: '🥈',
+    tier: 'silver',
+    category: 'flags',
+    xpReward: 150
+  },
+  {
+    id: 'flag_games_100',
+    title: 'Banderas de Oro',
+    description: 'Juega 100 partidas en el modo Banderas.',
+    icon: '🥇',
+    tier: 'gold',
+    category: 'flags',
+    xpReward: 300
+  },
 
   // =================================================================
   // 4. ✍️ ESCRITURA Y ORTOGRAFÍA (typing)
@@ -208,6 +262,33 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     tier: 'gold',
     category: 'typing',
     xpReward: 250
+  },
+  {
+    id: 'typing_games_10',
+    title: 'Escriba de Bronce',
+    description: 'Juega 10 partidas en el modo Escribir País.',
+    icon: '🥉',
+    tier: 'bronze',
+    category: 'typing',
+    xpReward: 50
+  },
+  {
+    id: 'typing_games_50',
+    title: 'Escriba de Plata',
+    description: 'Juega 50 partidas en el modo Escribir País.',
+    icon: '🥈',
+    tier: 'silver',
+    category: 'typing',
+    xpReward: 150
+  },
+  {
+    id: 'typing_games_100',
+    title: 'Escriba de Oro',
+    description: 'Juega 100 partidas en el modo Escribir País.',
+    icon: '🥇',
+    tier: 'gold',
+    category: 'typing',
+    xpReward: 300
   },
 
   // =================================================================
@@ -249,6 +330,33 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     category: 'trivia',
     xpReward: 100
   },
+  {
+    id: 'trivia_games_10',
+    title: 'Trivia de Bronce',
+    description: 'Juega 10 partidas en el modo Trivia Geográfica.',
+    icon: '🥉',
+    tier: 'bronze',
+    category: 'trivia',
+    xpReward: 50
+  },
+  {
+    id: 'trivia_games_50',
+    title: 'Trivia de Plata',
+    description: 'Juega 50 partidas en el modo Trivia Geográfica.',
+    icon: '🥈',
+    tier: 'silver',
+    category: 'trivia',
+    xpReward: 150
+  },
+  {
+    id: 'trivia_games_100',
+    title: 'Trivia de Oro',
+    description: 'Juega 100 partidas en el modo Trivia Geográfica.',
+    icon: '🥇',
+    tier: 'gold',
+    category: 'trivia',
+    xpReward: 300
+  },
 
   // =================================================================
   // 6. 🗺️ HAZ CLIC EN EL MAPA (click_find)
@@ -288,6 +396,33 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     tier: 'gold',
     category: 'click_find',
     xpReward: 250
+  },
+  {
+    id: 'click_games_10',
+    title: 'Cartógrafo de Bronce',
+    description: 'Juega 10 partidas en el modo Clic en el Mapa.',
+    icon: '🥉',
+    tier: 'bronze',
+    category: 'click_find',
+    xpReward: 50
+  },
+  {
+    id: 'click_games_50',
+    title: 'Cartógrafo de Plata',
+    description: 'Juega 50 partidas en el modo Clic en el Mapa.',
+    icon: '🥈',
+    tier: 'silver',
+    category: 'click_find',
+    xpReward: 150
+  },
+  {
+    id: 'click_games_100',
+    title: 'Cartógrafo de Oro',
+    description: 'Juega 100 partidas en el modo Clic en el Mapa.',
+    icon: '🥇',
+    tier: 'gold',
+    category: 'click_find',
+    xpReward: 300
   },
 
   // =================================================================
@@ -435,6 +570,33 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     tier: 'diamond',
     category: 'multiplayer',
     xpReward: 500
+  },
+  {
+    id: 'duel_games_10',
+    title: 'Duelista de Bronce',
+    description: 'Completa 10 duelos multijugador 1v1.',
+    icon: '🥉',
+    tier: 'bronze',
+    category: 'multiplayer',
+    xpReward: 50
+  },
+  {
+    id: 'duel_games_50',
+    title: 'Duelista de Plata',
+    description: 'Completa 50 duelos multijugador 1v1.',
+    icon: '🥈',
+    tier: 'silver',
+    category: 'multiplayer',
+    xpReward: 150
+  },
+  {
+    id: 'duel_games_100',
+    title: 'Duelista de Oro',
+    description: 'Completa 100 duelos multijugador 1v1.',
+    icon: '🥇',
+    tier: 'gold',
+    category: 'multiplayer',
+    xpReward: 300
   },
 
   // =================================================================
@@ -685,6 +847,36 @@ export class AchievementService {
     if (bestStreak >= 30) unlock('streak_30');
 
     // -------------------------------------------------------------
+    // A2. Progreso Escalonado por Minijuego (10, 50, 100 partidas)
+    // -------------------------------------------------------------
+    const modeStats = userStats?.modeStats || {};
+    const pinpointGames = (modeStats['city-pinpoint']?.gamesPlayed || 0) + (modeStats['pinpoint']?.gamesPlayed || 0);
+    const flagGames = (modeStats['flag-skip-chain']?.gamesPlayed || 0) + (modeStats['flags']?.gamesPlayed || 0);
+    const typingGames = (modeStats['input-write']?.gamesPlayed || 0) + (modeStats['typing']?.gamesPlayed || 0);
+    const triviaGames = (modeStats['trivia-curiosities']?.gamesPlayed || 0) + (modeStats['trivia']?.gamesPlayed || 0);
+    const clickGames = (modeStats['click-find']?.gamesPlayed || 0) + (modeStats['click_find']?.gamesPlayed || 0);
+
+    if (pinpointGames >= 10) unlock('pinpoint_games_10');
+    if (pinpointGames >= 50) unlock('pinpoint_games_50');
+    if (pinpointGames >= 100) unlock('pinpoint_games_100');
+
+    if (flagGames >= 10) unlock('flag_games_10');
+    if (flagGames >= 50) unlock('flag_games_50');
+    if (flagGames >= 100) unlock('flag_games_100');
+
+    if (typingGames >= 10) unlock('typing_games_10');
+    if (typingGames >= 50) unlock('typing_games_50');
+    if (typingGames >= 100) unlock('typing_games_100');
+
+    if (triviaGames >= 10) unlock('trivia_games_10');
+    if (triviaGames >= 50) unlock('trivia_games_50');
+    if (triviaGames >= 100) unlock('trivia_games_100');
+
+    if (clickGames >= 10) unlock('click_games_10');
+    if (clickGames >= 50) unlock('click_games_50');
+    if (clickGames >= 100) unlock('click_games_100');
+
+    // -------------------------------------------------------------
     // B. Contexto de la Partida (gameCtx)
     // -------------------------------------------------------------
     if (gameCtx) {
@@ -812,6 +1004,14 @@ export class AchievementService {
    */
   getAchievementsProgress(userStats: UserStatsState): AchievementProgress[] {
     const unlockedMap = this.getUserAchievements();
+    const modeStats = userStats.modeStats || {};
+
+    const pinpointGames = (modeStats['city-pinpoint']?.gamesPlayed || 0) + (modeStats['pinpoint']?.gamesPlayed || 0);
+    const flagGames = (modeStats['flag-skip-chain']?.gamesPlayed || 0) + (modeStats['flags']?.gamesPlayed || 0);
+    const typingGames = (modeStats['input-write']?.gamesPlayed || 0) + (modeStats['typing']?.gamesPlayed || 0);
+    const triviaGames = (modeStats['trivia-curiosities']?.gamesPlayed || 0) + (modeStats['trivia']?.gamesPlayed || 0);
+    const clickGames = (modeStats['click-find']?.gamesPlayed || 0) + (modeStats['click_find']?.gamesPlayed || 0);
+    const duelGames = (modeStats['multiplayer']?.gamesPlayed || 0) + (modeStats['duels']?.gamesPlayed || 0);
 
     return ALL_ACHIEVEMENTS.map(ach => {
       const unlockedState = unlockedMap[ach.id];
@@ -863,6 +1063,86 @@ export class AchievementService {
           currentValue = userStats.bestStreak;
           targetValue = 30;
           break;
+
+        // Progresivos por Minijuego
+        case 'pinpoint_games_10':
+          currentValue = Math.min(10, pinpointGames);
+          targetValue = 10;
+          break;
+        case 'pinpoint_games_50':
+          currentValue = Math.min(50, pinpointGames);
+          targetValue = 50;
+          break;
+        case 'pinpoint_games_100':
+          currentValue = Math.min(100, pinpointGames);
+          targetValue = 100;
+          break;
+
+        case 'flag_games_10':
+          currentValue = Math.min(10, flagGames);
+          targetValue = 10;
+          break;
+        case 'flag_games_50':
+          currentValue = Math.min(50, flagGames);
+          targetValue = 50;
+          break;
+        case 'flag_games_100':
+          currentValue = Math.min(100, flagGames);
+          targetValue = 100;
+          break;
+
+        case 'typing_games_10':
+          currentValue = Math.min(10, typingGames);
+          targetValue = 10;
+          break;
+        case 'typing_games_50':
+          currentValue = Math.min(50, typingGames);
+          targetValue = 50;
+          break;
+        case 'typing_games_100':
+          currentValue = Math.min(100, typingGames);
+          targetValue = 100;
+          break;
+
+        case 'trivia_games_10':
+          currentValue = Math.min(10, triviaGames);
+          targetValue = 10;
+          break;
+        case 'trivia_games_50':
+          currentValue = Math.min(50, triviaGames);
+          targetValue = 50;
+          break;
+        case 'trivia_games_100':
+          currentValue = Math.min(100, triviaGames);
+          targetValue = 100;
+          break;
+
+        case 'click_games_10':
+          currentValue = Math.min(10, clickGames);
+          targetValue = 10;
+          break;
+        case 'click_games_50':
+          currentValue = Math.min(50, clickGames);
+          targetValue = 50;
+          break;
+        case 'click_games_100':
+          currentValue = Math.min(100, clickGames);
+          targetValue = 100;
+          break;
+
+        case 'duel_games_10':
+          currentValue = Math.min(10, duelGames);
+          targetValue = 10;
+          break;
+        case 'duel_games_50':
+          currentValue = Math.min(50, duelGames);
+          targetValue = 50;
+          break;
+        case 'duel_games_100':
+          currentValue = Math.min(100, duelGames);
+          targetValue = 100;
+          break;
+
         default:
           currentValue = isUnlocked ? 1 : 0;
           targetValue = 1;

@@ -7,6 +7,19 @@ export type MultiplayerType = 'friendly' | 'ranked' | 'custom_room';
 
 export type DuelMode = 'pinpoint' | 'countries' | 'flags' | 'capitals';
 
+export interface ModeEloConfig {
+  mode: DuelMode;
+  name: string;
+  subtitle: string;
+  icon: string;
+  colorHex: string;
+  textClass: string;
+  borderClass: string;
+  bgClass: string;
+  badgeClass: string;
+  glowClass: string;
+}
+
 export interface RankInfo {
   tier: RankTier;
   label: string;
@@ -22,13 +35,15 @@ export interface PlayerProfile {
   id: string;
   name: string;
   avatar: string;
-  elo: number;
+  elo: number; // ELO general / promedio
   rank: RankInfo;
   wins: number;
   losses: number;
   streak: number;
   xp: number;
   level: number;
+  elos?: Record<DuelMode, number>;
+  statsByMode?: Record<DuelMode, { wins: number; losses: number; duels: number }>;
 }
 
 export interface CustomRoomConfig {

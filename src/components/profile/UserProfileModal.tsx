@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trophy, Swords, Flame, Award, Globe, Edit2, Check, Sparkles, User, ShieldCheck, Clock, ArrowUpRight } from 'lucide-react';
+import { X, Trophy, Swords, Flame, Award, Globe, Edit2, Check, Sparkles, User, ShieldCheck, Clock, ArrowUpRight, Medal } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { personalRecordsService, PersonalRecord } from '../../services/personalRecordsService';
 import { authService } from '../../services/authService';
+import { cloudSyncService } from '../../services/cloudSyncService';
+import { multiplayerService, MODE_ELO_CONFIGS } from '../../services/multiplayerService';
+import { DuelMode } from '../../types/multiplayer';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -20,6 +23,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [newNick, setNewNick] = useState('');
   const [records, setRecords] = useState<Record<string, PersonalRecord>>({});
   const [savingNick, setSavingNick] = useState(false);
+  const [rankPositions, setRankPositions] = useState<Record<DuelMode | 'all', number>>({
+    pinpoint: 1,
+    countries: 1,
+    capitals: 1,
+    flags: 1,
+    all: 1
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -28,6 +38,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       }
       if (user?.id) {
         personalRecordsService.syncFromSupabase(user.id).then(setRecords);
+        cloudSyncService.getUserRankPositions(user.id).then(setRankPositions);
       } else {
         setRecords(personalRecordsService.getAllRecords());
       }
@@ -160,11 +171,85 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
         {/* CONTENIDO SCROLLABLE */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
-          {/* 1. ESTADÍSTICAS GENERALES Y MULTIJUGADOR */}
+          {/* 1. MIS 4 CALIFICACIONES ELO POR MINIJUEGO */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                <Medal className="w-4 h-4 text-amber-400" />
+                <span>Mis 4 Calificaciones ELO por Minijuego</span>
+              </h3>
+              {onOpenLeaderboard && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenLeaderboard();
+                  }}
+                  className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-semibold"
+                >
+                  <span>Ver Rankings ELO</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {(['pinpoint', 'countries', 'capitals', 'flags'] as DuelMode[]).map(m => {
+                const cfg = MODE_ELO_CONFIGS[m];
+                const modeElo = (profile as any)?.[`elo_${m}`] ?? 1200;
+                const modeDuels = (profile as any)?.[`duels_${m}`] ?? 0;
+                const modeWins = (profile as any)?.[`wins_${m}`] ?? 0;
+                const modeLosses = Math.max(0, modeDuels - modeWins);
+                const rankPos = rankPositions[m] || 1;
+                const modeRankInfo = multiplayerService.getRankInfo(modeElo);
+
+                return (
+                  <div
+                    key={m}
+                    className={`p-4 rounded-2xl border ${cfg.borderClass} ${cfg.bgClass} flex flex-col justify-between space-y-3 transition-all hover:scale-[1.01]`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-2xl">{cfg.icon}</span>
+                        <div>
+                          <h4 className="font-bold text-sm text-zinc-100">{cfg.name}</h4>
+                          <p className="text-[11px] text-zinc-400">{cfg.subtitle}</p>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${cfg.badgeClass}`}>
+                        #{rankPos} en el Mundo
+                      </span>
+                    </div>
+
+                    <div className="flex items-end justify-between pt-2 border-t border-zinc-800/80">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Calificación</span>
+                        <div className="flex items-baseline gap-2">
+                          <span className={`text-2xl font-mono font-black ${cfg.textClass}`}>
+                            {modeElo}
+                          </span>
+                          <span className="text-xs text-zinc-400 font-mono">Elo</span>
+                          <span className="text-xs text-zinc-400">({modeRankInfo.label})</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right text-xs font-mono">
+                        <span className="text-zinc-400 block text-[10px]">Historial</span>
+                        <span className="text-emerald-400 font-bold">{modeWins}V</span>
+                        <span className="text-zinc-500 mx-1">/</span>
+                        <span className="text-rose-400 font-bold">{modeLosses}D</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. RESUMEN COMPETITIVO GENERAL (DUELOS 1V1) */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
               <Swords className="w-4 h-4 text-cyan-400" />
-              <span>Rendimiento Competitivo (Duelos 1v1)</span>
+              <span>Resumen Global de Duelos 1v1</span>
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="bg-zinc-900/60 border border-zinc-800/80 p-3 rounded-2xl text-center">

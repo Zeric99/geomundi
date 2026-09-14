@@ -23,10 +23,36 @@ export class StorageService {
       const stored = localStorage.getItem(STATS_STORAGE_KEY);
       if (!stored) return INITIAL_STATS;
       const parsed = JSON.parse(stored);
+      let modeStats = parsed.modeStats || {};
+      // Si modeStats está vacío pero hay historial, reconstruir
+      if (Object.keys(modeStats).length === 0 && Array.isArray(parsed.gameHistory) && parsed.gameHistory.length > 0) {
+        parsed.gameHistory.forEach((gh: any) => {
+          const m = gh.config?.mode;
+          if (m) {
+            if (!modeStats[m]) {
+              modeStats[m] = { gamesPlayed: 0, totalScore: 0, bestScore: 0, correctCount: 0 };
+            }
+            modeStats[m].gamesPlayed += 1;
+            modeStats[m].totalScore += (gh.score || 0);
+            modeStats[m].bestScore = Math.max(modeStats[m].bestScore, gh.score || 0);
+            modeStats[m].correctCount = (modeStats[m].correctCount || 0) + (gh.correctCount || 0);
+          }
+          if (gh.config?.isGeekMode) {
+            if (!modeStats['geek_mode']) {
+              modeStats['geek_mode'] = { gamesPlayed: 0, totalScore: 0, bestScore: 0, correctCount: 0 };
+            }
+            modeStats['geek_mode'].gamesPlayed += 1;
+            modeStats['geek_mode'].totalScore += (gh.score || 0);
+            modeStats['geek_mode'].bestScore = Math.max(modeStats['geek_mode'].bestScore, gh.score || 0);
+          }
+        });
+      }
+
       return {
         ...INITIAL_STATS,
         ...parsed,
-        countries: parsed.countries || {}
+        countries: parsed.countries || {},
+        modeStats
       };
     } catch (e) {
       console.error('Error cargando estadísticas desde localStorage:', e);
@@ -94,6 +120,30 @@ export class StorageService {
       };
     }
 
+    const modeKey = gameSummary.mode;
+    const currentModeStats = currentStats.modeStats || {};
+    const existingMode = currentModeStats[modeKey] || { gamesPlayed: 0, totalScore: 0, bestScore: 0, correctCount: 0 };
+
+    const updatedModeStats: Record<string, any> = {
+      ...currentModeStats,
+      [modeKey]: {
+        gamesPlayed: existingMode.gamesPlayed + 1,
+        totalScore: existingMode.totalScore + gameSummary.score,
+        bestScore: Math.max(existingMode.bestScore || 0, gameSummary.score),
+        correctCount: (existingMode.correctCount || 0) + gameSummary.correctCount
+      }
+    };
+
+    if (gameSummary.isGeekMode) {
+      const existingGeek = currentModeStats['geek_mode'] || { gamesPlayed: 0, totalScore: 0, bestScore: 0, correctCount: 0 };
+      updatedModeStats['geek_mode'] = {
+        gamesPlayed: existingGeek.gamesPlayed + 1,
+        totalScore: existingGeek.totalScore + gameSummary.score,
+        bestScore: Math.max(existingGeek.bestScore || 0, gameSummary.score),
+        correctCount: (existingGeek.correctCount || 0) + gameSummary.correctCount
+      };
+    }
+
     const updatedStats: UserStatsState = {
       ...currentStats,
       countries: updatedCountries,
@@ -101,7 +151,8 @@ export class StorageService {
       totalScore: currentStats.totalScore + gameSummary.score,
       totalGamesPlayed: currentStats.totalGamesPlayed + 1,
       bestStreak: Math.max(currentStats.bestStreak || 0, gameSummary.maxStreak || 0),
-      lastSessionDate: new Date().toISOString()
+      lastSessionDate: new Date().toISOString(),
+      modeStats: updatedModeStats
     };
 
     this.saveUserStats(updatedStats);

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Swords, CheckCircle2, XCircle, Flame, ArrowRight, Home, RotateCcw, Zap, Crown } from 'lucide-react';
 import { DuelState } from '../../types/multiplayer';
+import { MODE_ELO_CONFIGS } from '../../services/multiplayerService';
 
 interface DuelResultModalProps {
   duelState: DuelState;
@@ -50,15 +51,22 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
               Tu partida se ha registrado con éxito en el tablón público. Ahora otros jugadores podrán competir contra tu récord.
             </p>
           ) : (
-            duelState.type === 'ranked' && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full font-mono text-sm font-bold border bg-zinc-900">
-                <span className="text-zinc-400">Rango ELO:</span>
-                <span className={duelState.eloChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                  {duelState.eloChange >= 0 ? `+${duelState.eloChange}` : duelState.eloChange} ELO
-                </span>
-                <span className="text-amber-400 ml-1">({duelState.player.elo} ELO)</span>
-              </div>
-            )
+            duelState.type === 'ranked' && (() => {
+              const modeCfg = MODE_ELO_CONFIGS[duelState.duelMode];
+              const modeElo = duelState.player.elos?.[duelState.duelMode] ?? duelState.player.elo;
+              return (
+                <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-mono text-xs sm:text-sm font-bold border ${modeCfg ? modeCfg.borderClass : 'border-zinc-700'} ${modeCfg ? modeCfg.bgClass : 'bg-zinc-900'}`}>
+                  <span>{modeCfg?.icon}</span>
+                  <span className="text-zinc-300">{modeCfg?.name}:</span>
+                  <span className={duelState.eloChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                    {duelState.eloChange >= 0 ? `+${duelState.eloChange}` : duelState.eloChange} ELO
+                  </span>
+                  <span className={`${modeCfg ? modeCfg.textClass : 'text-amber-400'} ml-1`}>
+                    ({modeElo} Elo)
+                  </span>
+                </div>
+              );
+            })()
           )}
         </div>
 

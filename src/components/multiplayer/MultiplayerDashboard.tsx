@@ -136,34 +136,38 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
   };
 
 
-  const modesInfo: { id: DuelMode; title: string; desc: string; icon: React.ReactNode; color: string }[] = [
+  const modesInfo: { id: DuelMode; title: string; desc: string; icon: React.ReactNode; color: string; eloColor: string }[] = [
     {
       id: 'pinpoint',
       title: '🎯 Puntería Geográfica',
       desc: 'El modo GeoStrike. Haz clic libre en el mapa para situar la ciudad objetivo (hasta 1,000 pts/ronda).',
       icon: <Target className="w-6 h-6 text-cyan-400" />,
-      color: 'border-cyan-500/70 bg-cyan-950/30'
+      color: 'border-cyan-500/70 bg-cyan-950/30',
+      eloColor: 'text-cyan-400'
     },
     {
       id: 'countries',
       title: '🗺️ Países',
       desc: 'Localiza y haz clic sobre la masa territorial del país indicado.',
       icon: <Globe className="w-6 h-6 text-indigo-400" />,
-      color: 'border-indigo-500/70 bg-indigo-950/30'
+      color: 'border-indigo-500/70 bg-indigo-950/30',
+      eloColor: 'text-indigo-400'
     },
     {
       id: 'capitals',
       title: '🏛️ Capitales',
       desc: 'Adivina la capital mostrada e identifica su país en el mapa.',
       icon: <Landmark className="w-6 h-6 text-purple-400" />,
-      color: 'border-purple-500/70 bg-purple-950/30'
+      color: 'border-purple-500/70 bg-purple-950/30',
+      eloColor: 'text-purple-400'
     },
     {
       id: 'flags',
       title: '🚩 Banderas',
       desc: 'Identifica la bandera oficial e indica su país correspondiente.',
-      icon: <Flag className="w-6 h-6 text-rose-400" />,
-      color: 'border-rose-500/70 bg-rose-950/30'
+      icon: <Flag className="w-6 h-6 text-amber-400" />,
+      color: 'border-amber-500/70 bg-amber-950/30',
+      eloColor: 'text-amber-400'
     }
   ];
 
@@ -178,6 +182,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
             <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-4xl shadow-md shrink-0">
               {playerProfile.avatar}
             </div>
+
             <div>
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-mono font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border bg-zinc-900 ${playerProfile.rank.color} ${playerProfile.rank.border}`}>
@@ -203,10 +208,32 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
             </div>
           </div>
 
-          <div className="bg-[#121214] border border-zinc-800 p-4 rounded-2xl text-center min-w-[150px] shadow-inner">
-            <span className="text-[10px] font-mono uppercase text-zinc-500 font-bold block">Puntuación Clasificatoria</span>
-            <span className="text-3xl font-mono font-black text-amber-400">{playerProfile.elo}</span>
-            <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">Puntos ELO</span>
+          {/* Calificaciones ELO por Minijuego */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 shrink-0">
+            <div className="bg-[#121214] border border-cyan-500/40 p-2.5 rounded-xl text-center">
+              <span className="text-[10px] font-mono text-cyan-400 font-bold block">🎯 Puntería</span>
+              <span className="text-lg font-mono font-black text-cyan-300">
+                {playerProfile.elos?.pinpoint ?? 1200}
+              </span>
+            </div>
+            <div className="bg-[#121214] border border-indigo-500/40 p-2.5 rounded-xl text-center">
+              <span className="text-[10px] font-mono text-indigo-400 font-bold block">🗺️ Países</span>
+              <span className="text-lg font-mono font-black text-indigo-300">
+                {playerProfile.elos?.countries ?? 1200}
+              </span>
+            </div>
+            <div className="bg-[#121214] border border-purple-500/40 p-2.5 rounded-xl text-center">
+              <span className="text-[10px] font-mono text-purple-400 font-bold block">🏛️ Capitales</span>
+              <span className="text-lg font-mono font-black text-purple-300">
+                {playerProfile.elos?.capitals ?? 1200}
+              </span>
+            </div>
+            <div className="bg-[#121214] border border-amber-500/40 p-2.5 rounded-xl text-center">
+              <span className="text-[10px] font-mono text-amber-400 font-bold block">🚩 Banderas</span>
+              <span className="text-lg font-mono font-black text-amber-300">
+                {playerProfile.elos?.flags ?? 1200}
+              </span>
+            </div>
           </div>
         </div>
       </div>

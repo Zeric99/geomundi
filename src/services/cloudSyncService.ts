@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { StorageService } from './storageService';
 import { DailyChallengeRecord } from './dailyChallengeService';
+import { DuelMode } from '../types/multiplayer';
 
 export interface LeaderboardEntry {
   id: string;
@@ -14,6 +15,7 @@ export interface LeaderboardEntry {
   losses: number;
   total_duels: number;
   rank_position: number;
+  mode?: DuelMode | 'all';
 }
 
 export interface DailyLeaderboardEntry {
@@ -57,24 +59,124 @@ export const cloudSyncService = {
   },
 
   /**
-   * Obtiene la clasificación mundial de Elo de Duelos 1v1
+   * Obtiene la clasificación mundial de Elo de Duelos 1v1 (general o filtrado por minijuego)
    */
   async getEloLeaderboard(limit = 50): Promise<LeaderboardEntry[]> {
+    return this.getEloLeaderboardByMode('all', limit);
+  },
+
+  /**
+   * Obtiene el ranking específico de una modalidad de juego ('pinpoint', 'countries', 'capitals', 'flags' o 'all')
+   */
+  async getEloLeaderboardByMode(mode: DuelMode | 'all' = 'all', limit = 50): Promise<LeaderboardEntry[]> {
     if (!supabase) return [];
     try {
+      if (mode === 'all') {
+        const { data, error } = await supabase
+          .from('leaderboard_elo')
+          .select('*')
+          .limit(limit);
+
+        if (!error && data && data.length > 0) {
+          return data as LeaderboardEntry[];
+        }
+
+        // Fallback directo a tabla profiles
+        const { data: profiles, error: pError } = await supabase
+          .from('profiles')
+          .select('id, nickname, avatar_url, elo, rank_tier, level, xp, wins, losses, total_duels')
+          .order('elo', { ascending: false })
+          .limit(limit);
+
+        if (pError || !profiles) return [];
+        return profiles.map((p: any, idx: number) => ({
+          ...p,
+          rank_position: idx + 1,
+          mode: 'all'
+        })) as LeaderboardEntry[];
+      }
+
+      // Consulta de ranking específico para un minijuego
+      const eloCol = `elo_${mode}`;
+      const duelsCol = `duels_${mode}`;
+      const winsCol = `wins_${mode}`;
+
       const { data, error } = await supabase
-        .from('leaderboard_elo')
-        .select('*')
+        .from('profiles')
+        .select(`id, nickname, avatar_url, ${eloCol}, rank_tier, level, xp, ${winsCol}, total_duels, ${duelsCol}`)
+        .order(eloCol, { ascending: false })
         .limit(limit);
 
       if (error) {
-        console.error('Error obteniendo ranking Elo:', error);
-        return [];
+        console.warn(`Columna ${eloCol} no encontrada o error en ranking, usando fallback general:`, error);
+        return this.getEloLeaderboardByMode('all', limit);
       }
-      return (data || []) as LeaderboardEntry[];
+
+      return (data || []).map((row: any, idx: number) => ({
+        id: row.id,
+        nickname: row.nickname,
+        avatar_url: row.avatar_url,
+        elo: row[eloCol] ?? row.elo ?? 1200,
+        rank_tier: row.rank_tier || 'bronce',
+        level: row.level || 1,
+        xp: row.xp || 0,
+        wins: row[winsCol] ?? 0,
+        losses: Math.max(0, (row[duelsCol] || 0) - (row[winsCol] || 0)),
+        total_duels: row[duelsCol] ?? 0,
+        rank_position: idx + 1,
+        mode
+      })) as LeaderboardEntry[];
     } catch (e) {
       console.error('Excepción obteniendo ranking Elo:', e);
       return [];
+    }
+  },
+
+  /**
+   * Obtiene la posición de ranking mundial (# puesto) del usuario en cada una de las 4 modalidades y en general
+   */
+  async getUserRankPositions(userId: string): Promise<Record<DuelMode | 'all', number>> {
+    const defaultPositions: Record<DuelMode | 'all', number> = {
+      pinpoint: 1,
+      countries: 1,
+      capitals: 1,
+      flags: 1,
+      all: 1
+    };
+
+    if (!supabase || !userId) return defaultPositions;
+
+    try {
+      const { data: userProfile, error: profError } = await supabase
+        .from('profiles')
+        .select('elo, elo_pinpoint, elo_countries, elo_capitals, elo_flags')
+        .eq('id', userId)
+        .single();
+
+      if (profError || !userProfile) return defaultPositions;
+
+      const modes: (DuelMode | 'all')[] = ['all', 'pinpoint', 'countries', 'capitals', 'flags'];
+
+      await Promise.all(
+        modes.map(async (m) => {
+          const col = m === 'all' ? 'elo' : `elo_${m}`;
+          const userElo = (userProfile as Record<string, any>)[col] ?? 1200;
+
+          const { count, error } = await supabase!
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .gt(col, userElo);
+
+          if (!error && count !== null) {
+            defaultPositions[m] = count + 1;
+          }
+        })
+      );
+
+      return defaultPositions;
+    } catch (e) {
+      console.warn('Excepción calculando puestos de ranking:', e);
+      return defaultPositions;
     }
   },
 

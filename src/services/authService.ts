@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
+import { DuelMode } from '../types/multiplayer';
 
 export interface UserProfile {
   id: string;
@@ -18,6 +19,19 @@ export interface UserProfile {
   best_win_streak: number;
   daily_streak: number;
   best_daily_streak: number;
+  // ELOs y estadísticas específicas por minijuego
+  elo_pinpoint?: number;
+  elo_countries?: number;
+  elo_capitals?: number;
+  elo_flags?: number;
+  duels_pinpoint?: number;
+  wins_pinpoint?: number;
+  duels_countries?: number;
+  wins_countries?: number;
+  duels_capitals?: number;
+  wins_capitals?: number;
+  duels_flags?: number;
+  wins_flags?: number;
   created_at: string;
 }
 
@@ -90,7 +104,9 @@ export const authService = {
     isWin: boolean,
     isDraw: boolean,
     xpEarned: number,
-    rankTier: string
+    rankTier: string,
+    duelMode?: DuelMode,
+    modeElo?: number
   ): Promise<boolean> {
     if (!supabase) return false;
     try {
@@ -106,21 +122,36 @@ export const authService = {
       const newXp = (current.xp || 0) + xpEarned;
       const newLevel = Math.floor(Math.sqrt(newXp / 100)) + 1;
 
+      const updatePayload: Record<string, any> = {
+        elo: newElo,
+        rank_tier: rankTier,
+        total_duels: newTotal,
+        wins: newWins,
+        losses: newLosses,
+        draws: newDraws,
+        win_streak: newStreak,
+        best_win_streak: bestStreak,
+        xp: newXp,
+        level: newLevel,
+        updated_at: new Date().toISOString()
+      };
+
+      if (duelMode) {
+        const modeKey = duelMode;
+        if (modeElo !== undefined) {
+          updatePayload[`elo_${modeKey}`] = modeElo;
+        }
+        const currentModeDuels = (current as any)[`duels_${modeKey}`] || 0;
+        const currentModeWins = (current as any)[`wins_${modeKey}`] || 0;
+        updatePayload[`duels_${modeKey}`] = currentModeDuels + 1;
+        if (isWin) {
+          updatePayload[`wins_${modeKey}`] = currentModeWins + 1;
+        }
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          elo: newElo,
-          rank_tier: rankTier,
-          total_duels: newTotal,
-          wins: newWins,
-          losses: newLosses,
-          draws: newDraws,
-          win_streak: newStreak,
-          best_win_streak: bestStreak,
-          xp: newXp,
-          level: newLevel,
-          updated_at: new Date().toISOString()
-        })
+        .update(updatePayload)
         .eq('id', userId);
 
       if (error) {

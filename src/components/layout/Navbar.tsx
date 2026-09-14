@@ -125,11 +125,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           {onOpenAchievements && (
             <button
               onClick={onOpenAchievements}
-              title="Ver Galería de Logros y Medallas"
+              title="Ver Galería de Logros y Estadísticas Detalladas"
               className="p-2 sm:px-3 sm:py-2 rounded-xl bg-[#18181B] hover:bg-zinc-800 text-amber-400 border border-zinc-800 transition-colors flex items-center gap-1.5 text-xs font-bold shrink-0"
             >
               <Award className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className="hidden xl:inline">Logros</span>
+              <span className="hidden lg:inline">Logros y Estadísticas</span>
             </button>
           )}
 

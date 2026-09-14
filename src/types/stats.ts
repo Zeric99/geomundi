@@ -49,6 +49,14 @@ export interface TutorAdvice {
   actionLabel?: string;
 }
 
+export interface ModeStatsItem {
+  gamesPlayed: number;
+  totalScore: number;
+  bestScore: number;
+  totalAttempts?: number;
+  correctCount?: number;
+}
+
 export interface UserStatsState {
   version: number;
   countries: Record<string, CountryPerformance>;
@@ -57,4 +65,5 @@ export interface UserStatsState {
   totalGamesPlayed: number;
   bestStreak: number;
   lastSessionDate: string;
+  modeStats?: Record<string, ModeStatsItem>;
 }
