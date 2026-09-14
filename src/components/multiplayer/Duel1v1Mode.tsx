@@ -496,7 +496,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-zinc-900/90 border border-cyan-500/40 px-4 py-2 rounded-xl text-xs flex items-center justify-between gap-3 shadow-lg text-zinc-200 font-mono"
+            className="bg-[#18181B] border border-cyan-500/40 px-4 py-2 rounded-xl text-xs flex items-center justify-between gap-3 shadow-lg text-zinc-200 font-mono"
           >
             <div className="flex items-center gap-2">
               <span className="text-cyan-400 font-bold">📍 Tiro anterior ({lastResultToast.cityName}):</span>
@@ -512,7 +512,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
       </div>
 
       {/* 3. Mapa Interactivo Principal (Globo 3D para Pinpoint, Mapa 2D para Países/Banderas) */}
-      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-270px)] max-h-[calc(100vh-270px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-270px)] max-h-[calc(100vh-270px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800 bg-[#050b14]">
         {duelMode === 'pinpoint' ? (
           <PinpointWorldMap
             clickedCoords={lastPinpointClick}

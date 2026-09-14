@@ -172,10 +172,10 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-200">
       {/* Tarjeta de Rango ELO y Perfil del Jugador con Nivel y XP */}
-      <div className={`p-6 sm:p-8 rounded-3xl border ${playerProfile.rank.border} bg-[#18181B] ${playerProfile.rank.bg} relative overflow-hidden shadow-2xl`}>
+      <div className={`p-6 sm:p-8 rounded-3xl border ${playerProfile.rank.border} bg-[#18181B] relative overflow-hidden shadow-2xl`}>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-900/90 border border-zinc-700/80 flex items-center justify-center text-4xl shadow-md shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-4xl shadow-md shrink-0">
               {playerProfile.avatar}
             </div>
             <div>
@@ -183,11 +183,11 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
                 <span className={`text-xs font-mono font-bold uppercase tracking-widest px-2.5 py-0.5 rounded border bg-zinc-900 ${playerProfile.rank.color} ${playerProfile.rank.border}`}>
                   Rango {playerProfile.rank.label}
                 </span>
-                <span className="text-[11px] font-mono font-bold bg-cyan-950/80 text-cyan-300 px-2.5 py-0.5 rounded border border-cyan-700/60">
+                <span className="text-[11px] font-mono font-bold bg-[#0a1e2b] text-cyan-300 px-2.5 py-0.5 rounded border border-cyan-700/60">
                   Nivel {playerProfile.level || 1}
                 </span>
                 {playerProfile.streak > 0 && (
-                  <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30 flex items-center gap-1">
+                  <span className="text-[10px] font-mono font-bold bg-[#261c07] text-amber-300 px-2 py-0.5 rounded border border-amber-500/30 flex items-center gap-1">
                     <Flame className="w-3 h-3 text-amber-400 fill-amber-400" />
                     Racha {playerProfile.streak}
                   </span>
@@ -203,7 +203,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
             </div>
           </div>
 
-          <div className="bg-zinc-900/90 border border-zinc-800 p-4 rounded-2xl text-center min-w-[150px] shadow-inner">
+          <div className="bg-[#121214] border border-zinc-800 p-4 rounded-2xl text-center min-w-[150px] shadow-inner">
             <span className="text-[10px] font-mono uppercase text-zinc-500 font-bold block">Puntuación Clasificatoria</span>
             <span className="text-3xl font-mono font-black text-amber-400">{playerProfile.elo}</span>
             <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">Puntos ELO</span>
@@ -217,7 +217,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
           onClick={() => setActiveTab('ranked')}
           className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all flex items-center gap-2 ${
             activeTab === 'ranked'
-              ? 'bg-amber-950/40 text-amber-300 border border-amber-800/60 shadow-sm'
+              ? 'bg-[#2a1c06] text-amber-300 border border-amber-800 shadow-sm'
               : 'text-zinc-400 hover:bg-zinc-900'
           }`}
         >
@@ -229,7 +229,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
           onClick={() => setActiveTab('custom')}
           className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all flex items-center gap-2 ${
             activeTab === 'custom'
-              ? 'bg-indigo-950/40 text-indigo-300 border border-indigo-800/60 shadow-sm'
+              ? 'bg-[#151229] text-indigo-300 border border-indigo-800 shadow-sm'
               : 'text-zinc-400 hover:bg-zinc-900'
           }`}
         >
@@ -241,7 +241,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
           onClick={() => setActiveTab('history')}
           className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all flex items-center gap-2 ${
             activeTab === 'history'
-              ? 'bg-cyan-950/40 text-cyan-300 border border-cyan-800/60 shadow-sm'
+              ? 'bg-[#091b26] text-cyan-300 border border-cyan-800 shadow-sm'
               : 'text-zinc-400 hover:bg-zinc-900'
           }`}
         >
@@ -585,7 +585,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
                 return (
                   <div
                     key={duel.id || idx}
-                    className="bg-zinc-900/80 border border-zinc-800 p-4 rounded-xl flex items-center justify-between gap-4 flex-wrap hover:border-zinc-700 transition-all"
+                    className="bg-[#121214] border border-zinc-800 p-4 rounded-xl flex items-center justify-between gap-4 flex-wrap hover:border-zinc-700 transition-all"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl shrink-0">

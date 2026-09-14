@@ -269,7 +269,7 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
   return (
     <div className="space-y-4">
       {/* Target Radar HUD (Cabecera Táctica) */}
-      <div className="bg-[#141d28]/95 backdrop-blur-md border border-cyan-900/40 rounded-xl p-4 sm:p-5 shadow-card-subtle flex items-center justify-between gap-4 flex-wrap relative overflow-hidden border-l-4 border-l-cyan-500">
+      <div className="bg-[#141d28] border border-cyan-900/40 rounded-xl p-4 sm:p-5 shadow-card-subtle flex items-center justify-between gap-4 flex-wrap relative overflow-hidden border-l-4 border-l-cyan-500">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-cyan-950/60 border border-cyan-800/60 rounded-xl text-cyan-400 shadow-inner">
             <Target className="w-7 h-7 animate-pulse" />
@@ -313,7 +313,7 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
       </div>
 
       {/* Mapa Interactivo de Puntería */}
-      <div className="relative flex-1 min-h-[380px] h-[calc(100vh-230px)] max-h-[calc(100vh-230px)] w-full rounded-xl overflow-hidden shadow-2xl border border-zinc-800">
+      <div className="relative flex-1 min-h-[380px] h-[calc(100vh-230px)] max-h-[calc(100vh-230px)] w-full rounded-xl overflow-hidden shadow-2xl border border-zinc-800 bg-[#050b14]">
         <PinpointWorldMap
           clickedCoords={clickedCoords}
           targetCoords={currentCity.coordinates}
@@ -325,7 +325,7 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
 
         {/* Modal / Tarjeta de Evaluación al hacer clic */}
         {isEvaluated && currentResult && (
-          <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-[420px] bg-[#141d2b]/95 backdrop-blur-xl border border-cyan-800/70 rounded-2xl p-5 shadow-2xl z-30 animate-in slide-in-from-bottom-6 duration-300">
+          <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-[420px] bg-[#141d2b] border border-cyan-800/70 rounded-2xl p-5 shadow-2xl z-30 animate-in slide-in-from-bottom-6 duration-300">
             <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-zinc-800">
               <div className="flex items-center gap-2 text-cyan-400 font-bold text-sm">
                 <Sparkles className="w-4 h-4" />

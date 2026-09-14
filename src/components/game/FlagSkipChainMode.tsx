@@ -476,7 +476,7 @@ export const FlagSkipChainMode: React.FC<FlagSkipChainModeProps> = ({
       </AnimatePresence>
 
       {/* Mapa Interactivo */}
-      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-230px)] max-h-[calc(100vh-230px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
+      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-230px)] max-h-[calc(100vh-230px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800 bg-[#0B0F19]">
         <WorldMap
           countryStatuses={countryStatuses}
           continent={continent}

@@ -87,7 +87,7 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
   return (
     <div className="flex flex-col h-full min-h-0 gap-2 w-full">
       {/* Banner Superior de Instrucción, Buscador y Salir (z-50 para que el dropdown flote por encima del mapa) */}
-      <div className="relative z-50 bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-3 sm:p-4 shadow-card-subtle flex items-center justify-between gap-3 flex-wrap shrink-0">
+      <div className="relative z-50 bg-[#18181B] border border-zinc-800 rounded-xl p-3 sm:p-4 shadow-card-subtle flex items-center justify-between gap-3 flex-wrap shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="p-2 bg-zinc-800 border border-zinc-700 rounded-lg text-amber-300">
             <Compass className="w-5 h-5" />
@@ -166,8 +166,8 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 flex-1 min-h-0 overflow-hidden">
-        {/* Mapa Interactivo */}
-        <div className={`${selectedCountry ? 'lg:col-span-3' : 'lg:col-span-4'} h-full min-h-0 transition-all rounded-xl overflow-hidden shadow-lg border border-zinc-800`}>
+        {/* Mapa Interactivo con fondo sólido */}
+        <div className={`${selectedCountry ? 'lg:col-span-3' : 'lg:col-span-4'} h-full min-h-0 transition-all rounded-xl overflow-hidden shadow-lg border border-zinc-800 bg-[#0B0F19]`}>
           <WorldMap
             continent={continent}
             onSelectContinent={onSelectContinent}
@@ -179,9 +179,9 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
           />
         </div>
 
-        {/* Ficha Detallada del País Seleccionado */}
+        {/* Ficha Detallada del País Seleccionado con fondo 100% opaco */}
         {selectedCountry && (
-          <div className="lg:col-span-1 bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-5 shadow-card-subtle flex flex-col justify-between animate-in fade-in slide-in-from-right-4 duration-200">
+          <div className="lg:col-span-1 bg-[#18181B] border border-zinc-800 rounded-xl p-5 shadow-card-subtle flex flex-col justify-between animate-in fade-in slide-in-from-right-4 duration-200">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
                 <span className="text-[11px] font-mono text-indigo-300 uppercase tracking-wider bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/60">

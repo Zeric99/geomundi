@@ -214,8 +214,9 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
     camera.up.set(0, 1, 0); // Eje norte siempre alineado verticalmente
     cameraRef.current = camera;
 
-    // 3. Renderer WebGL
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // 3. Renderer WebGL con fondo completamente opaco
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setClearColor(0x050b14, 1.0);
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
@@ -865,7 +866,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       }`}
     >
       {/* Indicador de ayuda superior */}
-      <div className="absolute top-3 left-3 z-10 bg-zinc-900/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-zinc-800 text-xs text-zinc-300 flex items-center gap-2 shadow-xl pointer-events-none">
+      <div className="absolute top-3 left-3 z-10 bg-[#18181B] px-3.5 py-2 rounded-xl border border-zinc-800 text-xs text-zinc-300 flex items-center gap-2 shadow-xl pointer-events-none">
         <Crosshair className="w-4 h-4 text-cyan-400 animate-pulse" />
         <span>
           {isEvaluated
@@ -876,7 +877,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
 
       {/* Selector y Controles de Zoom */}
       <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
-        <div className="bg-zinc-900/90 backdrop-blur-md border border-zinc-800 p-1 rounded-xl flex items-center gap-1 shadow-xl">
+        <div className="bg-[#18181B] border border-zinc-800 p-1 rounded-xl flex items-center gap-1 shadow-xl">
           <button
             type="button"
             onClick={handleZoomIn}

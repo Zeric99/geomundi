@@ -513,21 +513,21 @@ export function App() {
       }
     : null;
 
-  // Mostrar el planeta 3D y las estelas en TODOS los menús (Un Jugador, Multijugador, Explorar, Tutor, Récords)
-  // Ocultar estrictamente cuando se está dentro de una partida o juego en curso
+  // El planeta 3D Wireframe se muestra EXCLUSIVAMENTE en el menú de Un Jugador para no entorpecer los mapas y textos
+  // Ocultar estrictamente en Multijugador, Explorar, Tutor, Récords y durante cualquier partida
   const isInsideGame = isPlaying || isDailyChallengeActive || activeDuelQuestions.length > 0;
-  const showGlobeInMainMenu = !isInsideGame;
+  const showGlobeInSingleplayerMenu = (activeTab === 'singleplayer' || activeTab === 'game') && !isInsideGame;
 
   return (
     <div className={`relative flex flex-col bg-black text-slate-100 selection:bg-cyan-500 selection:text-slate-950 ${
       isPlaying ? 'h-screen max-h-screen overflow-hidden' : 'min-h-screen'
     }`}>
       {/* Partículas de Polvo Estelar en Movimiento por Toda la Pantalla */}
-      {showGlobeInMainMenu && <BackgroundStardust />}
+      {!isInsideGame && <BackgroundStardust />}
 
-      {/* Globo Terráqueo 3D Wireframe en el Lateral Derecho (Solo en menús principales Un Jugador y Multijugador) */}
-      {showGlobeInMainMenu && (
-        <div className="fixed -top-12 -right-36 sm:-right-28 md:-right-20 lg:-right-10 pointer-events-none z-0 opacity-95 overflow-visible select-none">
+      {/* Globo Terráqueo 3D Wireframe en el Lateral Derecho (Exclusivo en Menú Un Jugador) */}
+      {showGlobeInSingleplayerMenu && (
+        <div className="fixed -top-12 -right-36 sm:-right-28 md:-right-20 lg:-right-10 pointer-events-none z-0 opacity-90 overflow-visible select-none">
           <WireframeGlobe size={680} />
         </div>
       )}
@@ -553,8 +553,8 @@ export function App() {
         onOpenProfile={() => setIsProfileModalOpen(true)}
       />
 
-      {/* Contenido Principal */}
-      <main className={`flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col ${
+      {/* Contenido Principal con Z-Index sólido */}
+      <main className={`relative z-10 flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col ${
         isPlaying ? 'px-1 sm:px-2 pt-1 pb-1 overflow-hidden' : isDailyChallengeActive ? 'px-2 sm:px-4 pt-3 pb-8 overflow-y-auto' : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-8'
       }`}>
         {/* PESTAÑA 1: UN JUGADOR (SINGLEPLAYER) */}

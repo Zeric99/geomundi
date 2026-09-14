@@ -356,7 +356,7 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
   return (
     <div className="space-y-4">
       {/* Cabecera de Estadísticas en Vivo */}
-      <div className="bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-4 sm:p-5 shadow-card-subtle flex items-center justify-between gap-4 flex-wrap">
+      <div className="bg-[#18181B] border border-zinc-800 rounded-xl p-4 sm:p-5 shadow-card-subtle flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-indigo-400">
             <Type className="w-5 h-5" />
@@ -537,7 +537,7 @@ export const InputWriteMode: React.FC<InputWriteModeProps> = ({
       </AnimatePresence>
 
       {/* Mapa Interactivo con el país resaltado en ámbar */}
-      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-230px)] max-h-[calc(100vh-230px)] rounded-xl overflow-hidden shadow-lg border border-zinc-800">
+      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-230px)] max-h-[calc(100vh-230px)] rounded-xl overflow-hidden shadow-lg border border-zinc-800 bg-[#0B0F19]">
         <WorldMap
           countryStatuses={{
             ...countryStatuses,

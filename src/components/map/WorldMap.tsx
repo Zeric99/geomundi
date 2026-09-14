@@ -534,7 +534,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       />
 
       {/* 3. Leyenda rápida interactiva (esquina superior central) */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 hidden lg:flex items-center gap-3 bg-[#131C2E]/85 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-slate-700/60 text-[11px] text-slate-300 font-medium shadow-lg pointer-events-none">
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 hidden lg:flex items-center gap-3 bg-[#131C2E] px-3.5 py-1.5 rounded-xl border border-slate-700/80 text-[11px] text-slate-300 font-medium shadow-lg pointer-events-none">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
           <span>Acierto</span>
@@ -612,7 +612,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       )}
 
       {/* 6. PESTAÑAS FLOTANTES INFERIORES: ZOOM DIRECTO A ISLAS Y MAPA */}
-      <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 sm:gap-2 bg-[#0A101C]/95 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl border border-cyan-500/60 shadow-[0_10px_35px_rgba(0,0,0,0.9)] pointer-events-auto max-w-[95%] overflow-x-auto">
+      <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 sm:gap-2 bg-[#0A101C] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl border border-cyan-500/80 shadow-[0_10px_35px_rgba(0,0,0,0.95)] pointer-events-auto max-w-[95%] overflow-x-auto">
         <button
           onClick={() => {
             setExpandedInset(null);
@@ -622,7 +622,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           className={`px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 shadow-sm active:scale-95 shrink-0 ${
             expandedInset === null
               ? 'bg-gradient-to-r from-cyan-500 to-sky-500 text-slate-950 shadow-glow-cyan'
-              : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700'
+              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700'
           }`}
         >
           <span>🌍</span>
@@ -644,14 +644,14 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             expandedInset === 'caribbean'
               ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 shadow-glow-emerald ring-2 ring-emerald-300'
               : !showCaribbeanInset
-              ? 'bg-slate-800/60 hover:bg-slate-700 text-slate-400 border border-slate-700'
-              : 'bg-slate-800/90 hover:bg-emerald-950 text-emerald-300 hover:text-white border border-emerald-500/50'
+              ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700'
+              : 'bg-slate-800 hover:bg-emerald-950 text-emerald-300 hover:text-white border border-emerald-500/50'
           }`}
         >
           <span>🏝️</span>
           <span>{!showCaribbeanInset ? 'Mostrar Caribe' : 'Zoom Caribe'}</span>
           {expandedInset === 'caribbean' && (
-            <span className="text-[9px] sm:text-[10px] bg-slate-950/50 text-white px-1.5 py-0.2 rounded-full">Activo</span>
+            <span className="text-[9px] sm:text-[10px] bg-slate-950 text-white px-1.5 py-0.2 rounded-full font-mono">Activo</span>
           )}
         </button>
 
@@ -670,14 +670,14 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             expandedInset === 'oceania'
               ? 'bg-gradient-to-r from-sky-400 to-blue-500 text-slate-950 shadow-glow-sky ring-2 ring-sky-300'
               : !showOceaniaInset
-              ? 'bg-slate-800/60 hover:bg-slate-700 text-slate-400 border border-slate-700'
-              : 'bg-slate-800/90 hover:bg-sky-950 text-sky-300 hover:text-white border border-sky-500/50'
+              ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700'
+              : 'bg-slate-800 hover:bg-sky-950 text-sky-300 hover:text-white border border-sky-500/50'
           }`}
         >
           <span>🌊</span>
           <span>{!showOceaniaInset ? 'Mostrar Oceanía' : 'Zoom Oceanía'}</span>
           {expandedInset === 'oceania' && (
-            <span className="text-[9px] sm:text-[10px] bg-slate-950/50 text-white px-1.5 py-0.2 rounded-full">Activo</span>
+            <span className="text-[9px] sm:text-[10px] bg-slate-950 text-white px-1.5 py-0.2 rounded-full font-mono">Activo</span>
           )}
         </button>
       </div>

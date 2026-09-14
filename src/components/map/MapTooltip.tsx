@@ -22,7 +22,7 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
       aria-label={`Ficha informativa de ${country.nameEs}`}
       className="absolute top-3 left-3 sm:top-4 sm:left-4 z-40 max-w-[270px] sm:max-w-[310px] w-full pointer-events-auto select-none animate-in fade-in slide-in-from-top-2 duration-150 shadow-2xl"
     >
-      <div className="bg-[#18181B]/95 backdrop-blur-md border border-cyan-500/40 hover:border-cyan-400/70 rounded-2xl p-3 sm:p-3.5 shadow-2xl space-y-2.5 transition-all text-zinc-100">
+      <div className="bg-[#18181B] border border-cyan-500/40 hover:border-cyan-400/70 rounded-2xl p-3 sm:p-3.5 shadow-2xl space-y-2.5 transition-all text-zinc-100">
         {/* Cabecera con indicador de Pista y botón cerrar */}
         <div className="flex items-center justify-between gap-2 border-b border-zinc-800/80 pb-2">
           <div className="flex items-center gap-1.5">

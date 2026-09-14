@@ -131,7 +131,7 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
   return (
     <div className="flex flex-col h-full min-h-0 gap-2 max-w-7xl mx-auto w-full px-1 sm:px-2 overflow-hidden">
       {/* Barra Superior: Categoría, Vidas, Racha, Puntuación */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18181B]/95 backdrop-blur-md px-3.5 py-2 rounded-xl border border-zinc-800 shadow-card-subtle shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18181B] px-3.5 py-2 rounded-xl border border-zinc-800 shadow-card-subtle shrink-0">
         {/* Contador y Badge de Categoría */}
         <div className="flex items-center gap-2.5">
           <div className="px-2.5 py-0.5 bg-zinc-800 rounded-md border border-zinc-700 text-xs font-mono font-medium text-zinc-300">
@@ -189,7 +189,7 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
         key={currentQuestion.id}
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative bg-[#18181B]/95 backdrop-blur-md p-3 sm:p-4 rounded-xl border border-zinc-800 shadow-card-subtle shrink-0 border-l-4 border-l-indigo-500"
+        className="relative bg-[#18181B] p-3 sm:p-4 rounded-xl border border-zinc-800 shadow-card-subtle shrink-0 border-l-4 border-l-indigo-500"
       >
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5">
           <div className="flex items-start gap-2.5 max-w-4xl">
@@ -244,7 +244,7 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
 
       {/* Barra Interactiva de Selección y Confirmación */}
       {!isEvaluating && (
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-xl border bg-[#18181B]/95 backdrop-blur-md shrink-0 border-zinc-800 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-xl border bg-[#18181B] shrink-0 border-zinc-800 shadow-sm">
           {selectedCountry ? (
             <div className="flex items-center gap-2 flex-wrap font-sans">
               <span className="text-[11px] font-mono font-medium uppercase tracking-wider text-indigo-400 flex items-center gap-1">
@@ -277,7 +277,7 @@ export const TriviaCuriositiesMode: React.FC<TriviaCuriositiesModeProps> = ({
       )}
 
       {/* Mapa Interactivo Principal */}
-      <div className="relative flex-1 min-h-0 w-full rounded-xl overflow-hidden shadow-lg border border-zinc-800">
+      <div className="relative flex-1 min-h-0 w-full rounded-xl overflow-hidden shadow-lg border border-zinc-800 bg-[#0B0F19]">
         <WorldMap
           countryStatuses={countryStatuses}
           selectedCountryCode={!isEvaluating && selectedCountry ? selectedCountry.cca3 : null}

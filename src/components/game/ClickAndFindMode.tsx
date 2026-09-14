@@ -32,7 +32,7 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
   return (
     <div className="space-y-4">
       {/* Tarjeta de Pregunta Activa */}
-      <div className="bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-xl p-4 sm:p-5 shadow-card-subtle flex items-center justify-between gap-4 flex-wrap relative overflow-hidden border-l-4 border-l-indigo-500">
+      <div className="bg-[#18181B] border border-zinc-800 rounded-xl p-4 sm:p-5 shadow-card-subtle flex items-center justify-between gap-4 flex-wrap relative overflow-hidden border-l-4 border-l-indigo-500">
         <div className="flex items-center gap-4">
           {/* Visual según tipo de pregunta con soporte para ampliación de bandera */}
           {questionType === 'flag' && (
@@ -137,7 +137,7 @@ export const ClickAndFindMode: React.FC<ClickAndFindModeProps> = ({
       )}
 
       {/* Mapa Interactivo */}
-      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-210px)] max-h-[calc(100vh-210px)] w-full rounded-xl overflow-hidden shadow-lg border border-zinc-800">
+      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-210px)] max-h-[calc(100vh-210px)] w-full rounded-xl overflow-hidden shadow-lg border border-zinc-800 bg-[#0B0F19]">
         <WorldMap
           countryStatuses={countryStatuses}
           onCountryClick={onCountryClick}

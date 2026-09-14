@@ -165,7 +165,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ stats }) => {
           </div>
 
           {displayDailyLeaders.length === 0 ? (
-            <div className="py-12 text-center space-y-3 bg-zinc-900/40 rounded-xl border border-zinc-800/80">
+            <div className="py-12 text-center space-y-3 bg-[#121214] rounded-xl border border-zinc-800">
               <Sparkles className="w-8 h-8 text-amber-400 mx-auto animate-pulse" />
               <p className="text-sm text-zinc-300 font-medium">
                 Aún no hay intentos registrados hoy en la nube.
@@ -185,9 +185,9 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ stats }) => {
                     key={player.attempt_id || idx}
                     className={`p-3.5 rounded-xl border flex items-center justify-between gap-4 font-mono transition-all ${
                       isCurrentPlayer
-                        ? 'bg-amber-500/10 border-amber-500/60 shadow-md ring-1 ring-amber-500/30'
+                        ? 'bg-[#1e1708] border-amber-500/60 shadow-md ring-1 ring-amber-500/30'
                         : position === 1
-                        ? 'bg-amber-950/20 border-amber-500/30 text-amber-100'
+                        ? 'bg-[#181309] border-amber-500/30 text-amber-100'
                         : 'bg-[#121214] border-zinc-800 text-zinc-200'
                     }`}
                   >
@@ -263,7 +263,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ stats }) => {
           </div>
 
           {eloLeaders.length === 0 ? (
-            <div className="py-12 text-center space-y-3 bg-zinc-900/40 rounded-xl border border-zinc-800/80">
+            <div className="py-12 text-center space-y-3 bg-[#121214] rounded-xl border border-zinc-800">
               <Swords className="w-8 h-8 text-cyan-400 mx-auto" />
               <p className="text-sm text-zinc-300 font-medium">
                 Aún no hay partidas multijugador registradas en la clasificación oficial.
@@ -283,9 +283,9 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ stats }) => {
                     key={player.id || idx}
                     className={`p-3.5 rounded-xl border flex items-center justify-between gap-4 font-mono transition-all ${
                       isCurrentPlayer
-                        ? 'bg-cyan-950/40 border-cyan-500/60 shadow-md ring-1 ring-cyan-500/40'
+                        ? 'bg-[#091824] border-cyan-500/60 shadow-md ring-1 ring-cyan-500/40'
                         : position === 1
-                        ? 'bg-amber-950/20 border-amber-500/40 text-amber-100'
+                        ? 'bg-[#181309] border-amber-500/40 text-amber-100'
                         : 'bg-[#121214] border-zinc-800 text-zinc-200'
                     }`}
                   >
