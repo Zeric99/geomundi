@@ -3,6 +3,7 @@
 ## Cuentas y Servicios
 - **Cuenta de Supabase del proyecto**: `geostrikeapp@gmail.com`
 - **Proyecto Supabase**: `mklofgtmjbhvqrnnmris` (`https://mklofgtmjbhvqrnnmris.supabase.co`)
+- **Google Cloud Project ID**: `geostrike-508605`
 
 ## Directrices Clave
 - En modos competitivos (Desafío Diario / Wordle, Duelos 1v1, etc.) NO deben mostrarse pistas ni el botón de pistas.
