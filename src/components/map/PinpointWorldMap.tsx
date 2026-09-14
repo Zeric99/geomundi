@@ -18,6 +18,8 @@ interface PinpointWorldMapProps {
   previousPins?: PinHistoryItem[];
   continent?: string;
   cityName?: string;
+  /** Si es true, hace un zoom cinematográfico suave con delay tras evaluar (solo modo Chill) */
+  enableCinematicZoom?: boolean;
 }
 
 /**
@@ -149,7 +151,8 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
   isEvaluated,
   previousPins = [],
   continent,
-  cityName
+  cityName,
+  enableCinematicZoom = false
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
@@ -704,6 +707,11 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       targetSphericalRef.current = { theta: tTheta, phi: tPhi };
     }
 
+    // Reset de zoom cuando se empieza nueva ciudad en modo Chill
+    if (!clickedCoords && !isEvaluated && enableCinematicZoom) {
+      targetZoomScaleRef.current = 1.0;
+    }
+
     // B. Dibujar tiro de la ronda activa si está evaluada
     if (clickedCoords && targetCoords && isEvaluated) {
       drawPinAndArc(clickedCoords, targetCoords, false, cityName);
@@ -719,14 +727,52 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       const tPhi = Math.max(0.08, Math.min(Math.PI - 0.08, (90 - midLat) * (Math.PI / 180)));
       targetSphericalRef.current = { theta: tTheta, phi: tPhi };
 
-      // Zoom dinámico según la distancia del tiro para un encuadre cinemático óptimo
+      // Zoom dinámico según la distancia del tiro para un encuadre óptimo
       const dKm = computeDistanceKm(clickedCoords, targetCoords);
-      if (dKm < 500) {
-        targetZoomScaleRef.current = 1.35;
-      } else if (dKm > 4000) {
-        targetZoomScaleRef.current = 0.85;
+
+      if (enableCinematicZoom) {
+        // Modo Chill: zoom suave inicial en el punto medio, luego zoom extra al objetivo
+        if (dKm < 300) {
+          targetZoomScaleRef.current = 1.5;
+        } else if (dKm < 800) {
+          targetZoomScaleRef.current = 1.3;
+        } else if (dKm < 2500) {
+          targetZoomScaleRef.current = 1.1;
+        } else {
+          targetZoomScaleRef.current = 0.9;
+        }
+
+        // Tras 700ms (el arco habrá terminado ~450ms), zoom cinematográfico al objetivo exacto
+        const cinemaTimer = setTimeout(() => {
+          if (targetCoords) {
+            const tgt3Theta = (targetCoords[0] + 90) * (Math.PI / 180);
+            const tgt3Phi = Math.max(0.08, Math.min(Math.PI - 0.08, (90 - targetCoords[1]) * (Math.PI / 180)));
+            targetSphericalRef.current = { theta: tgt3Theta, phi: tgt3Phi };
+
+            // Zoom extra según distancia para revelar contexto geográfico
+            if (dKm < 300) {
+              targetZoomScaleRef.current = 2.2;
+            } else if (dKm < 800) {
+              targetZoomScaleRef.current = 1.8;
+            } else if (dKm < 2500) {
+              targetZoomScaleRef.current = 1.4;
+            } else {
+              targetZoomScaleRef.current = 1.1;
+            }
+          }
+        }, 700);
+
+        // Guardar el timer para limpiarlo si el efecto se vuelve a ejecutar
+        return () => clearTimeout(cinemaTimer);
       } else {
-        targetZoomScaleRef.current = 1.05;
+        // Modo competitivo: zoom estándar rápido, sin delay
+        if (dKm < 500) {
+          targetZoomScaleRef.current = 1.35;
+        } else if (dKm > 4000) {
+          targetZoomScaleRef.current = 0.85;
+        } else {
+          targetZoomScaleRef.current = 1.05;
+        }
       }
     } else if (clickedCoords && !isEvaluated) {
       // Tiro individual en progreso con onda de pulso cian
@@ -766,7 +812,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
 
     markersGroupRef.current = group;
     scene.add(group);
-  }, [clickedCoords, targetCoords, isEvaluated, previousPins, cityName, lngLatToVector3]);
+  }, [clickedCoords, targetCoords, isEvaluated, previousPins, cityName, enableCinematicZoom, lngLatToVector3]);
 
   // Controles de zoom y reseteo
   const handleZoomIn = () => {

@@ -321,6 +321,7 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
           isEvaluated={isEvaluated}
           continent={continent}
           cityName={currentCity.nameEs}
+          enableCinematicZoom={true}
         />
 
         {/* Modal / Tarjeta de Evaluación al hacer clic */}
