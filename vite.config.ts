@@ -8,5 +8,19 @@ export default defineConfig({
   server: {
     port: 3000,
     open: false
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-three': ['three'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-maps': ['react-simple-maps', 'd3-geo', 'topojson-client'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-icons': ['lucide-react']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
   }
 })

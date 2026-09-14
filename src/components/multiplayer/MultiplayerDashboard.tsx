@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Swords, Trophy, Crown, Flame, Target, Flag, Landmark, Users, Sparkles, ArrowRight, Clock, Globe, Shield, Key, RefreshCw } from 'lucide-react';
-import { CommunityChallenge, CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile } from '../../types/multiplayer';
+import { CommunityChallenge, CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile, PlayerRoundResult } from '../../types/multiplayer';
 import { multiplayerService } from '../../services/multiplayerService';
 import { customRoomService } from '../../services/customRoomService';
 import { Continent, Country } from '../../types/country';
@@ -11,7 +11,14 @@ interface MultiplayerDashboardProps {
   playerProfile: PlayerProfile;
   countries: Country[];
   initialRoomCode?: string;
-  onStartDuel: (type: MultiplayerType, duelMode: DuelMode, customConfig?: CustomRoomConfig, customQuestions?: DuelQuestion[], rivalProfile?: PlayerProfile | null) => void;
+  onStartDuel: (
+    type: MultiplayerType,
+    duelMode: DuelMode,
+    customConfig?: CustomRoomConfig,
+    customQuestions?: DuelQuestion[],
+    rivalProfile?: PlayerProfile | null,
+    recordedRivalResults?: PlayerRoundResult[]
+  ) => void;
   onStartChallenge?: (challenge: CommunityChallenge) => void;
   onCreateChallenge?: (mode: DuelMode) => void;
 }
@@ -676,10 +683,10 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
           config={activeLobby.config}
           playerProfile={playerProfile}
           questions={activeLobby.questions}
-          onStartGame={(questions, rivalProfile) => {
+          onStartGame={(questions, rivalProfile, recordedResults) => {
             const lobby = activeLobby;
             setActiveLobby(null);
-            onStartDuel('custom_room', lobby.config.mode, lobby.config, questions, rivalProfile);
+            onStartDuel('custom_room', lobby.config.mode, lobby.config, questions, rivalProfile, recordedResults);
           }}
           onClose={() => setActiveLobby(null)}
         />

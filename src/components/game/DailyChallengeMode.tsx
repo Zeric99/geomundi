@@ -4,7 +4,8 @@ import confetti from 'canvas-confetti';
 import { Country, CountryMapStatus } from '../../types/country';
 import { DailyStageQuestion, dailyChallengeService } from '../../services/dailyChallengeService';
 import { WorldMap } from '../map/WorldMap';
-import { copyToClipboard } from '../../utils/shareUtils';
+import { generateDailyShareText } from '../../utils/shareUtils';
+import { ShareButtonsBar } from '../common/ShareButtonsBar';
 
 interface DailyChallengeModeProps {
   questions: DailyStageQuestion[];
@@ -199,39 +200,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
     }, 1800);
   };
 
-  // Copiar resumen con formato tweet para X (Twitter)
-  const handleCopyTweet = async () => {
-    if (!finalSummary) return;
-    const tweetText = dailyChallengeService.generateDailyTweetText(
-      finalSummary.correctCount,
-      finalSummary.totalQuestions,
-      finalSummary.score,
-      finalSummary.durationSeconds,
-      finalSummary.stageResults,
-      activeDate
-    );
 
-    const success = await copyToClipboard(tweetText);
-    if (success) {
-      setCopiedTweet(true);
-      setTimeout(() => setCopiedTweet(false), 2500);
-    }
-  };
-
-  // Abrir ventana directa para publicar en X / Twitter
-  const handleTweetIntent = () => {
-    if (!finalSummary) return;
-    const tweetText = dailyChallengeService.generateDailyTweetText(
-      finalSummary.correctCount,
-      finalSummary.totalQuestions,
-      finalSummary.score,
-      finalSummary.durationSeconds,
-      finalSummary.stageResults,
-      activeDate
-    );
-    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
-    window.open(tweetUrl, '_blank', 'noopener,noreferrer');
-  };
 
   // PANTALLA DE FINALIZACIÓN DEL RETO DIARIO
   if (isCompleted && finalSummary) {
@@ -346,19 +315,19 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
             </div>
           </div>
 
-          {/* Sección de compartir en X / Twitter */}
+          {/* Sección de compartir en Redes y Portapapeles */}
           <div className="bg-[#141416] border border-zinc-800/90 rounded-2xl p-4 sm:p-5 space-y-3 relative z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-white">𝕏</span>
-                <span className="text-xs sm:text-sm font-semibold text-zinc-200">
-                  Comparte tu resultado en X (Twitter)
+                <Share2 className="w-4 h-4 text-amber-400" />
+                <span className="text-xs sm:text-sm font-bold text-zinc-200">
+                  Comparte tu resultado con amigos
                 </span>
               </div>
               <span className="text-[11px] font-mono text-zinc-400">#GeoStrike</span>
             </div>
 
-            {/* Vista previa del Tweet */}
+            {/* Vista previa con emojis estilo Wordle */}
             <div className="bg-[#0e0e10] border border-zinc-800 rounded-xl p-3 font-mono text-xs text-zinc-300 space-y-1 select-all">
               <p>🌍 Reto Diario GeoStrike #{activeDate}</p>
               <p className="font-bold text-emerald-400">
@@ -370,37 +339,19 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
               <p className="text-zinc-400">⏱️ {finalSummary.durationSeconds}s | 🏆 {finalSummary.score.toLocaleString()} pts</p>
             </div>
 
-            {/* Botones de acción para X */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-              <button
-                onClick={handleCopyTweet}
-                className={`w-full py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all border ${
-                  copiedTweet
-                    ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300 shadow-emerald-950/30'
-                    : 'bg-zinc-800/80 hover:bg-zinc-700/80 border-zinc-700 text-zinc-100 hover:border-zinc-600'
-                }`}
-              >
-                {copiedTweet ? (
-                  <>
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span>¡Copiado para el Tuit!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4 text-zinc-300" />
-                    <span>Copiar texto para Tuit</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={handleTweetIntent}
-                className="w-full py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all bg-sky-500 hover:bg-sky-400 text-zinc-950 font-sans shadow-sm"
-              >
-                <span className="font-black text-sm">𝕏</span>
-                <span>Publicar directamente en X</span>
-              </button>
-            </div>
+            {/* Barra de botones: Copiar 1-clic, WhatsApp, X y nativo */}
+            <ShareButtonsBar
+              shareText={generateDailyShareText({
+                dateStr: activeDate,
+                correctCount: finalSummary.correctCount,
+                totalQuestions: finalSummary.totalQuestions,
+                accuracy: finalSummary.accuracy,
+                score: finalSummary.score,
+                durationSeconds: finalSummary.durationSeconds,
+                stageResults: finalSummary.stageResults
+              })}
+              shareTitle={`GeoStrike Reto Diario #${activeDate}`}
+            />
           </div>
 
           {/* Botones finales de navegación */}

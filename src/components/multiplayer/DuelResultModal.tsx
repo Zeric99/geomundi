@@ -4,6 +4,8 @@ import { Trophy, Swords, CheckCircle2, XCircle, Flame, ArrowRight, Home, RotateC
 import { DuelState } from '../../types/multiplayer';
 import { MODE_ELO_CONFIGS } from '../../services/multiplayerService';
 import { PlayerAvatar } from '../common/PlayerAvatar';
+import { ShareButtonsBar } from '../common/ShareButtonsBar';
+import { generateDuelShareText } from '../../utils/shareUtils';
 
 interface DuelResultModalProps {
   duelState: DuelState;
@@ -130,6 +132,28 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
             </div>
           </div>
         )}
+
+        {/* Compartir resultado del duelo */}
+        <div className="bg-[#121214] border border-zinc-800 p-3.5 rounded-2xl space-y-2 text-left">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-zinc-300">
+              {isCreation ? 'Comparte tu desafío con amigos' : 'Comparte tu resultado'}
+            </span>
+            <span className="text-[10px] font-mono text-zinc-500">#GeoStrike1v1</span>
+          </div>
+          <ShareButtonsBar
+            shareText={generateDuelShareText({
+              modeName: MODE_ELO_CONFIGS[duelState.duelMode]?.name || 'Duelo 1v1',
+              playerScore: duelState.playerScore,
+              rivalScore: duelState.rivalScore,
+              isWinner: duelState.winner === 'player',
+              isTie: duelState.winner === 'tie',
+              rivalName: duelState.rival.name,
+              durationSeconds: Math.round(duelState.playerTimeTotalMs / 1000)
+            })}
+            shareTitle={`Duelo en GeoStrike - ${MODE_ELO_CONFIGS[duelState.duelMode]?.name || '1v1'}`}
+          />
+        </div>
 
         {/* Botones de Acción */}
         <div className="grid grid-cols-2 gap-3 pt-2">

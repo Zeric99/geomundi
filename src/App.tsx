@@ -14,8 +14,6 @@ import { CountryExplorer } from './components/explore/CountryExplorer';
 import { TutorDashboard } from './components/tutor/TutorDashboard';
 import { LeaderboardView } from './components/leaderboard/LeaderboardView';
 import { AchievementToast } from './components/achievements/AchievementToast';
-import { AchievementsModal } from './components/achievements/AchievementsModal';
-import { DonateModal } from './components/common/DonateModal';
 import { MultiplayerDashboard } from './components/multiplayer/MultiplayerDashboard';
 import { Duel1v1Mode } from './components/multiplayer/Duel1v1Mode';
 
@@ -32,9 +30,13 @@ import { GameConfig, GameSummary } from './types/game';
 import { TutorAdvice, UserStatsState } from './types/stats';
 import { Achievement } from './types/achievements';
 import { CommunityChallenge, CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile, PlayerRoundResult } from './types/multiplayer';
-import { DailyArchiveModal } from './components/daily/DailyArchiveModal';
-import { LeaderboardModal } from './components/leaderboard/LeaderboardModal';
-import { UserProfileModal } from './components/profile/UserProfileModal';
+
+// Carga diferida (lazy-loading) de modales secundarios para acelerar la carga en móvil
+const AchievementsModal = React.lazy(() => import('./components/achievements/AchievementsModal').then(m => ({ default: m.AchievementsModal })));
+const DonateModal = React.lazy(() => import('./components/common/DonateModal').then(m => ({ default: m.DonateModal })));
+const DailyArchiveModal = React.lazy(() => import('./components/daily/DailyArchiveModal').then(m => ({ default: m.DailyArchiveModal })));
+const LeaderboardModal = React.lazy(() => import('./components/leaderboard/LeaderboardModal').then(m => ({ default: m.LeaderboardModal })));
+const UserProfileModal = React.lazy(() => import('./components/profile/UserProfileModal').then(m => ({ default: m.UserProfileModal })));
 import { FALLBACK_COUNTRIES, GEEK_TERRITORIES } from './data/fallbackCountries';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { achievementService } from './services/achievementService';
@@ -44,6 +46,7 @@ import { multiplayerService } from './services/multiplayerService';
 import { authService } from './services/authService';
 import { cloudSyncService } from './services/cloudSyncService';
 import { storageService } from './services/storageService';
+import { customRoomService } from './services/customRoomService';
 import { useAuth } from './contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -104,6 +107,7 @@ export function App() {
   const [activeChallengeId, setActiveChallengeId] = useState<string | undefined>(undefined);
   const [activeDuelState, setActiveDuelState] = useState<DuelState | null>(null);
   const [finishedDuelResult, setFinishedDuelResult] = useState<DuelState | null>(null);
+  const [activeRoomCode, setActiveRoomCode] = useState<string | null>(null);
 
   // Sincronizar el perfil multijugador con el usuario autenticado de Supabase
   useEffect(() => {
@@ -328,7 +332,8 @@ export function App() {
     duelMode: DuelMode,
     customConfig?: CustomRoomConfig,
     customQuestions?: DuelQuestion[],
-    rivalProfile?: PlayerProfile | null
+    rivalProfile?: PlayerProfile | null,
+    recordedRivalResults?: PlayerRoundResult[]
   ) => {
     setMatchmakingType(type);
     setMatchmakingMode(duelMode);
@@ -338,11 +343,13 @@ export function App() {
         ? customQuestions
         : multiplayerService.generateDuelQuestions(countries, duelMode, customConfig?.totalRounds || 5);
 
+      setActiveRoomCode(customConfig?.roomCode || null);
       setActiveRivalProfile(rivalProfile || null);
-      setActiveRecordedResults([]);
+      setActiveRecordedResults(recordedRivalResults || []);
       setIsChallengeCreation(false);
       setActiveDuelQuestions(questions);
     } else {
+      setActiveRoomCode(null);
       handleCreateChallenge(duelMode);
     }
   }, [countries, handleCreateChallenge]);
@@ -350,6 +357,19 @@ export function App() {
 
   // Finalizar Duelo 1v1 y mostrar resultados (otorgar XP, guardar en Supabase y actualizar ELO)
   const handleFinishDuel = useCallback(async (duelState: DuelState) => {
+    // Si era una partida en sala privada, registrar el reto para el amigo
+    if (activeRoomCode) {
+      customRoomService.saveRoomChallenge({
+        roomCode: activeRoomCode,
+        creatorProfile: playerProfile,
+        mode: duelState.duelMode,
+        questions: duelState.questions,
+        roundResults: duelState.playerResults,
+        score: duelState.playerScore,
+        totalTimeMs: duelState.playerTimeTotalMs
+      });
+    }
+
     setActiveDuelQuestions([]);
     setActiveRivalProfile(null);
     setActiveRecordedResults([]);
@@ -865,44 +885,52 @@ export function App() {
         onClose={() => setUnlockedAchievement(null)}
       />
 
-      {/* Modal de Galería de Logros */}
-      <AchievementsModal
-        isOpen={isAchievementsModalOpen}
-        onClose={() => setIsAchievementsModalOpen(false)}
-        stats={stats}
-      />
+      {/* Modales secundarios cargados bajo demanda */}
+      <React.Suspense fallback={null}>
+        {isAchievementsModalOpen && (
+          <AchievementsModal
+            isOpen={isAchievementsModalOpen}
+            onClose={() => setIsAchievementsModalOpen(false)}
+            stats={stats}
+          />
+        )}
 
-      {/* Modal de Donación y Apoyo al Proyecto */}
-      <DonateModal
-        isOpen={isDonateModalOpen}
-        onClose={() => setIsDonateModalOpen(false)}
-      />
+        {isDonateModalOpen && (
+          <DonateModal
+            isOpen={isDonateModalOpen}
+            onClose={() => setIsDonateModalOpen(false)}
+          />
+        )}
 
-      {/* Modal de Calendario de Desafíos Diarios Anteriores */}
-      <DailyArchiveModal
-        isOpen={isDailyArchiveOpen}
-        onClose={() => setIsDailyArchiveOpen(false)}
-        onSelectDateToPlay={(dateStr) => {
-          setIsDailyArchiveOpen(false);
-          handleStartDailyChallenge(dateStr);
-        }}
-      />
+        {isDailyArchiveOpen && (
+          <DailyArchiveModal
+            isOpen={isDailyArchiveOpen}
+            onClose={() => setIsDailyArchiveOpen(false)}
+            onSelectDateToPlay={(dateStr) => {
+              setIsDailyArchiveOpen(false);
+              handleStartDailyChallenge(dateStr);
+            }}
+          />
+        )}
 
-      {/* Modal de Clasificación Mundial en Vivo (Supabase) */}
-      <LeaderboardModal
-        isOpen={isLeaderboardModalOpen}
-        onClose={() => setIsLeaderboardModalOpen(false)}
-      />
+        {isLeaderboardModalOpen && (
+          <LeaderboardModal
+            isOpen={isLeaderboardModalOpen}
+            onClose={() => setIsLeaderboardModalOpen(false)}
+          />
+        )}
 
-      {/* Modal de Perfil de Jugador y Récords Personales */}
-      <UserProfileModal
-        isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
-        onOpenLeaderboard={() => {
-          setIsProfileModalOpen(false);
-          setIsLeaderboardModalOpen(true);
-        }}
-      />
+        {isProfileModalOpen && (
+          <UserProfileModal
+            isOpen={isProfileModalOpen}
+            onClose={() => setIsProfileModalOpen(false)}
+            onOpenLeaderboard={() => {
+              setIsProfileModalOpen(false);
+              setIsLeaderboardModalOpen(true);
+            }}
+          />
+        )}
+      </React.Suspense>
 
       {/* Pie de Página */}
       <Footer isCompact={isPlaying || activeDuelQuestions.length > 0} />
