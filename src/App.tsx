@@ -43,12 +43,21 @@ import { challengeService } from './services/challengeService';
 import { multiplayerService } from './services/multiplayerService';
 import { authService } from './services/authService';
 import { cloudSyncService } from './services/cloudSyncService';
+import { useAuth } from './contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 export function App() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>('singleplayer');
   const [explorerContinent, setExplorerContinent] = useState<any>('World');
   const [previewFlagCountry, setPreviewFlagCountry] = useState<Country | null>(null);
+
+  // Sincronizar logros con la nube si el usuario inicia sesion
+  useEffect(() => {
+    if (user?.id) {
+      achievementService.syncWithSupabase(user.id);
+    }
+  }, [user?.id]);
 
   // Modales y Toasts de Nuevas Funcionalidades
   const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
@@ -94,16 +103,26 @@ export function App() {
     }
 
     // Evaluar si se desbloqueó algún logro
-    const newAchievements = achievementService.evaluateAchievements(stats, {
-      accuracy: summary.accuracy,
-      maxStreak: summary.maxStreak,
-      isDaily: isDailyChallengeActive
-    });
+    const newAchievements = achievementService.evaluateAchievements(
+      stats,
+      {
+        mode: summary.mode,
+        continent: summary.continent,
+        accuracy: summary.accuracy,
+        maxStreak: summary.maxStreak,
+        score: summary.score,
+        totalQuestions: summary.results.length,
+        correctCount: summary.results.filter(r => r.userSuccess).length,
+        isGeekMode: summary.isGeekMode,
+        isDaily: isDailyChallengeActive
+      },
+      user?.id
+    );
 
     if (newAchievements.length > 0) {
       setUnlockedAchievement(newAchievements[0]);
     }
-  }, [recordGame, isDailyChallengeActive, stats]);
+  }, [recordGame, isDailyChallengeActive, stats, user?.id]);
 
   const {
     isPlaying,
@@ -259,16 +278,25 @@ export function App() {
     setPlayerProfile(duelState.player);
 
     // Evaluar logros tras el duelo multijugador
-    const newAchievements = achievementService.evaluateAchievements(stats, {
-      accuracy: Math.round((duelState.playerScore / 500) * 100),
-      maxStreak: duelState.player.streak,
-      isDaily: false
-    });
+    const isWin = duelState.winner === 'player';
+    const newAchievements = achievementService.evaluateAchievements(
+      stats,
+      {
+        mode: 'multiplayer',
+        accuracy: Math.round((duelState.playerScore / 500) * 100),
+        maxStreak: duelState.player.streak,
+        duelResult: isWin ? 'win' : (duelState.winner === 'rival' ? 'loss' : 'draw'),
+        duelStreak: duelState.player.streak,
+        elo: duelState.player.elo,
+        isDaily: false
+      },
+      user?.id
+    );
 
     if (newAchievements.length > 0) {
       setUnlockedAchievement(newAchievements[0]);
     }
-  }, [stats]);
+  }, [stats, user?.id]);
 
   // Manejar acción desde tarjeta del Tutor
   const handleAdviceAction = useCallback((advice: TutorAdvice) => {

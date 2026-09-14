@@ -4,6 +4,8 @@ import { GameSummary } from '../../types/game';
 import { challengeService } from '../../services/challengeService';
 import { dailyChallengeService } from '../../services/dailyChallengeService';
 import { personalRecordsService, PersonalRecord } from '../../services/personalRecordsService';
+import { achievementService } from '../../services/achievementService';
+import { Achievement } from '../../types/achievements';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface GameOverModalProps {
@@ -30,12 +32,37 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
     previous?: PersonalRecord;
     current: PersonalRecord;
   } | null>(null);
+  const [unlockedAtGameOver, setUnlockedAtGameOver] = useState<Achievement[]>([]);
 
   useEffect(() => {
     if (!isDailyChallenge) {
       personalRecordsService.evaluateAndSave(summary, summary.durationSeconds, user?.id).then(res => {
         setRecordEvaluation(res);
       });
+    }
+
+    // Evaluamos si esta partida desbloquea logros
+    const newAchs = achievementService.evaluateAchievements(
+      {
+        totalGamesPlayed: 1,
+        totalScore: summary.score,
+        bestStreak: summary.maxStreak
+      },
+      {
+        mode: summary.mode,
+        continent: summary.continent,
+        accuracy: summary.accuracy,
+        maxStreak: summary.maxStreak,
+        score: summary.score,
+        totalQuestions: summary.results.length,
+        correctCount: summary.results.filter(r => r.userSuccess).length,
+        isGeekMode: summary.isGeekMode,
+        isDaily: isDailyChallenge
+      },
+      user?.id
+    );
+    if (newAchs.length > 0) {
+      setUnlockedAtGameOver(newAchs);
     }
   }, [summary, user, isDailyChallenge]);
 
@@ -184,6 +211,38 @@ ${blocks}
               <Clock className="w-3 h-3" />
               {recordEvaluation.current.timeSeconds}s
             </span>
+          </div>
+        )}
+
+        {/* Logros Desbloqueados en esta partida */}
+        {unlockedAtGameOver.length > 0 && (
+          <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {unlockedAtGameOver.map(ach => (
+              <div 
+                key={ach.id}
+                className="p-3 bg-gradient-to-r from-indigo-950/40 via-purple-950/30 to-indigo-950/40 border border-indigo-500/40 rounded-xl flex items-center justify-between gap-3 shadow-sm"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-lg shrink-0">
+                    {ach.icon}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-indigo-400 block">
+                      🏅 ¡Logro Desbloqueado!
+                    </span>
+                    <h5 className="text-xs font-bold text-zinc-100 truncate">
+                      {ach.title}
+                    </h5>
+                    <p className="text-[10px] text-zinc-400 line-clamp-1">
+                      {ach.description}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-indigo-900/60 text-indigo-300 border border-indigo-700/50 shrink-0">
+                  +{ach.xpReward} XP
+                </span>
+              </div>
+            ))}
           </div>
         )}
 

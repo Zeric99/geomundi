@@ -6,6 +6,7 @@ import { getRandomCities, CityThemeCategory } from '../../data/citiesData';
 import { calculateHaversineDistance, calculatePinpointScore, checkCountryAndContinentMatch } from '../../utils/haversineScoring';
 import { PinpointWorldMap } from '../map/PinpointWorldMap';
 import { generateShareText, copyToClipboard } from '../../utils/shareUtils';
+import { achievementService } from '../../services/achievementService';
 import confetti from 'canvas-confetti';
 
 interface CityPinpointModeProps {
@@ -98,6 +99,12 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
     nextTimerRef.current = setTimeout(() => {
       handleNextCity(result);
     }, 1400);
+
+    // Evaluar logros de puntería inmediata (ej. cirujano < 50km, francotirador 1000 pts)
+    achievementService.evaluateAchievements(
+      { totalGamesPlayed: 0, totalScore: score, bestStreak: 0 },
+      { mode: 'city_pinpoint', distanceKm, pinpointScore: score, correctCount: isSameCountry ? 1 : 0 }
+    );
   }, [currentCity, isEvaluated, isGameOver, currentIndex, citiesList.length]);
 
   const nextTimerRef = useRef<any>(null);
@@ -107,10 +114,11 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
     const res = resultToSave || currentResult;
     if (!res) return;
 
+    const newHistory = [...resultsHistory, res];
     setResultsHistory(prev => {
       // Evitar duplicados si ya se guardó
       if (prev.length > currentIndex) return prev;
-      return [...prev, res];
+      return newHistory;
     });
 
     if (currentIndex + 1 < citiesList.length) {
@@ -120,6 +128,17 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
       setCurrentResult(null);
     } else {
       setIsGameOver(true);
+      // Evaluar logros de final de partida de puntería
+      const finalScore = newHistory.reduce((acc, r) => acc + r.score, 0);
+      achievementService.evaluateAchievements(
+        { totalGamesPlayed: 1, totalScore: finalScore, bestStreak: 0 },
+        { 
+          mode: 'city_pinpoint', 
+          score: finalScore, 
+          totalQuestions: citiesList.length, 
+          correctCount: newHistory.filter(r => r.isSameCountry).length 
+        }
+      );
     }
   };
 

@@ -91,4 +91,5 @@ export interface GameSummary {
   durationSeconds: number;
   playedAt: string; // ISO String
   results: GameRoundResult[];
+  isGeekMode?: boolean;
 }
