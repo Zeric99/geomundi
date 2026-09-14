@@ -28,6 +28,15 @@
   background: #3F3F46;
 }
 
+/* Ocultar scrollbar pero mantener scroll funcional si se requiere */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Animación de Shake para errores */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
