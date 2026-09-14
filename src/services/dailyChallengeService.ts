@@ -253,47 +253,18 @@ export class DailyChallengeService {
   }
 
   /**
-   * Obtiene el ranking diario para la fecha dada (con rivales del día deterministas)
+   * Obtiene el ranking diario para la fecha dada (solo intentos reales de jugadores)
    */
-  getDailyLeaderboard(dateStr: string = this.getTodayDateString()): LeaderboardEntry[] {
-    const seed = hashString(dateStr + '_leaderboard');
-    const rng = seededRandom(seed);
-
-    const rivalNames = [
-      { name: 'MateoGamer99', avatar: '👨‍🚀', country: 'ES' },
-      { name: 'Sofia_Geo', avatar: '👩‍🏫', country: 'MX' },
-      { name: 'LucasExplorer', avatar: '🦊', country: 'AR' },
-      { name: 'Elena_Atlas', avatar: '👑', country: 'CL' },
-      { name: 'Carlos_World', avatar: '🦁', country: 'CO' },
-      { name: 'Vanesa_Map', avatar: '👩‍💻', country: 'ES' },
-      { name: 'David_Geek', avatar: '🚀', country: 'PE' },
-      { name: 'Lucia_Banderas', avatar: '🎨', country: 'UY' },
-      { name: 'Nico_Master', avatar: '⚡', country: 'EC' }
-    ];
-
-    const rivals: LeaderboardEntry[] = rivalNames.map((r) => {
-      const score = Math.floor(rng() * 200) + 800; // 800-1000 pts
-      const accuracy = score > 950 ? 100 : score > 900 ? 80 : 60;
-      const durationSeconds = Math.floor(rng() * 25) + 15; // 15-40s
-      return {
-        rank: 0,
-        username: r.name,
-        avatar: r.avatar,
-        score,
-        accuracy,
-        durationSeconds,
-        countryCode: r.country
-      };
-    });
-
+  getDailyLeaderboard(dateStr: string = this.getTodayDateString(), playerName: string = 'Jugador'): LeaderboardEntry[] {
+    const rivals: LeaderboardEntry[] = [];
     const state = this.getStreakState();
     const userToday = state.history[dateStr];
 
     if (userToday) {
       rivals.push({
-        rank: 0,
-        username: 'Tú (Jugador Local)',
-        avatar: '🫵',
+        rank: 1,
+        username: playerName,
+        avatar: '👤',
         score: userToday.score,
         accuracy: userToday.accuracy,
         durationSeconds: userToday.durationSeconds || 30,
@@ -302,25 +273,14 @@ export class DailyChallengeService {
       });
     }
 
-    // Ordenar por score desc, luego duration asc
-    rivals.sort((a, b) => b.score - a.score || a.durationSeconds - b.durationSeconds);
-    return rivals.map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+    return rivals;
   }
 
   /**
-   * Obtiene el ranking acumulado mundial global de todos los tiempos
+   * Obtiene el ranking acumulado mundial global (solo jugadores reales)
    */
-  getGlobalLeaderboard(): LeaderboardEntry[] {
-    const globalRivals: LeaderboardEntry[] = [
-      { rank: 1, username: 'AtlasKing99', avatar: '👑', score: 14850, accuracy: 98, durationSeconds: 0, countryCode: 'ES' },
-      { rank: 2, username: 'GeoMaster_Latam', avatar: '🌎', score: 12400, accuracy: 95, durationSeconds: 0, countryCode: 'MX' },
-      { rank: 3, username: 'Carmen_Cartografa', avatar: '🧭', score: 11200, accuracy: 94, durationSeconds: 0, countryCode: 'AR' },
-      { rank: 4, username: 'Diego_Speed', avatar: '⚡', score: 9850, accuracy: 91, durationSeconds: 0, countryCode: 'CL' },
-      { rank: 5, username: 'Laura_Banderas', avatar: '🚩', score: 8900, accuracy: 89, durationSeconds: 0, countryCode: 'CO' },
-      { rank: 6, username: 'Alvaro_Geek', avatar: '🎓', score: 7650, accuracy: 88, durationSeconds: 0, countryCode: 'ES' },
-      { rank: 7, username: 'Beatriz_World', avatar: '🌟', score: 6500, accuracy: 86, durationSeconds: 0, countryCode: 'PE' }
-    ];
-
+  getGlobalLeaderboard(playerName: string = 'Jugador'): LeaderboardEntry[] {
+    const list: LeaderboardEntry[] = [];
     const state = this.getStreakState();
     const historyEntries = Object.values(state.history);
     const userTotalScore = historyEntries.reduce((acc, curr) => acc + curr.score, 0);
@@ -330,10 +290,10 @@ export class DailyChallengeService {
         historyEntries.reduce((acc, curr) => acc + curr.accuracy, 0) / historyEntries.length
       );
 
-      globalRivals.push({
-        rank: 0,
-        username: 'Tú (Jugador Local)',
-        avatar: '🫵',
+      list.push({
+        rank: 1,
+        username: playerName,
+        avatar: '👤',
         score: userTotalScore,
         accuracy: avgAccuracy,
         durationSeconds: 0,
@@ -342,8 +302,7 @@ export class DailyChallengeService {
       });
     }
 
-    globalRivals.sort((a, b) => b.score - a.score);
-    return globalRivals.map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+    return list;
   }
 
   /**
