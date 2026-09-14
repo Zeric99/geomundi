@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Swords, CheckCircle2, XCircle, Flame, ArrowRight, Home, RotateCcw, Zap, Crown } from 'lucide-react';
 import { DuelState } from '../../types/multiplayer';
 import { MODE_ELO_CONFIGS } from '../../services/multiplayerService';
+import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface DuelResultModalProps {
   duelState: DuelState;
@@ -92,9 +93,11 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
           <div className="grid grid-cols-5 items-center bg-[#121214] p-4 rounded-2xl border border-zinc-800">
             {/* Jugador */}
             <div className="col-span-2 space-y-1 text-center">
-              <div className="w-12 h-12 rounded-xl bg-indigo-950/60 border border-indigo-500/50 mx-auto flex items-center justify-center text-2xl shadow-sm">
-                {duelState.player.avatar}
-              </div>
+              <PlayerAvatar
+                avatar={duelState.player.avatar}
+                name={duelState.player.name}
+                className="w-12 h-12 rounded-xl bg-indigo-950/60 border border-indigo-500/50 mx-auto text-2xl shadow-sm"
+              />
               <div className="font-bold text-xs sm:text-sm text-zinc-100 truncate">{duelState.player.name}</div>
               <div className="text-lg font-mono font-bold text-emerald-400">
                 {duelState.playerScore} pts
@@ -111,9 +114,12 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
 
             {/* Rival */}
             <div className="col-span-2 space-y-1 text-center">
-              <div className="w-12 h-12 rounded-xl bg-rose-950/60 border border-rose-500/50 mx-auto flex items-center justify-center text-2xl shadow-sm">
-                {duelState.rival.avatar}
-              </div>
+              <PlayerAvatar
+                avatar={duelState.rival.avatar}
+                name={duelState.rival.name}
+                fallbackIcon="👤"
+                className="w-12 h-12 rounded-xl bg-rose-950/60 border border-rose-500/50 mx-auto text-2xl shadow-sm"
+              />
               <div className="font-bold text-xs sm:text-sm text-zinc-100 truncate">{duelState.rival.name}</div>
               <div className="text-lg font-mono font-bold text-amber-400">
                 {duelState.rivalScore} pts

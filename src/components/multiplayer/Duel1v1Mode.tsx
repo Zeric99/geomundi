@@ -10,6 +10,7 @@ import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { multiplayerService } from '../../services/multiplayerService';
 import { CITIES_DATASET } from '../../data/citiesData';
 import confetti from 'canvas-confetti';
+import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface Duel1v1ModeProps {
   questions: DuelQuestion[];
@@ -401,9 +402,11 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
       <div className="bg-[#18181B] border border-zinc-800 p-3.5 sm:p-4 rounded-2xl shadow-card-subtle flex items-center justify-between gap-4 flex-wrap shrink-0">
         {/* Jugador */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-950/60 border border-indigo-500/50 flex items-center justify-center text-xl shrink-0">
-            {playerProfile.avatar}
-          </div>
+          <PlayerAvatar
+            avatar={playerProfile.avatar}
+            name={playerProfile.name}
+            className="w-10 h-10 rounded-xl bg-indigo-950/60 border border-indigo-500/50 text-xl"
+          />
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-xs sm:text-sm text-zinc-100">{playerProfile.name}</span>
@@ -453,9 +456,12 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
                 {rivalScore} <span className="text-xs text-zinc-500 font-sans">pts</span>
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-rose-950/60 border border-rose-500/50 flex items-center justify-center text-xl shrink-0">
-              {rivalProfile.avatar}
-            </div>
+            <PlayerAvatar
+              avatar={rivalProfile.avatar}
+              name={rivalProfile.name}
+              fallbackIcon="👤"
+              className="w-10 h-10 rounded-xl bg-rose-950/60 border border-rose-500/50 text-xl"
+            />
           </div>
         )}
       </div>

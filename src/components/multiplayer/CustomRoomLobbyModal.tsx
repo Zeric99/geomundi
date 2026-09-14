@@ -4,6 +4,7 @@ import { Users, Copy, Check, Share2, Play, ArrowLeft, Sparkles, Clock, Globe, Sh
 import { CustomRoomConfig, DuelMode, DuelQuestion, PlayerProfile } from '../../types/multiplayer';
 import { customRoomService, RoomState } from '../../services/customRoomService';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface CustomRoomLobbyModalProps {
   isOpen: boolean;
@@ -201,9 +202,11 @@ export const CustomRoomLobbyModal: React.FC<CustomRoomLobbyModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Jugador 1 (Anfitrión) */}
               <div className="bg-[#121214] border border-zinc-800 p-3.5 rounded-xl flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-950/80 border border-indigo-500/50 flex items-center justify-center text-xl shrink-0">
-                  {isHost ? playerProfile.avatar : hostProfile.avatar}
-                </div>
+                <PlayerAvatar
+                  avatar={isHost ? playerProfile.avatar : hostProfile.avatar}
+                  name={isHost ? playerProfile.name : hostProfile.name}
+                  className="w-10 h-10 rounded-xl bg-indigo-950/80 border border-indigo-500/50 text-xl"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-xs text-zinc-100 truncate">
@@ -227,9 +230,12 @@ export const CustomRoomLobbyModal: React.FC<CustomRoomLobbyModalProps> = ({
               }`}>
                 {(isHost ? guestProfile : playerProfile) ? (
                   <>
-                    <div className="w-10 h-10 rounded-xl bg-rose-950/80 border border-rose-500/50 flex items-center justify-center text-xl shrink-0">
-                      {isHost ? guestProfile?.avatar : playerProfile.avatar}
-                    </div>
+                    <PlayerAvatar
+                      avatar={isHost ? guestProfile?.avatar : playerProfile.avatar}
+                      name={isHost ? guestProfile?.name : playerProfile.name}
+                      fallbackIcon="👤"
+                      className="w-10 h-10 rounded-xl bg-rose-950/80 border border-rose-500/50 text-xl"
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <span className="font-bold text-xs text-zinc-100 truncate">

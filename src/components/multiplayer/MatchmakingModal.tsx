@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Swords, Trophy, Loader2, Zap, ShieldAlert, CheckCircle2, User } from 'lucide-react';
 import { PlayerProfile, MultiplayerType, DuelMode } from '../../types/multiplayer';
 import { multiplayerService } from '../../services/multiplayerService';
+import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface MatchmakingModalProps {
   isOpen: boolean;
@@ -95,9 +96,11 @@ export const MatchmakingModal: React.FC<MatchmakingModalProps> = ({
           <div className="grid grid-cols-5 items-center bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
             {/* Jugador */}
             <div className="col-span-2 space-y-1">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-950/60 border border-indigo-500/50 mx-auto flex items-center justify-center text-3xl shadow-sm">
-                {playerProfile.avatar}
-              </div>
+              <PlayerAvatar
+                avatar={playerProfile.avatar}
+                name={playerProfile.name}
+                className="w-14 h-14 rounded-2xl bg-indigo-950/60 border border-indigo-500/50 mx-auto text-3xl shadow-sm"
+              />
               <div className="font-bold text-sm text-zinc-100 truncate">{playerProfile.name}</div>
               <div className="text-[11px] font-mono text-amber-400 font-bold">
                 {playerProfile.rank.icon} {playerProfile.elo} ELO
@@ -120,9 +123,12 @@ export const MatchmakingModal: React.FC<MatchmakingModalProps> = ({
                   animate={{ scale: 1, opacity: 1 }}
                   className="space-y-1"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-rose-950/60 border border-rose-500/50 mx-auto flex items-center justify-center text-3xl shadow-sm animate-pulse">
-                    {rival.avatar}
-                  </div>
+                  <PlayerAvatar
+                    avatar={rival.avatar}
+                    name={rival.name}
+                    fallbackIcon="👤"
+                    className="w-14 h-14 rounded-2xl bg-rose-950/60 border border-rose-500/50 mx-auto text-3xl shadow-sm animate-pulse"
+                  />
                   <div className="font-bold text-sm text-zinc-100 truncate">{rival.name}</div>
                   <div className="text-[11px] font-mono text-amber-400 font-bold">
                     {rival.rank.icon} {rival.elo} ELO

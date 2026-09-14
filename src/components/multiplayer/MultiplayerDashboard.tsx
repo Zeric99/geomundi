@@ -5,6 +5,7 @@ import { multiplayerService } from '../../services/multiplayerService';
 import { customRoomService } from '../../services/customRoomService';
 import { Continent, Country } from '../../types/country';
 import { CustomRoomLobbyModal } from './CustomRoomLobbyModal';
+import { PlayerAvatar } from '../common/PlayerAvatar';
 
 interface MultiplayerDashboardProps {
   playerProfile: PlayerProfile;
@@ -179,9 +180,11 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
       <div className={`p-6 sm:p-8 rounded-3xl border ${playerProfile.rank.border} bg-[#18181B] relative overflow-hidden shadow-2xl`}>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-4xl shadow-md shrink-0">
-              {playerProfile.avatar}
-            </div>
+            <PlayerAvatar
+              avatar={playerProfile.avatar}
+              name={playerProfile.name}
+              className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-700/80 text-3xl shadow-md"
+            />
 
             <div>
               <div className="flex items-center gap-2">
@@ -421,9 +424,11 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
                       className="bg-[#121214] border border-zinc-800 hover:border-zinc-700 p-4 rounded-2xl flex items-center justify-between gap-4 transition-all shadow-sm group"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-2xl shrink-0 shadow-inner">
-                          {chal.creatorAvatar}
-                        </div>
+                        <PlayerAvatar
+                          avatar={chal.creatorAvatar}
+                          name={chal.creatorName}
+                          className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-700/80 text-2xl shadow-inner"
+                        />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-sm text-zinc-100 truncate">
@@ -615,9 +620,12 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
                     className="bg-[#121214] border border-zinc-800 p-4 rounded-xl flex items-center justify-between gap-4 flex-wrap hover:border-zinc-700 transition-all"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl shrink-0">
-                        {duel.rival?.avatar || '👤'}
-                      </div>
+                      <PlayerAvatar
+                        avatar={duel.rival?.avatar}
+                        name={duel.rival?.name}
+                        fallbackIcon="👤"
+                        className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 text-xl"
+                      />
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-sm text-zinc-100">VS {duel.rival?.name || 'Rival'}</span>
