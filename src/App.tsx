@@ -48,9 +48,29 @@ import { Loader2 } from 'lucide-react';
 
 export function App() {
   const { user, profile, refreshProfile } = useAuth();
-  const [activeTab, setActiveTab] = useState<ActiveTab>('singleplayer');
+
+  // Detectar si el usuario entra mediante un enlace de invitación a sala (#room=GEO-XXXX o ?room=GEO-XXXX)
+  const initialRoomCode = useMemo(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const qRoom = urlParams.get('room');
+      if (qRoom) return qRoom.toUpperCase().trim();
+
+      const hash = window.location.hash;
+      if (hash.includes('room=')) {
+        const match = hash.match(/room=([A-Za-z0-9_-]+)/);
+        if (match && match[1]) return match[1].toUpperCase().trim();
+      }
+    } catch (e) {}
+    return undefined;
+  }, []);
+
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    return initialRoomCode ? 'multiplayer' : 'singleplayer';
+  });
 
   const [explorerContinent, setExplorerContinent] = useState<any>('World');
+
   const [previewFlagCountry, setPreviewFlagCountry] = useState<Country | null>(null);
 
   // Sincronizar logros con la nube si el usuario inicia sesion
@@ -302,23 +322,30 @@ export function App() {
   }, []);
 
   // Iniciar búsqueda de duelo 1v1 o sala personalizada
-  const handleStartDuel = useCallback((type: MultiplayerType, duelMode: DuelMode, customConfig?: CustomRoomConfig) => {
+  const handleStartDuel = useCallback((
+    type: MultiplayerType,
+    duelMode: DuelMode,
+    customConfig?: CustomRoomConfig,
+    customQuestions?: DuelQuestion[],
+    rivalProfile?: PlayerProfile | null
+  ) => {
     setMatchmakingType(type);
     setMatchmakingMode(duelMode);
 
-    if (type === 'custom_room' && customConfig) {
-      // Iniciar directamente sala personalizada
-      const totalRounds = customConfig.totalRounds || 5;
-      const duelQuestions = multiplayerService.generateDuelQuestions(countries, duelMode, totalRounds);
+    if (type === 'custom_room') {
+      const questions = customQuestions && customQuestions.length > 0
+        ? customQuestions
+        : multiplayerService.generateDuelQuestions(countries, duelMode, customConfig?.totalRounds || 5);
 
-      setActiveRivalProfile(null);
+      setActiveRivalProfile(rivalProfile || null);
       setActiveRecordedResults([]);
       setIsChallengeCreation(false);
-      setActiveDuelQuestions(duelQuestions);
+      setActiveDuelQuestions(questions);
     } else {
       handleCreateChallenge(duelMode);
     }
   }, [countries, handleCreateChallenge]);
+
 
   // Finalizar Duelo 1v1 y mostrar resultados (otorgar XP, guardar en Supabase y actualizar ELO)
   const handleFinishDuel = useCallback(async (duelState: DuelState) => {
@@ -714,10 +741,13 @@ export function App() {
             ) : (
               <MultiplayerDashboard
                 playerProfile={playerProfile}
+                countries={countries}
+                initialRoomCode={initialRoomCode}
                 onStartDuel={handleStartDuel}
                 onStartChallenge={handleStartChallenge}
                 onCreateChallenge={handleCreateChallenge}
               />
+
             )}
           </div>
         )}

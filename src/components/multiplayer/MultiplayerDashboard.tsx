@@ -1,23 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Swords, Trophy, Crown, Flame, Target, Flag, Landmark, Users, Sparkles, ArrowRight, Clock, Globe, Shield, Key, RefreshCw } from 'lucide-react';
-import { CommunityChallenge, CustomRoomConfig, DuelMode, DuelState, MultiplayerType, PlayerProfile } from '../../types/multiplayer';
+import { CommunityChallenge, CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile } from '../../types/multiplayer';
 import { multiplayerService } from '../../services/multiplayerService';
-import { Continent } from '../../types/country';
-
+import { customRoomService } from '../../services/customRoomService';
+import { Continent, Country } from '../../types/country';
+import { CustomRoomLobbyModal } from './CustomRoomLobbyModal';
 
 interface MultiplayerDashboardProps {
   playerProfile: PlayerProfile;
-  onStartDuel: (type: MultiplayerType, duelMode: DuelMode, customConfig?: CustomRoomConfig) => void;
+  countries: Country[];
+  initialRoomCode?: string;
+  onStartDuel: (type: MultiplayerType, duelMode: DuelMode, customConfig?: CustomRoomConfig, customQuestions?: DuelQuestion[], rivalProfile?: PlayerProfile | null) => void;
   onStartChallenge?: (challenge: CommunityChallenge) => void;
   onCreateChallenge?: (mode: DuelMode) => void;
 }
 
 export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
   playerProfile,
+  countries,
+  initialRoomCode,
   onStartDuel,
   onStartChallenge,
   onCreateChallenge
 }) => {
+
   const [activeTab, setActiveTab] = useState<'ranked' | 'custom' | 'history'>('ranked');
   const [selectedDuelMode, setSelectedDuelMode] = useState<DuelMode>('pinpoint');
   const [duelHistory] = useState<DuelState[]>(() => multiplayerService.getDuelHistory());
@@ -43,6 +49,14 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
     loadChallenges();
   }, []);
 
+  // Estado de la sala de espera privada (Lobby)
+  const [activeLobby, setActiveLobby] = useState<{
+    isHost: boolean;
+    roomCode: string;
+    config: CustomRoomConfig;
+    questions: DuelQuestion[];
+  } | null>(null);
+
   // Estado para la creación de sala personalizada
   const [customMode, setCustomMode] = useState<DuelMode>('pinpoint');
   const [customContinent, setCustomContinent] = useState<Continent>('World');
@@ -53,9 +67,32 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
   const [joinCode, setJoinCode] = useState<string>('');
   const [joinError, setJoinError] = useState<string | null>(null);
 
-  // Crear sala y empezar partida
+  // Si se pasa un código de sala en la URL, abrir automáticamente
+  useEffect(() => {
+    if (initialRoomCode) {
+      setActiveTab('custom');
+      setJoinCode(initialRoomCode);
+      const code = initialRoomCode.toUpperCase().trim();
+      const config: CustomRoomConfig = {
+        roomCode: code,
+        mode: 'pinpoint',
+        continent: 'World',
+        totalRounds: 5,
+        timeLimitSeconds: 30,
+        isHost: false
+      };
+      setActiveLobby({
+        isHost: false,
+        roomCode: code,
+        config,
+        questions: []
+      });
+    }
+  }, [initialRoomCode]);
+
+  // Crear sala y abrir Lobby de espera para invitar amigos
   const handleCreateRoom = () => {
-    const roomCode = multiplayerService.generateRoomCode();
+    const roomCode = customRoomService.generateRoomCode();
     const config: CustomRoomConfig = {
       roomCode,
       mode: customMode,
@@ -64,27 +101,40 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
       timeLimitSeconds: customTimeLimit,
       isHost: true
     };
-    onStartDuel('custom_room', customMode, config);
+    const questions = multiplayerService.generateDuelQuestions(countries, customMode, customRounds);
+    setActiveLobby({
+      isHost: true,
+      roomCode,
+      config,
+      questions
+    });
   };
 
-  // Unirse a sala con código
+  // Unirse a sala con código y abrir Lobby
   const handleJoinRoom = () => {
-    if (!joinCode.trim() || joinCode.trim().length < 4) {
-      setJoinError('Introduce un código de sala válido (ej. ROOM-4921)');
+    const code = joinCode.trim().toUpperCase();
+    if (!code || code.length < 4) {
+      setJoinError('Introduce un código de sala válido (ej. GEO-4821)');
       return;
     }
 
     setJoinError(null);
     const config: CustomRoomConfig = {
-      roomCode: joinCode.toUpperCase().trim(),
+      roomCode: code,
       mode: 'pinpoint',
       continent: 'World',
       totalRounds: 5,
       timeLimitSeconds: 30,
       isHost: false
     };
-    onStartDuel('custom_room', 'pinpoint', config);
+    setActiveLobby({
+      isHost: false,
+      roomCode: code,
+      config,
+      questions: []
+    });
   };
+
 
   const modesInfo: { id: DuelMode; title: string; desc: string; icon: React.ReactNode; color: string }[] = [
     {
@@ -579,6 +629,27 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
           )}
         </div>
       )}
+
+
+      {/* Modal de Sala de Espera Privada (Lobby) */}
+      {activeLobby && (
+        <CustomRoomLobbyModal
+          isOpen={Boolean(activeLobby)}
+          isHost={activeLobby.isHost}
+          roomCode={activeLobby.roomCode}
+
+          config={activeLobby.config}
+          playerProfile={playerProfile}
+          questions={activeLobby.questions}
+          onStartGame={(questions, rivalProfile) => {
+            const lobby = activeLobby;
+            setActiveLobby(null);
+            onStartDuel('custom_room', lobby.config.mode, lobby.config, questions, rivalProfile);
+          }}
+          onClose={() => setActiveLobby(null)}
+        />
+      )}
     </div>
   );
 };
+
