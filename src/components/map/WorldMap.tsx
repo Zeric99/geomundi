@@ -14,6 +14,7 @@ import { CaribbeanInsetMap } from './CaribbeanInsetMap';
 import { OceaniaInsetMap } from './OceaniaInsetMap';
 import { countriesService } from '../../services/countriesService';
 import { FALLBACK_MAP_URL, FALLBACK_COUNTRIES, GEEK_TERRITORIES } from '../../data/fallbackCountries';
+import { mapPreloadService } from '../../services/mapPreloadService';
 import { Maximize2, Minimize2, Eye, EyeOff } from 'lucide-react';
 
 // Mapa de alta resolución 1:50,000,000 con todos los contornos geográficos reales
@@ -92,7 +93,18 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   // En modos competitivos nunca se permiten pistas ni tooltips
   const hintsAllowed = Boolean(enableTooltip && !isCompetitive);
 
-  const [geoUrl, setGeoUrl] = useState<string>(LOCAL_GEO_URL);
+  const [geoUrl, setGeoUrl] = useState<any>(() => {
+    const immediate = mapPreloadService.getImmediateData();
+    return immediate || LOCAL_GEO_URL;
+  });
+
+  useEffect(() => {
+    mapPreloadService.getMapData().then((data) => {
+      if (data) {
+        setGeoUrl(data);
+      }
+    });
+  }, []);
   const [hoveredCountry, setHoveredCountry] = useState<Country | null>(null);
   const [isCardPinned, setIsCardPinned] = useState<boolean>(false);
 

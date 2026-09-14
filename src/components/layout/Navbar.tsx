@@ -1,5 +1,5 @@
-import React from 'react';
-import { Globe2, Brain, Compass, Gamepad2, Volume2, VolumeX, Trophy, Award, Coffee, Swords, User } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Globe2, Brain, Compass, Gamepad2, Volume2, Volume1, VolumeX, Trophy, Award, Coffee, Swords, User, Smartphone } from 'lucide-react';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { UserMenu } from '../auth/UserMenu';
 
@@ -26,8 +26,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLeaderboard,
   onOpenProfile
 }) => {
-  const { soundEnabled, toggleSound } = useAudioFeedback();
+  const { soundEnabled, toggleSound, volume, setVolume, hapticsEnabled, toggleHaptics, playClickSound } = useAudioFeedback();
+  const [isAudioMenuOpen, setIsAudioMenuOpen] = useState<boolean>(false);
+  const audioMenuRef = useRef<HTMLDivElement>(null);
   const isSingle = activeTab === 'game' || activeTab === 'singleplayer';
+
+  // Cerrar popover al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (audioMenuRef.current && !audioMenuRef.current.contains(e.target as Node)) {
+        setIsAudioMenuOpen(false);
+      }
+    };
+    if (isAudioMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isAudioMenuOpen]);
 
   return (
     <header className="sticky top-0 z-40 w-full bg-black border-b border-zinc-800 shadow-md">
@@ -144,13 +161,102 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          <button
-            onClick={toggleSound}
-            title={soundEnabled ? 'Silenciar audio' : 'Activar efectos de sonido'}
-            className="p-2 sm:p-2.5 rounded-xl bg-[#18181B] hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition-colors shrink-0"
-          >
-            {soundEnabled ? <Volume2 className="w-4 h-4 text-zinc-300" /> : <VolumeX className="w-4 h-4 text-zinc-500" />}
-          </button>
+          {/* Menú Flotante de Audio y Vibración Háptica */}
+          <div className="relative" ref={audioMenuRef}>
+            <button
+              onClick={() => setIsAudioMenuOpen(prev => !prev)}
+              title={soundEnabled ? `Volumen: ${Math.round(volume * 100)}%` : 'Audio Silenciado'}
+              className={`p-2 sm:p-2.5 rounded-xl border transition-all flex items-center justify-center shrink-0 ${
+                isAudioMenuOpen
+                  ? 'bg-cyan-950/70 border-cyan-500/60 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
+                  : soundEnabled
+                  ? 'bg-[#18181B] hover:bg-zinc-800 text-zinc-300 border-zinc-800 hover:border-zinc-700'
+                  : 'bg-[#18181B] hover:bg-zinc-800 text-zinc-500 border-zinc-800'
+              }`}
+            >
+              {!soundEnabled || volume === 0 ? (
+                <VolumeX className="w-4 h-4 text-zinc-500" />
+              ) : volume < 0.5 ? (
+                <Volume1 className="w-4 h-4 text-cyan-400" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-cyan-300" />
+              )}
+            </button>
+
+            {/* Popover desplegable de configuración de audio y háptica */}
+            {isAudioMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-64 bg-[#18181B] border border-zinc-700/80 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-4 backdrop-blur-xl">
+                <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+                  <span className="text-xs font-bold text-zinc-100 flex items-center gap-1.5">
+                    <Volume2 className="w-4 h-4 text-cyan-400" />
+                    <span>Efectos y Audio</span>
+                  </span>
+                  <button
+                    onClick={() => {
+                      toggleSound();
+                      playClickSound();
+                    }}
+                    className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-md border transition-all ${
+                      soundEnabled
+                        ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+                        : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                    }`}
+                  >
+                    {soundEnabled ? 'ACTIVO' : 'MUTE'}
+                  </button>
+                </div>
+
+                {/* Slider de Volumen */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
+                    <span>Volumen</span>
+                    <span className="text-cyan-400 font-bold">
+                      {soundEnabled ? `${Math.round(volume * 100)}%` : '0%'}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={soundEnabled ? volume : 0}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setVolume(val);
+                      playClickSound();
+                    }}
+                    className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                  />
+                </div>
+
+                {/* Toggle de Vibración Háptica (Móviles) */}
+                <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-zinc-400" />
+                    <div>
+                      <span className="text-xs font-bold text-zinc-200 block leading-tight">Vibración</span>
+                      <span className="text-[10px] text-zinc-500">Tacto al acertar / fallar</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      toggleHaptics();
+                      playClickSound();
+                    }}
+                    className={`w-9 h-5 rounded-full transition-colors relative p-0.5 ${
+                      hapticsEnabled ? 'bg-cyan-500' : 'bg-zinc-800'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                        hapticsEnabled ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Menú de Usuario y Google Auth */}
           <UserMenu onOpenLeaderboard={onOpenLeaderboard} onOpenProfile={onOpenProfile} />

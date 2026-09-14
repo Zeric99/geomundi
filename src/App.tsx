@@ -20,7 +20,6 @@ import { Duel1v1Mode } from './components/multiplayer/Duel1v1Mode';
 import { DuelResultModal } from './components/multiplayer/DuelResultModal';
 import { GameOverModal } from './components/game/GameOverModal';
 import { FlagModal } from './components/common/FlagModal';
-import { WireframeGlobe } from './components/common/WireframeGlobe';
 import { BackgroundStardust } from './components/common/BackgroundStardust';
 import { useCountriesData } from './hooks/useCountriesData';
 import { useStatsManager } from './hooks/useStatsManager';
@@ -31,7 +30,8 @@ import { TutorAdvice, UserStatsState } from './types/stats';
 import { Achievement } from './types/achievements';
 import { CommunityChallenge, CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile, PlayerRoundResult } from './types/multiplayer';
 
-// Carga diferida (lazy-loading) de modales secundarios para acelerar la carga en móvil
+// Carga diferida (lazy-loading) del globo 3D Three.js y modales secundarios para acelerar la carga inicial
+const WireframeGlobe = React.lazy(() => import('./components/common/WireframeGlobe').then(m => ({ default: m.WireframeGlobe })));
 const AchievementsModal = React.lazy(() => import('./components/achievements/AchievementsModal').then(m => ({ default: m.AchievementsModal })));
 const DonateModal = React.lazy(() => import('./components/common/DonateModal').then(m => ({ default: m.DonateModal })));
 const DailyArchiveModal = React.lazy(() => import('./components/daily/DailyArchiveModal').then(m => ({ default: m.DailyArchiveModal })));
@@ -43,6 +43,7 @@ import { achievementService } from './services/achievementService';
 import { dailyChallengeService, DailyStageQuestion } from './services/dailyChallengeService';
 import { challengeService } from './services/challengeService';
 import { multiplayerService } from './services/multiplayerService';
+import { mapPreloadService } from './services/mapPreloadService';
 import { authService } from './services/authService';
 import { cloudSyncService } from './services/cloudSyncService';
 import { storageService } from './services/storageService';
@@ -127,6 +128,11 @@ export function App() {
       });
     }
   }, [profile, user]);
+
+  // Iniciar pre-carga y caché de mapas en segundo plano para velocidad instantánea (0ms)
+  useEffect(() => {
+    mapPreloadService.startPreload();
+  }, []);
 
 
   // Carga de Países
@@ -605,7 +611,9 @@ export function App() {
       {/* Globo Terráqueo 3D Wireframe en el Lateral Derecho (Exclusivo en Menú Un Jugador) */}
       {showGlobeInSingleplayerMenu && (
         <div className="fixed -top-12 -right-36 sm:-right-28 md:-right-20 lg:-right-10 pointer-events-none z-0 opacity-90 overflow-visible select-none">
-          <WireframeGlobe size={680} />
+          <React.Suspense fallback={null}>
+            <WireframeGlobe size={680} />
+          </React.Suspense>
         </div>
       )}
 
