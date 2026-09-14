@@ -17,8 +17,8 @@ import { AchievementToast } from './components/achievements/AchievementToast';
 import { AchievementsModal } from './components/achievements/AchievementsModal';
 import { DonateModal } from './components/common/DonateModal';
 import { MultiplayerDashboard } from './components/multiplayer/MultiplayerDashboard';
-import { MatchmakingModal } from './components/multiplayer/MatchmakingModal';
 import { Duel1v1Mode } from './components/multiplayer/Duel1v1Mode';
+
 import { DuelResultModal } from './components/multiplayer/DuelResultModal';
 import { GameOverModal } from './components/game/GameOverModal';
 import { FlagModal } from './components/common/FlagModal';
@@ -31,7 +31,7 @@ import { Country } from './types/country';
 import { GameConfig, GameSummary } from './types/game';
 import { TutorAdvice } from './types/stats';
 import { Achievement } from './types/achievements';
-import { CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile } from './types/multiplayer';
+import { CommunityChallenge, CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile, PlayerRoundResult } from './types/multiplayer';
 import { DailyArchiveModal } from './components/daily/DailyArchiveModal';
 import { LeaderboardModal } from './components/leaderboard/LeaderboardModal';
 import { UserProfileModal } from './components/profile/UserProfileModal';
@@ -47,8 +47,9 @@ import { useAuth } from './contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 export function App() {
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>('singleplayer');
+
   const [explorerContinent, setExplorerContinent] = useState<any>('World');
   const [previewFlagCountry, setPreviewFlagCountry] = useState<Country | null>(null);
 
@@ -77,8 +78,30 @@ export function App() {
   const [matchmakingMode, setMatchmakingMode] = useState<DuelMode>('countries');
   const [activeDuelQuestions, setActiveDuelQuestions] = useState<DuelQuestion[]>([]);
   const [activeRivalProfile, setActiveRivalProfile] = useState<PlayerProfile | null>(null);
+  const [activeRecordedResults, setActiveRecordedResults] = useState<PlayerRoundResult[]>([]);
+  const [isChallengeCreation, setIsChallengeCreation] = useState<boolean>(false);
+  const [activeChallengeId, setActiveChallengeId] = useState<string | undefined>(undefined);
   const [activeDuelState, setActiveDuelState] = useState<DuelState | null>(null);
   const [finishedDuelResult, setFinishedDuelResult] = useState<DuelState | null>(null);
+
+  // Sincronizar el perfil multijugador con el usuario autenticado de Supabase
+  useEffect(() => {
+    if (profile) {
+      setPlayerProfile({
+        id: profile.id,
+        name: profile.nickname || user?.user_metadata?.full_name || 'Tú',
+        avatar: profile.avatar_url || user?.user_metadata?.avatar_url || '🎓',
+        elo: profile.elo || 1200,
+        rank: multiplayerService.getRankInfo(profile.elo || 1200),
+        wins: profile.wins || 0,
+        losses: profile.losses || 0,
+        streak: profile.win_streak || 0,
+        xp: profile.xp || 0,
+        level: profile.level || 1
+      });
+    }
+  }, [profile, user]);
+
 
   // Carga de Países
   const { countries, isLoading } = useCountriesData();
@@ -244,6 +267,40 @@ export function App() {
     }
   }, [countries, startGame]);
 
+  // Iniciar creación de desafío propio (grabar partida a 5 rondas)
+  const handleCreateChallenge = useCallback((duelMode: DuelMode) => {
+    setMatchmakingMode(duelMode);
+    setMatchmakingType('ranked');
+    const duelQuestions = multiplayerService.generateDuelQuestions(countries, duelMode, 5);
+    setActiveDuelQuestions(duelQuestions);
+    setActiveRivalProfile(null);
+    setActiveRecordedResults([]);
+    setIsChallengeCreation(true);
+    setActiveChallengeId(undefined);
+  }, [countries]);
+
+  // Desafiar una partida grabada de otro jugador de la comunidad
+  const handleStartChallenge = useCallback((challenge: CommunityChallenge) => {
+    setMatchmakingMode(challenge.mode);
+    setMatchmakingType('ranked');
+    setActiveDuelQuestions(challenge.questions);
+    setActiveRivalProfile({
+      id: challenge.creatorId,
+      name: challenge.creatorName,
+      avatar: challenge.creatorAvatar || '🎓',
+      elo: challenge.creatorElo,
+      rank: multiplayerService.getRankInfo(challenge.creatorElo),
+      wins: 0,
+      losses: 0,
+      streak: 0,
+      xp: 0,
+      level: 1
+    });
+    setActiveRecordedResults(challenge.roundResults);
+    setIsChallengeCreation(false);
+    setActiveChallengeId(challenge.id);
+  }, []);
+
   // Iniciar búsqueda de duelo 1v1 o sala personalizada
   const handleStartDuel = useCallback((type: MultiplayerType, duelMode: DuelMode, customConfig?: CustomRoomConfig) => {
     setMatchmakingType(type);
@@ -251,31 +308,88 @@ export function App() {
 
     if (type === 'custom_room' && customConfig) {
       // Iniciar directamente sala personalizada
-      const rival = multiplayerService.generateRival(playerProfile.elo);
       const totalRounds = customConfig.totalRounds || 5;
       const duelQuestions = multiplayerService.generateDuelQuestions(countries, duelMode, totalRounds);
 
-      setActiveRivalProfile(rival);
+      setActiveRivalProfile(null);
+      setActiveRecordedResults([]);
+      setIsChallengeCreation(false);
       setActiveDuelQuestions(duelQuestions);
     } else {
-      setIsMatchmakingOpen(true);
+      handleCreateChallenge(duelMode);
     }
-  }, [countries, playerProfile.elo]);
+  }, [countries, handleCreateChallenge]);
 
-  // Oponente encontrado -> Iniciar Duelo 1v1
-  const handleMatchFound = useCallback((rival: PlayerProfile) => {
-    const duelQuestions = multiplayerService.generateDuelQuestions(countries, matchmakingMode, 5);
-    setActiveDuelQuestions(duelQuestions);
-    setActiveRivalProfile(rival);
-    setIsMatchmakingOpen(false);
-  }, [countries, matchmakingMode]);
-
-  // Finalizar Duelo 1v1 y mostrar resultados (otorgar XP y evaluar logros)
-  const handleFinishDuel = useCallback((duelState: DuelState) => {
+  // Finalizar Duelo 1v1 y mostrar resultados (otorgar XP, guardar en Supabase y actualizar ELO)
+  const handleFinishDuel = useCallback(async (duelState: DuelState) => {
     setActiveDuelQuestions([]);
     setActiveRivalProfile(null);
+    setActiveRecordedResults([]);
+    setIsChallengeCreation(false);
     setFinishedDuelResult(duelState);
-    setPlayerProfile(duelState.player);
+
+    // 1. Si era una grabación de desafío propio:
+    if (duelState.isChallengeCreation) {
+      const creatorName = profile?.nickname || user?.user_metadata?.full_name || 'GeoStriker';
+      const creatorAvatar = profile?.avatar_url || user?.user_metadata?.avatar_url || '🎓';
+      const creatorElo = profile?.elo || playerProfile.elo || 1200;
+      const creatorId = user?.id || 'player_local';
+
+      const newChallenge: CommunityChallenge = {
+        id: `chal_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        creatorId,
+        creatorName,
+        creatorAvatar,
+        creatorElo,
+        mode: duelState.duelMode,
+        score: duelState.playerScore,
+        totalTimeMs: duelState.playerTimeTotalMs,
+        questions: duelState.questions,
+        roundResults: duelState.playerResults,
+        createdAt: new Date().toISOString()
+      };
+
+      await multiplayerService.saveCommunityChallenge(newChallenge);
+    }
+
+    // 2. Si era un desafío contra otro jugador (Ranked):
+    if (!duelState.isChallengeCreation && duelState.type === 'ranked') {
+      const isWin = duelState.winner === 'player';
+      const isDraw = duelState.winner === 'tie';
+      const currentElo = profile?.elo || playerProfile.elo || 1200;
+      const rivalElo = duelState.rival?.elo || 1200;
+
+      const eloChange = multiplayerService.calculateEloChange(
+        currentElo,
+        rivalElo,
+        duelState.winner || 'tie',
+        duelState.playerScore,
+        duelState.rivalScore
+      );
+      const newElo = Math.max(500, currentElo + eloChange);
+      const rankTier = multiplayerService.getRankInfo(newElo).tier;
+
+      if (user) {
+        await authService.updateDuelStats(
+          user.id,
+          newElo,
+          isWin,
+          isDraw,
+          duelState.xpEarned || 150,
+          rankTier
+        );
+        await refreshProfile();
+      }
+
+      setPlayerProfile(prev => ({
+        ...prev,
+        elo: newElo,
+        rank: multiplayerService.getRankInfo(newElo),
+        wins: prev.wins + (isWin ? 1 : 0),
+        losses: prev.losses + (!isWin && !isDraw ? 1 : 0),
+        streak: isWin ? prev.streak + 1 : 0
+      }));
+    }
 
     // Evaluar logros tras el duelo multijugador
     const isWin = duelState.winner === 'player';
@@ -296,7 +410,8 @@ export function App() {
     if (newAchievements.length > 0) {
       setUnlockedAchievement(newAchievements[0]);
     }
-  }, [stats, user?.id]);
+  }, [profile, user, playerProfile.elo, refreshProfile, stats]);
+
 
   // Manejar acción desde tarjeta del Tutor
   const handleAdviceAction = useCallback((advice: TutorAdvice) => {
@@ -578,27 +693,35 @@ export function App() {
         {/* PESTAÑA 2: MULTIJUGADOR ⚔️ (RANKED & AMISTOSO) */}
         {activeTab === 'multiplayer' && (
           <div className="h-full flex flex-col min-h-0 overflow-hidden">
-            {activeDuelQuestions.length > 0 && activeRivalProfile ? (
+            {activeDuelQuestions.length > 0 ? (
               <Duel1v1Mode
                 questions={activeDuelQuestions}
                 playerProfile={playerProfile}
                 rivalProfile={activeRivalProfile}
+                recordedRivalResults={activeRecordedResults}
                 duelMode={matchmakingMode}
                 isRanked={matchmakingType === 'ranked'}
+                isChallengeCreation={isChallengeCreation}
+                challengeId={activeChallengeId}
                 onFinishDuel={handleFinishDuel}
                 onQuit={() => {
                   setActiveDuelQuestions([]);
                   setActiveRivalProfile(null);
+                  setActiveRecordedResults([]);
+                  setIsChallengeCreation(false);
                 }}
               />
             ) : (
               <MultiplayerDashboard
                 playerProfile={playerProfile}
                 onStartDuel={handleStartDuel}
+                onStartChallenge={handleStartChallenge}
+                onCreateChallenge={handleCreateChallenge}
               />
             )}
           </div>
         )}
+
 
         {/* PESTAÑA 3: EXPLORAR */}
         {activeTab === 'explore' && (
@@ -637,15 +760,7 @@ export function App() {
         hideDetails={activeTab === 'game' || activeTab === 'singleplayer'}
       />
 
-      {/* Modal de Matchmaking VS 1v1 */}
-      <MatchmakingModal
-        isOpen={isMatchmakingOpen}
-        type={matchmakingType}
-        duelMode={matchmakingMode}
-        playerProfile={playerProfile}
-        onMatchFound={handleMatchFound}
-        onCancel={() => setIsMatchmakingOpen(false)}
-      />
+
 
       {/* Modal de Resultado de Duelo 1v1 */}
       {finishedDuelResult && (

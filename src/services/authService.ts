@@ -82,5 +82,56 @@ export const authService = {
       .update({ nickname, updated_at: new Date().toISOString() })
       .eq('id', userId);
     return !error;
+  },
+
+  async updateDuelStats(
+    userId: string,
+    newElo: number,
+    isWin: boolean,
+    isDraw: boolean,
+    xpEarned: number,
+    rankTier: string
+  ): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const current = await this.getProfile(userId);
+      if (!current) return false;
+
+      const newTotal = (current.total_duels || 0) + 1;
+      const newWins = (current.wins || 0) + (isWin ? 1 : 0);
+      const newLosses = (current.losses || 0) + (!isWin && !isDraw ? 1 : 0);
+      const newDraws = (current.draws || 0) + (isDraw ? 1 : 0);
+      const newStreak = isWin ? (current.win_streak || 0) + 1 : 0;
+      const bestStreak = Math.max(current.best_win_streak || 0, newStreak);
+      const newXp = (current.xp || 0) + xpEarned;
+      const newLevel = Math.floor(Math.sqrt(newXp / 100)) + 1;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          elo: newElo,
+          rank_tier: rankTier,
+          total_duels: newTotal,
+          wins: newWins,
+          losses: newLosses,
+          draws: newDraws,
+          win_streak: newStreak,
+          best_win_streak: bestStreak,
+          xp: newXp,
+          level: newLevel,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error actualizando stats de duelo en profiles:', error);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.error('Excepción actualizando stats de duelo:', e);
+      return false;
+    }
   }
 };
+

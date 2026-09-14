@@ -1,21 +1,47 @@
-import React, { useState } from 'react';
-import { Swords, Trophy, Crown, Flame, Target, Flag, Landmark, Users, Sparkles, ArrowRight, Clock, Globe, Shield, Key } from 'lucide-react';
-import { CustomRoomConfig, DuelMode, DuelState, MultiplayerType, PlayerProfile } from '../../types/multiplayer';
+import React, { useState, useEffect } from 'react';
+import { Swords, Trophy, Crown, Flame, Target, Flag, Landmark, Users, Sparkles, ArrowRight, Clock, Globe, Shield, Key, RefreshCw } from 'lucide-react';
+import { CommunityChallenge, CustomRoomConfig, DuelMode, DuelState, MultiplayerType, PlayerProfile } from '../../types/multiplayer';
 import { multiplayerService } from '../../services/multiplayerService';
 import { Continent } from '../../types/country';
+
 
 interface MultiplayerDashboardProps {
   playerProfile: PlayerProfile;
   onStartDuel: (type: MultiplayerType, duelMode: DuelMode, customConfig?: CustomRoomConfig) => void;
+  onStartChallenge?: (challenge: CommunityChallenge) => void;
+  onCreateChallenge?: (mode: DuelMode) => void;
 }
 
 export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
   playerProfile,
-  onStartDuel
+  onStartDuel,
+  onStartChallenge,
+  onCreateChallenge
 }) => {
   const [activeTab, setActiveTab] = useState<'ranked' | 'custom' | 'history'>('ranked');
   const [selectedDuelMode, setSelectedDuelMode] = useState<DuelMode>('pinpoint');
   const [duelHistory] = useState<DuelState[]>(() => multiplayerService.getDuelHistory());
+
+  // Estado de los desafíos de la comunidad
+  const [challenges, setChallenges] = useState<CommunityChallenge[]>([]);
+  const [isLoadingChallenges, setIsLoadingChallenges] = useState<boolean>(true);
+  const [filterMode, setFilterMode] = useState<DuelMode | 'all'>('all');
+
+  const loadChallenges = async () => {
+    setIsLoadingChallenges(true);
+    try {
+      const data = await multiplayerService.getCommunityChallenges(30);
+      setChallenges(data);
+    } catch (e) {
+      console.error('Error cargando desafíos:', e);
+    } finally {
+      setIsLoadingChallenges(false);
+    }
+  };
+
+  useEffect(() => {
+    loadChallenges();
+  }, []);
 
   // Estado para la creación de sala personalizada
   const [customMode, setCustomMode] = useState<DuelMode>('pinpoint');
@@ -91,6 +117,8 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
     }
   ];
 
+  const filteredChallenges = challenges.filter(c => filterMode === 'all' || c.mode === filterMode);
+
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-200">
       {/* Tarjeta de Rango ELO y Perfil del Jugador con Nivel y XP */}
@@ -98,7 +126,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-zinc-900/90 border border-zinc-700/80 flex items-center justify-center text-4xl shadow-md shrink-0">
-              {playerProfile.rank.icon}
+              {playerProfile.avatar}
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -144,7 +172,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
           }`}
         >
           <Trophy className="w-4 h-4 text-amber-400" />
-          <span>🏆 Modo Clasificatorio (Ranked ELO)</span>
+          <span>🏆 Desafíos Asíncronos (Ranked ELO)</span>
         </button>
 
         <button
@@ -156,7 +184,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
           }`}
         >
           <Users className="w-4 h-4 text-indigo-400" />
-          <span>🏠 Salas Personalizadas (Custom Rooms)</span>
+          <span>🏠 Salas Privadas (Código de Amigos)</span>
         </button>
 
         <button
@@ -172,16 +200,24 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
         </button>
       </div>
 
-      {/* PESTAÑA 1: MODOS RANKED (COMPETITIVO ELO) */}
+      {/* PESTAÑA 1: DESAFÍOS CLASIFICATORIOS (GRABAR PARTIDA O RETAR A JUGADORES REALES) */}
       {activeTab === 'ranked' && (
         <div className="space-y-6">
+          {/* SECCIÓN 1: GRABAR Y PUBLICAR PARTIDA PROPIA */}
           <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-zinc-200 flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-amber-400" />
-                <span>Selecciona el Modo Ranked (Todas a 5 Rondas)</span>
-              </h3>
-              <span className="text-xs text-amber-400 font-mono font-semibold">Ganar suma ELO (+15 a +32 pts)</span>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-400" />
+                  <span>1. Graba tu Partida y Lanza un Desafío</span>
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Juega 5 rondas (30 segundos). Al terminar, tu partida quedará registrada en el tablón público para que otros te reten.
+                </p>
+              </div>
+              <span className="text-xs text-amber-400 font-mono font-semibold bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">
+                ⏱️ 30s por partida · 5 Rondas
+              </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -203,7 +239,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
                       <div className="flex items-center justify-between">
                         <h4 className="font-bold text-base text-zinc-100">{mode.title}</h4>
                         <span className="text-[11px] bg-zinc-800 text-zinc-300 font-mono px-2 py-0.5 rounded border border-zinc-700">
-                          5 Rondas
+                          30s
                         </span>
                       </div>
                       <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
@@ -215,19 +251,151 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
               ))}
             </div>
 
-            {/* Botón de Inicio de Búsqueda Ranked */}
             <div className="pt-2">
               <button
-                onClick={() => onStartDuel('ranked', selectedDuelMode)}
+                onClick={() => onCreateChallenge ? onCreateChallenge(selectedDuelMode) : onStartDuel('ranked', selectedDuelMode)}
                 className="w-full py-4 bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-zinc-950 font-black rounded-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 text-base uppercase tracking-wider"
               >
                 <Swords className="w-5 h-5 fill-zinc-950" />
-                <span>Buscar Partida Ranked 1v1</span>
+                <span>Jugar y Registrar Desafío ({modesInfo.find(m => m.id === selectedDuelMode)?.title})</span>
               </button>
             </div>
           </div>
+
+          {/* SECCIÓN 2: TABLÓN DE DESAFÍOS DE JUGADORES REALES (RETAR) */}
+          <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                  <Swords className="w-5 h-5 text-cyan-400" />
+                  <span>2. Tablón de Desafíos de Jugadores Reales</span>
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Elige a quién retar según su ELO o modalidad. Jugarás exactamente contra su partida grabada.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={loadChallenges}
+                  disabled={isLoadingChallenges}
+                  className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-all text-xs flex items-center gap-1.5 border border-zinc-700"
+                  title="Actualizar desafíos"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingChallenges ? 'animate-spin text-cyan-400' : ''}`} />
+                  <span>Refrescar</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filtros de modalidad */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs scrollbar-none">
+              {(['all', 'pinpoint', 'countries', 'capitals', 'flags'] as const).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setFilterMode(mode)}
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all whitespace-nowrap ${
+                    filterMode === mode
+                      ? 'bg-cyan-950/80 text-cyan-300 border border-cyan-700/60 shadow-sm'
+                      : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+                  }`}
+                >
+                  {mode === 'all'
+                    ? `Todos (${challenges.length})`
+                    : mode === 'pinpoint'
+                    ? '🎯 Puntería'
+                    : mode === 'countries'
+                    ? '🗺️ Países'
+                    : mode === 'capitals'
+                    ? '🏛️ Capitales'
+                    : '🚩 Banderas'}
+                </button>
+              ))}
+            </div>
+
+            {/* Lista de Desafíos */}
+            {isLoadingChallenges ? (
+              <div className="py-12 text-center text-zinc-400 font-mono text-xs flex items-center justify-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
+                <span>Cargando desafíos reales de la comunidad...</span>
+              </div>
+            ) : filteredChallenges.length === 0 ? (
+              <div className="p-8 text-center border border-dashed border-zinc-800 rounded-2xl space-y-3">
+                <p className="text-sm text-zinc-300 font-medium">
+                  Aún no hay desafíos registrados en esta categoría.
+                </p>
+                <p className="text-xs text-zinc-500 max-w-md mx-auto">
+                  ¡Sé el primero en jugar una partida arriba! Se publicará aquí para que otros jugadores compitan contra tu puntuación y ELO.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {filteredChallenges.map(chal => {
+                  const isSelf = chal.creatorId === playerProfile.id || chal.creatorName === playerProfile.name;
+                  const rankInfo = multiplayerService.getRankInfo(chal.creatorElo);
+                  const modeBadge =
+                    chal.mode === 'pinpoint' ? '🎯 Puntería' :
+                    chal.mode === 'flags' ? '🚩 Banderas' :
+                    chal.mode === 'capitals' ? '🏛️ Capitales' : '🗺️ Países';
+
+                  return (
+                    <div
+                      key={chal.id}
+                      className="bg-[#121214] border border-zinc-800 hover:border-zinc-700 p-4 rounded-2xl flex items-center justify-between gap-4 transition-all shadow-sm group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                          {chal.creatorAvatar}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-sm text-zinc-100 truncate">
+                              {chal.creatorName}
+                            </span>
+                            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border bg-zinc-900 ${rankInfo.color} ${rankInfo.border}`}>
+                              {rankInfo.icon} {chal.creatorElo}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 mt-1 text-xs">
+                            <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-800/40 px-2 py-0.5 rounded">
+                              {modeBadge}
+                            </span>
+                            <span className="font-mono font-bold text-emerald-400">
+                              {chal.score} pts
+                            </span>
+                            <span className="text-zinc-500">•</span>
+                            <span className="font-mono text-zinc-400 text-[11px]">
+                              ⏱️ {Math.round(chal.totalTimeMs / 1000)}s
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        {isSelf ? (
+                          <span className="text-[11px] font-mono text-zinc-500 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-xl block text-center">
+                            Tu partida
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => onStartChallenge && onStartChallenge(chal)}
+                            className="py-2 px-4 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1.5"
+                          >
+                            <Swords className="w-3.5 h-3.5" />
+                            <span>Desafiar</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
+
 
       {/* PESTAÑA 2: SALAS PERSONALIZADAS (CUSTOM ROOMS) */}
       {activeTab === 'custom' && (

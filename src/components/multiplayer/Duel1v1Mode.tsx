@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Clock, Trophy, CheckCircle2, XCircle, Flame, ArrowRight, Zap, Target } from 'lucide-react';
+import { Swords, Clock, Trophy, CheckCircle2, XCircle, Flame, ArrowRight, Zap, Target, Sparkles } from 'lucide-react';
 import { Country, CountryMapStatus } from '../../types/country';
 import { DuelMode, DuelQuestion, DuelState, PlayerProfile, PlayerRoundResult } from '../../types/multiplayer';
 import { WorldMap } from '../map/WorldMap';
@@ -14,9 +14,12 @@ import confetti from 'canvas-confetti';
 interface Duel1v1ModeProps {
   questions: DuelQuestion[];
   playerProfile: PlayerProfile;
-  rivalProfile: PlayerProfile;
+  rivalProfile?: PlayerProfile | null;
+  recordedRivalResults?: PlayerRoundResult[];
   duelMode: DuelMode;
   isRanked: boolean;
+  isChallengeCreation?: boolean;
+  challengeId?: string;
   onFinishDuel: (duelState: DuelState) => void;
   onQuit: () => void;
   isGeekMode?: boolean;
@@ -25,9 +28,12 @@ interface Duel1v1ModeProps {
 export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
   questions,
   playerProfile,
-  rivalProfile,
+  rivalProfile = null,
+  recordedRivalResults,
   duelMode,
   isRanked,
+  isChallengeCreation = false,
+  challengeId,
   onFinishDuel,
   onQuit,
   isGeekMode = false
@@ -40,7 +46,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
   const [streak, setStreak] = useState<number>(0);
   const [countryStatuses, setCountryStatuses] = useState<Record<string, CountryMapStatus>>({});
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
-  const [timeLeft, setTimeLeft] = useState<number>(isRanked ? 25 : 15);
+  const [timeLeft, setTimeLeft] = useState<number>(isRanked ? 30 : 15);
   const [lastPinpointClick, setLastPinpointClick] = useState<[number, number] | null>(null);
 
   // Historial de pines 3D y notificación del último resultado para el jugador en Ranked
@@ -55,9 +61,15 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
   const questionStartTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<any>(null);
 
-  // Generar las respuestas simuladas del rival al inicio del duelo
+  // Resultados del rival (grabados de una partida real, o vacíos si es creación de reto)
   const rivalResults = useRef<PlayerRoundResult[]>(
-    multiplayerService.simulateRivalPerformance(questions, rivalProfile.elo)
+    recordedRivalResults && recordedRivalResults.length > 0
+      ? recordedRivalResults
+      : isChallengeCreation
+      ? []
+      : rivalProfile
+      ? multiplayerService.simulateRivalPerformance(questions, rivalProfile.elo)
+      : []
   ).current;
 
   const rivalScore = rivalResults
@@ -66,13 +78,13 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
 
   const currentQuestion = questions[currentIndex] || null;
 
-  // Temporizador regresivo: 25s TOTALES para modo Ranked, 15s POR PREGUNTA para modo Amistoso
+  // Temporizador regresivo: 30s TOTALES para modo Ranked, 15s POR PREGUNTA para modo Amistoso
   useEffect(() => {
     questionStartTimeRef.current = Date.now();
 
     if (isRanked) {
       if (currentIndex === 0) {
-        setTimeLeft(25);
+        setTimeLeft(30);
         if (timerRef.current) clearInterval(timerRef.current);
         timerRef.current = setInterval(() => {
           setTimeLeft(prev => {
@@ -103,6 +115,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     return () => {
       if (!isRanked && timerRef.current) clearInterval(timerRef.current);
     };
+
   }, [currentIndex, isRanked]);
 
   // Manejar agotamiento total del tiempo en modo Ranked (25 segundos finalizados)
@@ -288,12 +301,58 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     const rivalTotalScore = rivalResults.reduce((acc, r) => acc + r.points, 0);
     const rivalTotalTime = rivalResults.reduce((acc, r) => acc + r.timeSpentMs, 0);
 
+    // Caso 1: Modo creación de desafío (grabar partida personal)
+    if (isChallengeCreation) {
+      playVictorySound();
+      try {
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+      } catch (e) {}
+
+      const state: DuelState = {
+        id: `challenge_run_${Date.now()}`,
+        type: 'ranked',
+        duelMode,
+        questions,
+        player: playerProfile,
+        rival: playerProfile,
+        playerResults: finalResults,
+        rivalResults: [],
+        playerScore: playerTotalScore,
+        rivalScore: 0,
+        playerTimeTotalMs: playerTotalTime,
+        rivalTimeTotalMs: 0,
+        winner: 'player',
+        eloChange: 0,
+        xpEarned: 150,
+        isChallengeCreation: true
+      };
+
+      onFinishDuel(state);
+      return;
+    }
+
+    // Caso 2: Modo retar desafío / 1v1
+    const effectiveRival = rivalProfile || {
+      id: 'rival_unknown',
+      name: 'Rival',
+      avatar: '🎓',
+      elo: 1200,
+      rank: multiplayerService.getRankInfo(1200),
+      wins: 0,
+      losses: 0,
+      streak: 0,
+      xp: 0,
+      level: 1
+    };
+
     const { updatedProfile, eloChange, winner, xpEarned } = multiplayerService.processDuelResult(
       playerTotalScore,
       rivalTotalScore,
       playerTotalTime,
       rivalTotalTime,
-      isRanked
+      isRanked,
+      false,
+      effectiveRival.elo
     );
 
     if (winner === 'player') {
@@ -309,7 +368,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
       duelMode,
       questions,
       player: updatedProfile,
-      rival: rivalProfile,
+      rival: effectiveRival,
       playerResults: finalResults,
       rivalResults,
       playerScore: playerTotalScore,
@@ -318,7 +377,8 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
       rivalTimeTotalMs: rivalTotalTime,
       winner,
       eloChange,
-      xpEarned
+      xpEarned,
+      challengeId
     };
 
     onFinishDuel(state);
@@ -368,24 +428,37 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
           </div>
         </div>
 
-        {/* Rival */}
-        <div className="flex items-center gap-3 text-right">
-          <div>
-            <div className="flex items-center justify-end gap-1.5">
-              <span className="text-[10px] font-mono text-amber-400 font-bold bg-zinc-900 px-1.5 py-0.5 rounded">
-                {rivalProfile.rank.icon} {rivalProfile.elo}
-              </span>
-              <span className="font-bold text-xs sm:text-sm text-zinc-100">{rivalProfile.name}</span>
+        {/* Rival o Indicador de Grabación */}
+        {isChallengeCreation || !rivalProfile ? (
+          <div className="flex items-center gap-2.5 bg-indigo-950/60 border border-indigo-500/40 px-3.5 py-2 rounded-xl text-right">
+            <div>
+              <span className="text-[10px] font-mono uppercase text-indigo-400 font-bold block">Modo Registro</span>
+              <span className="text-xs font-bold text-zinc-200">Grabando Desafío</span>
             </div>
-            <div className="text-lg font-mono font-black text-amber-400 leading-none mt-0.5">
-              {rivalScore} <span className="text-xs text-zinc-500 font-sans">pts</span>
+            <div className="w-9 h-9 rounded-lg bg-indigo-900/80 border border-indigo-600/60 flex items-center justify-center text-indigo-300">
+              <Sparkles className="w-5 h-5" />
             </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-rose-950/60 border border-rose-500/50 flex items-center justify-center text-xl shrink-0">
-            {rivalProfile.avatar}
+        ) : (
+          <div className="flex items-center gap-3 text-right">
+            <div>
+              <div className="flex items-center justify-end gap-1.5">
+                <span className="text-[10px] font-mono text-amber-400 font-bold bg-zinc-900 px-1.5 py-0.5 rounded">
+                  {rivalProfile.rank.icon} {rivalProfile.elo}
+                </span>
+                <span className="font-bold text-xs sm:text-sm text-zinc-100">{rivalProfile.name}</span>
+              </div>
+              <div className="text-lg font-mono font-black text-amber-400 leading-none mt-0.5">
+                {rivalScore} <span className="text-xs text-zinc-500 font-sans">pts</span>
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-rose-950/60 border border-rose-500/50 flex items-center justify-center text-xl shrink-0">
+              {rivalProfile.avatar}
+            </div>
           </div>
-        </div>
+        )}
       </div>
+
 
       {/* 2. Pregunta Activa + Toast del Último Resultado */}
       <div className="flex flex-col gap-2 shrink-0">

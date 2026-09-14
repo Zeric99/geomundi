@@ -55,6 +55,20 @@ export interface PlayerRoundResult {
   distanceKm?: number;
 }
 
+export interface CommunityChallenge {
+  id: string;
+  creatorId: string;
+  creatorName: string;
+  creatorAvatar: string;
+  creatorElo: number;
+  mode: DuelMode;
+  score: number;
+  totalTimeMs: number;
+  questions: DuelQuestion[];
+  roundResults: PlayerRoundResult[];
+  createdAt: string;
+}
+
 export interface DuelState {
   id: string;
   type: MultiplayerType;
@@ -72,4 +86,7 @@ export interface DuelState {
   eloChange: number;
   xpEarned: number;
   roomConfig?: CustomRoomConfig;
+  challengeId?: string;
+  isChallengeCreation?: boolean;
 }
+

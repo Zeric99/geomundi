@@ -183,30 +183,33 @@ CREATE POLICY "Los usuarios pueden actualizar sus propios records"
   ON public.personal_records FOR UPDATE 
   USING (auth.uid() = user_id);
 
--- 7. TABLA DE DUELOS 1v1 MULTIJUGADOR
-CREATE TABLE IF NOT EXISTS public.duel_matches (
+-- 8. TABLA DE DESAFÍOS ASÍNCRONOS MULTIJUGADOR (Partidas grabadas de la comunidad)
+CREATE TABLE IF NOT EXISTS public.community_challenges (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  player1_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-  player2_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-  rival_name TEXT,
-  mode TEXT DEFAULT 'countries' NOT NULL,
-  player1_score INTEGER DEFAULT 0 NOT NULL,
-  player2_score INTEGER DEFAULT 0 NOT NULL,
-  winner_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-  elo_change_p1 INTEGER DEFAULT 0 NOT NULL,
-  elo_change_p2 INTEGER DEFAULT 0 NOT NULL,
+  creator_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  creator_name TEXT NOT NULL,
+  creator_avatar TEXT,
+  creator_elo INTEGER DEFAULT 1200 NOT NULL,
+  mode TEXT NOT NULL, -- 'pinpoint', 'countries', 'capitals', 'flags'
+  score INTEGER NOT NULL,
+  total_time_ms INTEGER NOT NULL,
+  questions JSONB NOT NULL,
+  round_results JSONB NOT NULL,
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-ALTER TABLE public.duel_matches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_challenges ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Los duelos son públicos" 
-  ON public.duel_matches FOR SELECT 
+DROP POLICY IF EXISTS "Desafios son publicos para todos" ON public.community_challenges;
+CREATE POLICY "Desafios son publicos para todos" 
+  ON public.community_challenges FOR SELECT 
   USING (true);
 
-CREATE POLICY "Usuarios autenticados pueden registrar duelos" 
-  ON public.duel_matches FOR INSERT 
-  WITH CHECK (auth.uid() = player1_id OR auth.uid() = player2_id);
+DROP POLICY IF EXISTS "Usuarios pueden publicar sus desafios" ON public.community_challenges;
+CREATE POLICY "Usuarios pueden publicar sus desafios" 
+  ON public.community_challenges FOR INSERT 
+  WITH CHECK (auth.uid() = creator_id);
+
 
 -- ==========================================================
 -- VISTAS DE CLASIFICACIÓN (RANKINGS LISTOS PARA CONSUMIR)

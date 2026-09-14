@@ -1,10 +1,12 @@
 import { Country } from '../types/country';
 import { QuestionType } from '../types/game';
-import { DuelMode, DuelQuestion, DuelState, PlayerProfile, PlayerRoundResult, RankInfo, RankTier } from '../types/multiplayer';
+import { CommunityChallenge, DuelMode, DuelQuestion, DuelState, PlayerProfile, PlayerRoundResult, RankInfo, RankTier } from '../types/multiplayer';
 import { getRandomCities } from '../data/citiesData';
+import { supabase } from '../lib/supabase';
 
 const MULTIPLAYER_PROFILE_KEY = 'GEOMUNDI_MULTIPLAYER_PROFILE_V1';
 const MULTIPLAYER_HISTORY_KEY = 'GEOMUNDI_MULTIPLAYER_HISTORY_V1';
+const COMMUNITY_CHALLENGES_KEY = 'GEOMUNDI_COMMUNITY_CHALLENGES_V1';
 
 export const RANKS: Record<RankTier, RankInfo> = {
   bronce: {
@@ -93,7 +95,7 @@ export class MultiplayerService {
       const stored = localStorage.getItem(MULTIPLAYER_PROFILE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        const elo = parsed.elo || 1000;
+        const elo = parsed.elo || 1200;
         const xp = parsed.xp || 0;
         const level = Math.floor(Math.sqrt(xp / 100)) + 1;
         return {
@@ -111,7 +113,7 @@ export class MultiplayerService {
       }
     } catch (e) {}
 
-    const defaultElo = 1000;
+    const defaultElo = 1200;
     return {
       id: 'player_local',
       name: 'Tú',
@@ -124,6 +126,7 @@ export class MultiplayerService {
       xp: 0,
       level: 1
     };
+
   }
 
   /**
@@ -196,7 +199,7 @@ export class MultiplayerService {
         return {
           country: matchingCountry,
           questionType: 'city-location' as QuestionType,
-          promptText: `Ubica con precisión ${city.nameEs} (${city.countryNameEs})`,
+          promptText: `${city.nameEs}, ${city.countryNameEs}`,
           cityTarget: city
         };
       });
@@ -206,7 +209,7 @@ export class MultiplayerService {
 
     return shuffled.map(country => {
       let qType: QuestionType = 'name';
-      let promptText = `Ubica ${country.nameEs}`;
+      let promptText = country.nameEs;
 
       if (duelMode === 'flags') {
         qType = 'flag';
@@ -223,6 +226,7 @@ export class MultiplayerService {
       };
     });
   }
+
 
   /**
    * Simula las respuestas del rival según su ELO (para jugabilidad inmediata 1v1)
@@ -269,6 +273,116 @@ export class MultiplayerService {
   }
 
   /**
+   * Calcula la variación de ELO siguiendo el sistema estándar de Elo
+   */
+  calculateEloChange(
+    playerElo: number,
+    rivalElo: number,
+    winner: 'player' | 'rival' | 'tie',
+    playerScore: number,
+    rivalScore: number
+  ): number {
+    const expectedScore = 1 / (1 + Math.pow(10, (rivalElo - playerElo) / 400));
+    const actualScore = winner === 'player' ? 1 : winner === 'tie' ? 0.5 : 0;
+    const kFactor = 32;
+    let change = Math.round(kFactor * (actualScore - expectedScore));
+
+    if (winner === 'player') {
+      const marginBonus = Math.min(6, Math.max(1, Math.round(Math.abs(playerScore - rivalScore) / 400)));
+      change = Math.max(12, change + marginBonus);
+    } else if (winner === 'rival') {
+      change = Math.min(-8, change);
+    }
+    return change;
+  }
+
+  /**
+   * Obtiene los desafíos de la comunidad guardados (Supabase con fallback local)
+   */
+  async getCommunityChallenges(limit = 30): Promise<CommunityChallenge[]> {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('community_challenges')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(limit);
+
+        if (!error && data && data.length > 0) {
+          const mapped: CommunityChallenge[] = data.map((row: any) => ({
+            id: row.id,
+            creatorId: row.creator_id,
+            creatorName: row.creator_name,
+            creatorAvatar: row.creator_avatar || '🎓',
+            creatorElo: row.creator_elo || 1200,
+            mode: row.mode,
+            score: row.score,
+            totalTimeMs: row.total_time_ms,
+            questions: row.questions,
+            roundResults: row.round_results,
+            createdAt: row.created_at
+          }));
+          try {
+            localStorage.setItem(COMMUNITY_CHALLENGES_KEY, JSON.stringify(mapped));
+          } catch (e) {}
+          return mapped;
+        }
+      } catch (e) {
+        console.warn('No se pudo consultar community_challenges de Supabase:', e);
+      }
+    }
+
+    try {
+      const cached = localStorage.getItem(COMMUNITY_CHALLENGES_KEY);
+      if (cached) return JSON.parse(cached);
+    } catch (e) {}
+
+    return [];
+  }
+
+  /**
+   * Publica un nuevo desafío a la comunidad (Supabase + local)
+   */
+  async saveCommunityChallenge(challenge: CommunityChallenge): Promise<boolean> {
+    try {
+      const cached = await this.getCommunityChallenges();
+      const updated = [challenge, ...cached.filter(c => c.id !== challenge.id)].slice(0, 30);
+      localStorage.setItem(COMMUNITY_CHALLENGES_KEY, JSON.stringify(updated));
+    } catch (e) {}
+
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('community_challenges')
+          .insert({
+            id: challenge.id,
+            creator_id: challenge.creatorId,
+            creator_name: challenge.creatorName,
+            creator_avatar: challenge.creatorAvatar,
+            creator_elo: challenge.creatorElo,
+            mode: challenge.mode,
+            score: challenge.score,
+            total_time_ms: challenge.totalTimeMs,
+            questions: challenge.questions,
+            round_results: challenge.roundResults,
+            created_at: challenge.createdAt
+          });
+
+        if (error) {
+          console.warn('Error insertando en community_challenges (Supabase):', error);
+          return false;
+        }
+        return true;
+      } catch (e) {
+        console.warn('Excepción guardando desafío en Supabase:', e);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
    * Actualiza el perfil tras un duelo, otorga XP y calcula el cambio de ELO
    */
   processDuelResult(
@@ -277,7 +391,8 @@ export class MultiplayerService {
     playerTimeMs: number,
     rivalTimeMs: number,
     isRanked: boolean,
-    isCustomRoom: boolean = false
+    isCustomRoom: boolean = false,
+    rivalEloOverride?: number
   ): { updatedProfile: PlayerProfile; eloChange: number; winner: 'player' | 'rival' | 'tie'; xpEarned: number } {
     const profile = this.getPlayerProfile();
 
@@ -292,23 +407,17 @@ export class MultiplayerService {
     }
 
     let eloChange = 0;
-    let xpEarned = 100; // XP base por jugar
+    let xpEarned = 100;
 
     if (winner === 'player') {
-      xpEarned += 150; // Bonus victoria
+      xpEarned += 150;
     } else if (winner === 'tie') {
       xpEarned += 50;
     }
 
     if (isRanked) {
-      if (winner === 'player') {
-        const margin = Math.min(10, Math.max(1, Math.round((playerScore - rivalScore) / 100)));
-        eloChange = 25 + margin;
-      } else if (winner === 'rival') {
-        eloChange = -18;
-      } else {
-        eloChange = 5;
-      }
+      const rivalElo = rivalEloOverride ?? (profile.elo || 1200);
+      eloChange = this.calculateEloChange(profile.elo, rivalElo, winner, playerScore, rivalScore);
     }
 
     const newElo = isRanked ? Math.max(500, profile.elo + eloChange) : profile.elo;
@@ -330,5 +439,6 @@ export class MultiplayerService {
     return { updatedProfile, eloChange, winner, xpEarned };
   }
 }
+
 
 export const multiplayerService = new MultiplayerService();

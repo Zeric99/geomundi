@@ -14,6 +14,7 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
   onPlayAgain,
   onReturnToMenu
 }) => {
+  const isCreation = duelState.isChallengeCreation;
   const isWinner = duelState.winner === 'player';
   const isTie = duelState.winner === 'tie';
 
@@ -23,66 +24,98 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
         {/* Cabecera de Resultado */}
         <div className="space-y-2">
           <div className={`inline-flex p-4 rounded-2xl border ${
-            isWinner
+            isCreation
+              ? 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400'
+              : isWinner
               ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
               : isTie
               ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400'
               : 'bg-rose-500/15 border-rose-500/30 text-rose-400'
           }`}>
-            {isWinner ? <Trophy className="w-10 h-10" /> : <Swords className="w-10 h-10" />}
+            {isCreation ? <Trophy className="w-10 h-10 text-cyan-400" /> : isWinner ? <Trophy className="w-10 h-10" /> : <Swords className="w-10 h-10" />}
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-zinc-100">
-            {isWinner ? '¡VICTORIA EN EL DUELO!' : isTie ? '¡EMPATE TÉCNICO!' : 'DERROTA'}
+            {isCreation
+              ? '¡DESAFÍO PUBLICADO!'
+              : isWinner
+              ? '¡VICTORIA EN EL DUELO!'
+              : isTie
+              ? '¡EMPATE TÉCNICO!'
+              : 'DERROTA'}
           </h2>
 
-          {/* Cambio de ELO */}
-          {duelState.type === 'ranked' && (
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full font-mono text-sm font-bold border bg-zinc-900">
-              <span className="text-zinc-400">Rango ELO:</span>
-              <span className={duelState.eloChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                {duelState.eloChange >= 0 ? `+${duelState.eloChange}` : duelState.eloChange} ELO
-              </span>
-              <span className="text-amber-400 ml-1">({duelState.player.elo} ELO)</span>
-            </div>
+          {isCreation ? (
+            <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+              Tu partida se ha registrado con éxito en el tablón público. Ahora otros jugadores podrán competir contra tu récord.
+            </p>
+          ) : (
+            duelState.type === 'ranked' && (
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full font-mono text-sm font-bold border bg-zinc-900">
+                <span className="text-zinc-400">Rango ELO:</span>
+                <span className={duelState.eloChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                  {duelState.eloChange >= 0 ? `+${duelState.eloChange}` : duelState.eloChange} ELO
+                </span>
+                <span className="text-amber-400 ml-1">({duelState.player.elo} ELO)</span>
+              </div>
+            )
           )}
         </div>
 
-        {/* Comparación Cara a Cara */}
-        <div className="grid grid-cols-5 items-center bg-[#121214] p-4 rounded-2xl border border-zinc-800">
-          {/* Jugador */}
-          <div className="col-span-2 space-y-1 text-center">
-            <div className="w-12 h-12 rounded-xl bg-indigo-950/60 border border-indigo-500/50 mx-auto flex items-center justify-center text-2xl shadow-sm">
-              {duelState.player.avatar}
+        {/* Comparación o Resumen de Partida */}
+        {isCreation ? (
+          <div className="bg-[#121214] p-5 rounded-2xl border border-zinc-800 space-y-3">
+            <div className="flex items-center justify-between text-xs font-mono text-zinc-400 border-b border-zinc-800 pb-2">
+              <span>MODALIDAD:</span>
+              <span className="text-cyan-400 font-bold uppercase">{duelState.duelMode}</span>
             </div>
-            <div className="font-bold text-xs sm:text-sm text-zinc-100 truncate">{duelState.player.name}</div>
-            <div className="text-lg font-mono font-bold text-emerald-400">
-              {duelState.playerScore} pts
-            </div>
-            <div className="text-[10px] font-mono text-zinc-400">
-              ⏱️ {Math.round(duelState.playerTimeTotalMs / 1000)}s
+            <div className="grid grid-cols-2 gap-4 text-center pt-1">
+              <div>
+                <span className="text-[10px] font-mono uppercase text-zinc-500 block">Puntuación Total</span>
+                <span className="text-2xl font-mono font-black text-emerald-400">{duelState.playerScore} pts</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-mono uppercase text-zinc-500 block">Tiempo Total</span>
+                <span className="text-2xl font-mono font-black text-cyan-400">{Math.round(duelState.playerTimeTotalMs / 1000)}s</span>
+              </div>
             </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-5 items-center bg-[#121214] p-4 rounded-2xl border border-zinc-800">
+            {/* Jugador */}
+            <div className="col-span-2 space-y-1 text-center">
+              <div className="w-12 h-12 rounded-xl bg-indigo-950/60 border border-indigo-500/50 mx-auto flex items-center justify-center text-2xl shadow-sm">
+                {duelState.player.avatar}
+              </div>
+              <div className="font-bold text-xs sm:text-sm text-zinc-100 truncate">{duelState.player.name}</div>
+              <div className="text-lg font-mono font-bold text-emerald-400">
+                {duelState.playerScore} pts
+              </div>
+              <div className="text-[10px] font-mono text-zinc-400">
+                ⏱️ {Math.round(duelState.playerTimeTotalMs / 1000)}s
+              </div>
+            </div>
 
-          {/* VS */}
-          <div className="col-span-1 text-center font-mono font-extrabold text-xs text-zinc-500">
-            VS
-          </div>
+            {/* VS */}
+            <div className="col-span-1 text-center font-mono font-extrabold text-xs text-zinc-500">
+              VS
+            </div>
 
-          {/* Rival */}
-          <div className="col-span-2 space-y-1 text-center">
-            <div className="w-12 h-12 rounded-xl bg-rose-950/60 border border-rose-500/50 mx-auto flex items-center justify-center text-2xl shadow-sm">
-              {duelState.rival.avatar}
-            </div>
-            <div className="font-bold text-xs sm:text-sm text-zinc-100 truncate">{duelState.rival.name}</div>
-            <div className="text-lg font-mono font-bold text-amber-400">
-              {duelState.rivalScore} pts
-            </div>
-            <div className="text-[10px] font-mono text-zinc-400">
-              ⏱️ {Math.round(duelState.rivalTimeTotalMs / 1000)}s
+            {/* Rival */}
+            <div className="col-span-2 space-y-1 text-center">
+              <div className="w-12 h-12 rounded-xl bg-rose-950/60 border border-rose-500/50 mx-auto flex items-center justify-center text-2xl shadow-sm">
+                {duelState.rival.avatar}
+              </div>
+              <div className="font-bold text-xs sm:text-sm text-zinc-100 truncate">{duelState.rival.name}</div>
+              <div className="text-lg font-mono font-bold text-amber-400">
+                {duelState.rivalScore} pts
+              </div>
+              <div className="text-[10px] font-mono text-zinc-400">
+                ⏱️ {Math.round(duelState.rivalTimeTotalMs / 1000)}s
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Botones de Acción */}
         <div className="grid grid-cols-2 gap-3 pt-2">
@@ -91,7 +124,7 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
             className="py-3 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs transition-all flex items-center justify-center gap-2 border border-zinc-700"
           >
             <Home className="w-4 h-4 text-zinc-400" />
-            <span>Volver al Menú</span>
+            <span>Volver al Tablón</span>
           </button>
 
           <button
@@ -99,10 +132,11 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
             className="py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 border border-indigo-500"
           >
             <Swords className="w-4 h-4" />
-            <span>Siguiente Duelo</span>
+            <span>{isCreation ? 'Crear Otro Desafío' : 'Siguiente Duelo'}</span>
           </button>
         </div>
       </div>
     </div>
   );
 };
+
