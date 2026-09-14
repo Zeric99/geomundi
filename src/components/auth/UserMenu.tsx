@@ -4,9 +4,10 @@ import { LogIn, LogOut, Trophy, Sparkles, AlertCircle, ChevronDown, CheckCircle2
 
 interface UserMenuProps {
   onOpenLeaderboard?: () => void;
+  onOpenProfile?: () => void;
 }
 
-export const UserMenu: React.FC<UserMenuProps> = ({ onOpenLeaderboard }) => {
+export const UserMenu: React.FC<UserMenuProps> = ({ onOpenLeaderboard, onOpenProfile }) => {
   const { user, profile, loading, isConfigured, signInWithGoogle, signOut } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showConfigHelp, setShowConfigHelp] = useState(false);
@@ -151,6 +152,19 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onOpenLeaderboard }) => {
 
           {/* Acciones */}
           <div className="space-y-1 pt-1">
+            {onOpenProfile && (
+              <button
+                onClick={() => {
+                  setDropdownOpen(false);
+                  onOpenProfile();
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-cyan-300 hover:bg-cyan-500/10 rounded-xl transition-colors text-left font-semibold"
+              >
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                <span>Ver Mi Perfil & Récords</span>
+              </button>
+            )}
+
             {onOpenLeaderboard && (
               <button
                 onClick={() => {

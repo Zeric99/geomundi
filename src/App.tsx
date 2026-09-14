@@ -34,6 +34,7 @@ import { Achievement } from './types/achievements';
 import { CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile } from './types/multiplayer';
 import { DailyArchiveModal } from './components/daily/DailyArchiveModal';
 import { LeaderboardModal } from './components/leaderboard/LeaderboardModal';
+import { UserProfileModal } from './components/profile/UserProfileModal';
 import { FALLBACK_COUNTRIES, GEEK_TERRITORIES } from './data/fallbackCountries';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { achievementService } from './services/achievementService';
@@ -54,6 +55,7 @@ export function App() {
   const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState<boolean>(false);
   const [isDonateModalOpen, setIsDonateModalOpen] = useState<boolean>(false);
   const [isLeaderboardModalOpen, setIsLeaderboardModalOpen] = useState<boolean>(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isDailyChallengeActive, setIsDailyChallengeActive] = useState<boolean>(false);
   const [isDailyArchiveOpen, setIsDailyArchiveOpen] = useState<boolean>(false);
   const [activeDailyQuestions, setActiveDailyQuestions] = useState<DailyStageQuestion[]>([]);
@@ -378,6 +380,7 @@ export function App() {
         onOpenAchievements={() => setIsAchievementsModalOpen(true)}
         onOpenDonate={() => setIsDonateModalOpen(true)}
         onOpenLeaderboard={() => setIsLeaderboardModalOpen(true)}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
       />
 
       {/* Contenido Principal */}
@@ -680,6 +683,16 @@ export function App() {
       <LeaderboardModal
         isOpen={isLeaderboardModalOpen}
         onClose={() => setIsLeaderboardModalOpen(false)}
+      />
+
+      {/* Modal de Perfil de Jugador y Récords Personales */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        onOpenLeaderboard={() => {
+          setIsProfileModalOpen(false);
+          setIsLeaderboardModalOpen(true);
+        }}
       />
 
       {/* Pie de Página */}

@@ -155,6 +155,34 @@ CREATE POLICY "Los usuarios pueden modificar su dominio"
   ON public.country_mastery FOR ALL 
   USING (auth.uid() = user_id);
 
+-- 6.1 TABLA DE RÉCORDS PERSONALES POR MAPA / CONTINENTE
+CREATE TABLE IF NOT EXISTS public.personal_records (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  game_mode TEXT NOT NULL,
+  continent TEXT NOT NULL,
+  correct_count INTEGER NOT NULL,
+  total_countries INTEGER NOT NULL,
+  accuracy_pct NUMERIC(5,2) NOT NULL,
+  time_seconds INTEGER DEFAULT 0 NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+  UNIQUE(user_id, game_mode, continent)
+);
+
+ALTER TABLE public.personal_records ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Records personales son públicos" 
+  ON public.personal_records FOR SELECT 
+  USING (true);
+
+CREATE POLICY "Los usuarios pueden insertar sus propios records" 
+  ON public.personal_records FOR INSERT 
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Los usuarios pueden actualizar sus propios records" 
+  ON public.personal_records FOR UPDATE 
+  USING (auth.uid() = user_id);
+
 -- 7. TABLA DE DUELOS 1v1 MULTIJUGADOR
 CREATE TABLE IF NOT EXISTS public.duel_matches (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

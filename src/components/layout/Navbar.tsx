@@ -13,6 +13,7 @@ interface NavbarProps {
   onOpenAchievements?: () => void;
   onOpenDonate?: () => void;
   onOpenLeaderboard?: () => void;
+  onOpenProfile?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -22,7 +23,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   bestStreak,
   onOpenAchievements,
   onOpenDonate,
-  onOpenLeaderboard
+  onOpenLeaderboard,
+  onOpenProfile
 }) => {
   const { soundEnabled, toggleSound } = useAudioFeedback();
   const isSingle = activeTab === 'game' || activeTab === 'singleplayer';
@@ -151,7 +153,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {/* Menú de Usuario y Google Auth */}
-          <UserMenu onOpenLeaderboard={onOpenLeaderboard} />
+          <UserMenu onOpenLeaderboard={onOpenLeaderboard} onOpenProfile={onOpenProfile} />
         </div>
       </div>
     </header>

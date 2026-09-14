@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Trophy, RotateCcw, Sparkles, Brain, CheckCircle2, XCircle, Flame, ArrowRight, Home, X, Share2, Swords, Copy, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trophy, RotateCcw, Sparkles, Brain, CheckCircle2, XCircle, Flame, ArrowRight, Home, X, Share2, Swords, Copy, Check, Clock } from 'lucide-react';
 import { GameSummary } from '../../types/game';
 import { challengeService } from '../../services/challengeService';
 import { dailyChallengeService } from '../../services/dailyChallengeService';
+import { personalRecordsService, PersonalRecord } from '../../services/personalRecordsService';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface GameOverModalProps {
   summary: GameSummary;
@@ -21,7 +23,21 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   onPracticeMistakes,
   isDailyChallenge = false
 }) => {
+  const { user } = useAuth();
   const [copiedState, setCopiedState] = useState<'challenge' | 'share' | null>(null);
+  const [recordEvaluation, setRecordEvaluation] = useState<{
+    isNewRecord: boolean;
+    previous?: PersonalRecord;
+    current: PersonalRecord;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!isDailyChallenge) {
+      personalRecordsService.evaluateAndSave(summary, summary.durationSeconds, user?.id).then(res => {
+        setRecordEvaluation(res);
+      });
+    }
+  }, [summary, user, isDailyChallenge]);
 
   const isPerfect = summary.accuracy === 100;
   const isGood = summary.accuracy >= 70;
@@ -132,6 +148,44 @@ ${blocks}
             </span>
           </div>
         </div>
+
+        {/* Banner de Récord Personal */}
+        {recordEvaluation && recordEvaluation.isNewRecord && (
+          <div className="p-3.5 sm:p-4 bg-gradient-to-r from-amber-500/20 via-yellow-500/25 to-amber-500/20 border border-amber-500/50 rounded-2xl flex items-center justify-between gap-3 shadow-[0_0_25px_rgba(245,158,11,0.25)] animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl select-none animate-bounce">🏆</span>
+              <div>
+                <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-800/80">
+                  ¡Nuevo Récord Personal en {summary.continent === 'World' ? 'el Mundo' : summary.continent}!
+                </span>
+                <p className="text-xs sm:text-sm font-bold text-zinc-100 mt-1">
+                  Has acertado <strong className="text-emerald-400 font-bold">{recordEvaluation.current.correctCount} de {recordEvaluation.current.totalQuestions}</strong> países ({recordEvaluation.current.accuracyPct}%)
+                </p>
+                {recordEvaluation.previous && (
+                  <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
+                    Anterior marca: {recordEvaluation.previous.correctCount}/{recordEvaluation.previous.totalQuestions} ({recordEvaluation.previous.accuracyPct}%)
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {recordEvaluation && !recordEvaluation.isNewRecord && (
+          <div className="p-3 bg-zinc-900/60 border border-zinc-800/80 rounded-xl flex items-center justify-between text-xs text-zinc-400">
+            <span className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-amber-400" />
+              <span>Tu récord en este mapa:</span>
+              <strong className="text-zinc-200 font-mono font-bold">
+                {recordEvaluation.current.correctCount}/{recordEvaluation.current.totalQuestions} ({recordEvaluation.current.accuracyPct}%)
+              </strong>
+            </span>
+            <span className="font-mono text-zinc-500 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {recordEvaluation.current.timeSeconds}s
+            </span>
+          </div>
+        )}
 
         {/* Desglose de Respuestas */}
         <div className="bg-[#121214] border border-zinc-800 rounded-xl p-3.5 max-h-36 overflow-y-auto space-y-2">

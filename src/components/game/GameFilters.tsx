@@ -17,11 +17,13 @@ import {
   X,
   ArrowRight,
   SlidersHorizontal,
-  } from 'lucide-react';
+  Clock
+} from 'lucide-react';
 import { Continent } from '../../types/country';
 import { GameConfig, GameMode, QuestionType } from '../../types/game';
 import { BlindSpotItem } from '../../types/stats';
 import { DailyChallengeCard } from '../daily/DailyChallengeCard';
+import { personalRecordsService } from '../../services/personalRecordsService';
 
 interface GameFiltersProps {
   config: GameConfig;
@@ -461,6 +463,35 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                     })}
                   </div>
                 </div>
+              )}
+
+              {/* MEJOR INTENTO REGISTRADO (RÉCORD PERSONAL) */}
+              {activeConfigMode && (
+                (() => {
+                  const rec = personalRecordsService.getRecord(activeConfigMode, config.continent);
+                  if (!rec) return null;
+                  return (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 flex items-center justify-between gap-3 text-xs animate-in fade-in duration-150">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-amber-500/20 text-amber-300 rounded-lg">
+                          <Trophy className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-amber-200">
+                            Tu mejor intento en {config.continent === 'World' ? 'el Mundo' : config.continent}
+                          </p>
+                          <p className="text-zinc-400 font-mono text-[11px]">
+                            <strong className="text-emerald-400 font-bold">{rec.correctCount} de {rec.totalQuestions}</strong> países acertados ({rec.accuracyPct}%)
+                          </p>
+                        </div>
+                      </div>
+                      <span className="font-mono text-zinc-400 flex items-center gap-1 text-[11px]">
+                        <Clock className="w-3.5 h-3.5 text-amber-400/70" />
+                        {rec.timeSeconds}s
+                      </span>
+                    </div>
+                  );
+                })()
               )}
 
               {/* OPCIÓN 4: MODO FRIKI */}
