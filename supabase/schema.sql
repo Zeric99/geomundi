@@ -209,7 +209,20 @@ CREATE TABLE IF NOT EXISTS public.community_challenges (
   total_time_ms INTEGER NOT NULL,
   questions JSONB NOT NULL,
   round_results JSONB NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+  -- Estado y resolución asíncrona del desafío
+  status TEXT DEFAULT 'open' NOT NULL, -- 'open', 'in_progress', 'completed'
+  room_code TEXT,
+  challenger_id UUID REFERENCES public.profiles(id),
+  challenger_name TEXT,
+  challenger_avatar TEXT,
+  challenger_elo INTEGER,
+  challenger_score INTEGER,
+  challenger_time_ms INTEGER,
+  winner TEXT, -- 'creator', 'challenger', 'tie'
+  elo_change INTEGER,
+  resolved_at TIMESTAMPTZ,
+  creator_notified BOOLEAN DEFAULT false
 );
 
 ALTER TABLE public.community_challenges ENABLE ROW LEVEL SECURITY;
@@ -223,6 +236,11 @@ DROP POLICY IF EXISTS "Usuarios pueden publicar sus desafios" ON public.communit
 CREATE POLICY "Usuarios pueden publicar sus desafios" 
   ON public.community_challenges FOR INSERT 
   WITH CHECK (auth.uid() = creator_id);
+
+DROP POLICY IF EXISTS "Usuarios pueden actualizar desafios para resolverlos" ON public.community_challenges;
+CREATE POLICY "Usuarios pueden actualizar desafios para resolverlos" 
+  ON public.community_challenges FOR UPDATE 
+  USING (true);
 
 
 -- ==========================================================
@@ -324,6 +342,22 @@ ORDER BY elo_flags DESC;
 -- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wins_countries INTEGER DEFAULT 0;
 -- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS duels_capitals INTEGER DEFAULT 0;
 -- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wins_capitals INTEGER DEFAULT 0;
--- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS duels_flags INTEGER DEFAULT 0;
 -- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS wins_flags INTEGER DEFAULT 0;
+--
+-- Columnas para desafíos asíncronos y exclusividad (community_challenges):
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open';
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS room_code TEXT;
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS challenger_id UUID REFERENCES public.profiles(id);
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS challenger_name TEXT;
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS challenger_avatar TEXT;
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS challenger_elo INTEGER;
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS challenger_score INTEGER;
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS challenger_time_ms INTEGER;
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS winner TEXT;
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS elo_change INTEGER;
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ;
+-- ALTER TABLE public.community_challenges ADD COLUMN IF NOT EXISTS creator_notified BOOLEAN DEFAULT false;
+-- DROP POLICY IF EXISTS "Usuarios pueden actualizar desafios para resolverlos" ON public.community_challenges;
+-- CREATE POLICY "Usuarios pueden actualizar desafios para resolverlos" ON public.community_challenges FOR UPDATE USING (true);
+
 

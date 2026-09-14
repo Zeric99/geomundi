@@ -8,6 +8,24 @@ const MULTIPLAYER_PROFILE_KEY = 'GEOMUNDI_MULTIPLAYER_PROFILE_V1';
 const MULTIPLAYER_HISTORY_KEY = 'GEOMUNDI_MULTIPLAYER_HISTORY_V1';
 const COMMUNITY_CHALLENGES_KEY = 'GEOMUNDI_COMMUNITY_CHALLENGES_V1';
 
+/**
+ * Formatea una fecha en texto relativo en español ('Hace 5 min', 'Hace 2 h', 'Ayer')
+ */
+export function formatRelativeTime(dateStr?: string): string {
+  if (!dateStr) return 'Reciente';
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffSec = Math.max(0, Math.floor(diffMs / 1000));
+  if (diffSec < 45) return 'Hace unos segundos';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `Hace ${diffMin} min`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `Hace ${diffHours} h`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return 'Ayer';
+  if (diffDays < 7) return `Hace ${diffDays} días`;
+  return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+}
+
 export const MODE_ELO_CONFIGS: Record<DuelMode, ModeEloConfig> = {
   pinpoint: {
     mode: 'pinpoint',
@@ -375,7 +393,7 @@ export class MultiplayerService {
   }
 
   /**
-   * Obtiene los desafíos de la comunidad guardados (Supabase con fallback local)
+   * Obtiene los desafíos de la comunidad abiertos y disponibles (Supabase con fallback local)
    */
   async getCommunityChallenges(limit = 30): Promise<CommunityChallenge[]> {
     if (supabase) {
@@ -383,6 +401,7 @@ export class MultiplayerService {
         const { data, error } = await supabase
           .from('community_challenges')
           .select('*')
+          .or('status.eq.open,status.is.null')
           .order('created_at', { ascending: false })
           .limit(limit);
 
@@ -398,7 +417,9 @@ export class MultiplayerService {
             totalTimeMs: row.total_time_ms,
             questions: row.questions,
             roundResults: row.round_results,
-            createdAt: row.created_at
+            createdAt: row.created_at,
+            status: row.status || 'open',
+            roomCode: row.room_code
           }));
           try {
             localStorage.setItem(COMMUNITY_CHALLENGES_KEY, JSON.stringify(mapped));
@@ -412,19 +433,28 @@ export class MultiplayerService {
 
     try {
       const cached = localStorage.getItem(COMMUNITY_CHALLENGES_KEY);
-      if (cached) return JSON.parse(cached);
+      if (cached) {
+        const parsed: CommunityChallenge[] = JSON.parse(cached);
+        return parsed.filter(c => !c.status || c.status === 'open');
+      }
     } catch (e) {}
 
     return [];
   }
 
   /**
-   * Publica un nuevo desafío a la comunidad (Supabase + local)
+   * Publica un nuevo desafío abierto a la comunidad (Supabase + local)
    */
   async saveCommunityChallenge(challenge: CommunityChallenge): Promise<boolean> {
+    const enrichedChallenge: CommunityChallenge = {
+      ...challenge,
+      status: 'open',
+      creatorNotified: false
+    };
+
     try {
       const cached = await this.getCommunityChallenges();
-      const updated = [challenge, ...cached.filter(c => c.id !== challenge.id)].slice(0, 30);
+      const updated = [enrichedChallenge, ...cached.filter(c => c.id !== challenge.id)].slice(0, 30);
       localStorage.setItem(COMMUNITY_CHALLENGES_KEY, JSON.stringify(updated));
     } catch (e) {}
 
@@ -433,17 +463,19 @@ export class MultiplayerService {
         const { error } = await supabase
           .from('community_challenges')
           .insert({
-            id: challenge.id,
-            creator_id: challenge.creatorId,
-            creator_name: challenge.creatorName,
-            creator_avatar: challenge.creatorAvatar,
-            creator_elo: challenge.creatorElo,
-            mode: challenge.mode,
-            score: challenge.score,
-            total_time_ms: challenge.totalTimeMs,
-            questions: challenge.questions,
-            round_results: challenge.roundResults,
-            created_at: challenge.createdAt
+            id: enrichedChallenge.id,
+            creator_id: enrichedChallenge.creatorId,
+            creator_name: enrichedChallenge.creatorName,
+            creator_avatar: enrichedChallenge.creatorAvatar,
+            creator_elo: enrichedChallenge.creatorElo,
+            mode: enrichedChallenge.mode,
+            score: enrichedChallenge.score,
+            total_time_ms: enrichedChallenge.totalTimeMs,
+            questions: enrichedChallenge.questions,
+            round_results: enrichedChallenge.roundResults,
+            created_at: enrichedChallenge.createdAt,
+            status: 'open',
+            creator_notified: false
           });
 
         if (error) {
@@ -458,6 +490,283 @@ export class MultiplayerService {
     }
 
     return true;
+  }
+
+  /**
+   * Reserva en exclusiva un desafío para que ningún otro jugador pueda desafiarlo a la vez
+   */
+  async claimCommunityChallenge(challengeId: string, challengerProfile: PlayerProfile): Promise<boolean> {
+    if (!supabase) return true;
+    try {
+      const { data, error } = await supabase
+        .from('community_challenges')
+        .update({
+          status: 'in_progress',
+          challenger_id: challengerProfile.id,
+          challenger_name: challengerProfile.name,
+          challenger_avatar: challengerProfile.avatar,
+          challenger_elo: challengerProfile.elo
+        })
+        .eq('id', challengeId)
+        .or('status.eq.open,status.is.null')
+        .select('id')
+        .maybeSingle();
+
+      if (error || !data) {
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  /**
+   * Resuelve un desafío completado por un retador, calcula ganador y transfiere ELO a ambos jugadores
+   */
+  async resolveCommunityChallenge(params: {
+    challenge: CommunityChallenge;
+    challengerProfile: PlayerProfile;
+    challengerScore: number;
+    challengerTimeMs: number;
+    challengerResults: PlayerRoundResult[];
+  }): Promise<{ winner: 'creator' | 'challenger' | 'tie'; eloChange: number }> {
+    const { challenge, challengerProfile, challengerScore, challengerTimeMs, challengerResults } = params;
+
+    // 1. Determinar ganador (desempate por tiempo)
+    let winner: 'creator' | 'challenger' | 'tie' = 'tie';
+    if (challengerScore > challenge.score) {
+      winner = 'challenger';
+    } else if (challengerScore < challenge.score) {
+      winner = 'creator';
+    } else {
+      winner = challengerTimeMs < challenge.totalTimeMs ? 'challenger' : (challengerTimeMs > challenge.totalTimeMs ? 'creator' : 'tie');
+    }
+
+    // 2. Calcular cambio de ELO
+    const winnerForElo = winner === 'challenger' ? 'player' : winner === 'creator' ? 'rival' : 'tie';
+    const eloChange = this.calculateEloChange(
+      challengerProfile.elo,
+      challenge.creatorElo,
+      winnerForElo,
+      challengerScore,
+      challenge.score
+    );
+
+    const absElo = Math.abs(eloChange);
+
+    // 3. Actualizar la fila del desafío en Supabase a status = 'completed'
+    if (supabase) {
+      try {
+        await supabase
+          .from('community_challenges')
+          .update({
+            status: 'completed',
+            challenger_id: challengerProfile.id,
+            challenger_name: challengerProfile.name,
+            challenger_avatar: challengerProfile.avatar,
+            challenger_elo: challengerProfile.elo,
+            challenger_score: challengerScore,
+            challenger_time_ms: challengerTimeMs,
+            winner,
+            elo_change: absElo,
+            resolved_at: new Date().toISOString(),
+            creator_notified: false
+          })
+          .eq('id', challenge.id);
+
+        // 4. Actualizar el perfil del creador en Supabase (si no es cuenta local)
+        if (challenge.creatorId && challenge.creatorId !== 'player_local') {
+          const modeCol = `elo_${challenge.mode}`;
+          const duelsCol = `duels_${challenge.mode}`;
+          const winsCol = `wins_${challenge.mode}`;
+
+          const { data: creatorData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', challenge.creatorId)
+            .maybeSingle();
+
+          if (creatorData) {
+            const currentModeElo = creatorData[modeCol] ?? 1200;
+            const currentGeneralElo = creatorData.elo ?? 1200;
+            const creatorWon = winner === 'creator';
+            const newModeElo = Math.max(100, currentModeElo + (creatorWon ? absElo : -absElo));
+            const newGeneralElo = Math.max(100, currentGeneralElo + (creatorWon ? absElo : -absElo));
+
+            await supabase
+              .from('profiles')
+              .update({
+                elo: newGeneralElo,
+                [modeCol]: newModeElo,
+                total_duels: (creatorData.total_duels || 0) + 1,
+                wins: (creatorData.wins || 0) + (creatorWon ? 1 : 0),
+                losses: (creatorData.losses || 0) + (!creatorWon && winner !== 'tie' ? 1 : 0),
+                [duelsCol]: (creatorData[duelsCol] || 0) + 1,
+                [winsCol]: (creatorData[winsCol] || 0) + (creatorWon ? 1 : 0),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', challenge.creatorId);
+          }
+        }
+      } catch (e) {
+        console.warn('Error resolviendo community_challenge en Supabase:', e);
+      }
+    }
+
+    return { winner, eloChange };
+  }
+
+  /**
+   * Obtiene los desafíos creados por el usuario que han sido resueltos mientras estaba fuera
+   */
+  async getUnnotifiedResolvedChallenges(userId: string): Promise<CommunityChallenge[]> {
+    if (!supabase || !userId) return [];
+    try {
+      const { data, error } = await supabase
+        .from('community_challenges')
+        .select('*')
+        .eq('creator_id', userId)
+        .eq('status', 'completed')
+        .eq('creator_notified', false)
+        .order('resolved_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return data.map((row: any) => ({
+          id: row.id,
+          creatorId: row.creator_id,
+          creatorName: row.creator_name,
+          creatorAvatar: row.creator_avatar || '🎓',
+          creatorElo: row.creator_elo || 1200,
+          mode: row.mode,
+          score: row.score,
+          totalTimeMs: row.total_time_ms,
+          questions: row.questions,
+          roundResults: row.round_results,
+          createdAt: row.created_at,
+          status: 'completed',
+          challengerId: row.challenger_id,
+          challengerName: row.challenger_name,
+          challengerAvatar: row.challenger_avatar,
+          challengerElo: row.challenger_elo,
+          challengerScore: row.challenger_score,
+          challengerTimeMs: row.challenger_time_ms,
+          winner: row.winner,
+          eloChange: row.elo_change,
+          resolvedAt: row.resolved_at
+        }));
+      }
+    } catch (e) {}
+    return [];
+  }
+
+  /**
+   * Marca los desafíos resueltos como vistos/notificados
+   */
+  async markChallengesAsNotified(challengeIds: string[]): Promise<void> {
+    if (!supabase || challengeIds.length === 0) return;
+    try {
+      await supabase
+        .from('community_challenges')
+        .update({ creator_notified: true })
+        .in('id', challengeIds);
+    } catch (e) {}
+  }
+
+  /**
+   * Obtiene el historial completo de duelos del usuario (tanto locales como en la nube)
+   */
+  async getUserDuelHistory(userId?: string): Promise<DuelState[]> {
+    const localHistory = this.getDuelHistory();
+
+    if (!supabase || !userId) return localHistory;
+
+    try {
+      const { data, error } = await supabase
+        .from('community_challenges')
+        .select('*')
+        .or(`creator_id.eq.${userId},challenger_id.eq.${userId}`)
+        .eq('status', 'completed')
+        .order('resolved_at', { ascending: false })
+        .limit(20);
+
+      if (!error && data && data.length > 0) {
+        const cloudDuels: DuelState[] = data.map((row: any) => {
+          const isUserCreator = row.creator_id === userId;
+          const userWon = isUserCreator ? row.winner === 'creator' : row.winner === 'challenger';
+          const isTie = row.winner === 'tie';
+
+          const playerScore = isUserCreator ? row.score : row.challenger_score;
+          const rivalScore = isUserCreator ? row.challenger_score : row.score;
+          const playerTime = isUserCreator ? row.total_time_ms : row.challenger_time_ms;
+          const rivalTime = isUserCreator ? row.challenger_time_ms : row.total_time_ms;
+
+          const rivalName = isUserCreator ? (row.challenger_name || 'Rival') : row.creator_name;
+          const rivalAvatar = isUserCreator ? (row.challenger_avatar || '👤') : row.creator_avatar;
+          const rivalElo = isUserCreator ? (row.challenger_elo || 1200) : row.creator_elo;
+
+          const eloDelta = userWon ? (row.elo_change || 16) : (isTie ? 0 : -(row.elo_change || 16));
+
+          return {
+            id: row.id,
+            type: 'ranked',
+            duelMode: row.mode as DuelMode,
+            questions: row.questions || [],
+            player: {
+              id: userId,
+              name: isUserCreator ? row.creator_name : row.challenger_name,
+              avatar: isUserCreator ? row.creator_avatar : row.challenger_avatar,
+              elo: 1200,
+              rank: this.getRankInfo(1200),
+              wins: 0,
+              losses: 0,
+              streak: 0,
+              xp: 0,
+              level: 1
+            },
+            rival: {
+              id: isUserCreator ? (row.challenger_id || 'rival') : row.creator_id,
+              name: rivalName,
+              avatar: rivalAvatar,
+              elo: rivalElo,
+              rank: this.getRankInfo(rivalElo),
+              wins: 0,
+              losses: 0,
+              streak: 0,
+              xp: 0,
+              level: 1
+            },
+            playerResults: isUserCreator ? row.round_results : [],
+            rivalResults: !isUserCreator ? row.round_results : [],
+            playerScore,
+            rivalScore,
+            playerTimeTotalMs: playerTime,
+            rivalTimeTotalMs: rivalTime,
+            winner: userWon ? 'player' : (isTie ? 'tie' : 'rival'),
+            eloChange: eloDelta,
+            xpEarned: 50
+          };
+        });
+
+        // Combinar evitando IDs duplicados
+        const seenIds = new Set<string>();
+        const combined: DuelState[] = [];
+
+        for (const d of [...cloudDuels, ...localHistory]) {
+          const key = d.id || `${d.playerScore}_${d.rivalScore}`;
+          if (!seenIds.has(key)) {
+            seenIds.add(key);
+            combined.push(d);
+          }
+        }
+
+        return combined.slice(0, 20);
+      }
+    } catch (e) {
+      console.warn('Error consultando historial de duelos en Supabase:', e);
+    }
+
+    return localHistory;
   }
 
   /**

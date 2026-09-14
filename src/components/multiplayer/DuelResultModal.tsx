@@ -50,8 +50,8 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
           </h2>
 
           {isCreation ? (
-            <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-              Tu partida se ha registrado con éxito en el tablón público. Ahora otros jugadores podrán competir contra tu récord.
+            <p className="text-xs text-zinc-300 max-w-sm mx-auto leading-relaxed">
+              Tu partida se ha publicado en el tablón a ciegas (nadie sabrá tu puntuación). Cuando otro jugador acepte tu reto y termine su partida, se resolverá el duelo y recibirás o perderás ELO según el resultado.
             </p>
           ) : (
             duelState.type === 'ranked' && (() => {

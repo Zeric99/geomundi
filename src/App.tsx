@@ -105,6 +105,7 @@ export function App() {
   const [activeRecordedResults, setActiveRecordedResults] = useState<PlayerRoundResult[]>([]);
   const [isChallengeCreation, setIsChallengeCreation] = useState<boolean>(false);
   const [activeChallengeId, setActiveChallengeId] = useState<string | undefined>(undefined);
+  const [activeCommunityChallenge, setActiveCommunityChallenge] = useState<CommunityChallenge | null>(null);
   const [activeDuelState, setActiveDuelState] = useState<DuelState | null>(null);
   const [finishedDuelResult, setFinishedDuelResult] = useState<DuelState | null>(null);
   const [activeRoomCode, setActiveRoomCode] = useState<string | null>(null);
@@ -302,6 +303,7 @@ export function App() {
     setActiveRecordedResults([]);
     setIsChallengeCreation(true);
     setActiveChallengeId(undefined);
+    setActiveCommunityChallenge(null);
   }, [countries]);
 
   // Desafiar una partida grabada de otro jugador de la comunidad
@@ -324,6 +326,7 @@ export function App() {
     setActiveRecordedResults(challenge.roundResults);
     setIsChallengeCreation(false);
     setActiveChallengeId(challenge.id);
+    setActiveCommunityChallenge(challenge);
   }, []);
 
   // Iniciar búsqueda de duelo 1v1 o sala personalizada
@@ -337,6 +340,7 @@ export function App() {
   ) => {
     setMatchmakingType(type);
     setMatchmakingMode(duelMode);
+    setActiveCommunityChallenge(null);
 
     if (type === 'custom_room') {
       const questions = customQuestions && customQuestions.length > 0
@@ -394,10 +398,27 @@ export function App() {
         totalTimeMs: duelState.playerTimeTotalMs,
         questions: duelState.questions,
         roundResults: duelState.playerResults,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        status: 'open'
       };
 
       await multiplayerService.saveCommunityChallenge(newChallenge);
+    }
+
+    // Si estábamos respondiendo al desafío de otro jugador de la comunidad:
+    if (activeCommunityChallenge && !duelState.isChallengeCreation) {
+      try {
+        await multiplayerService.resolveCommunityChallenge({
+          challenge: activeCommunityChallenge,
+          challengerProfile: playerProfile,
+          challengerScore: duelState.playerScore,
+          challengerTimeMs: duelState.playerTimeTotalMs,
+          challengerResults: duelState.playerResults
+        });
+      } catch (e) {
+        console.error('Error resolviendo community challenge:', e);
+      }
+      setActiveCommunityChallenge(null);
     }
 
     // 2. Si era un desafío contra otro jugador (Ranked):

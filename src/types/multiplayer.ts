@@ -82,6 +82,18 @@ export interface CommunityChallenge {
   questions: DuelQuestion[];
   roundResults: PlayerRoundResult[];
   createdAt: string;
+  status?: 'open' | 'in_progress' | 'completed';
+  roomCode?: string;
+  challengerId?: string;
+  challengerName?: string;
+  challengerAvatar?: string;
+  challengerElo?: number;
+  challengerScore?: number;
+  challengerTimeMs?: number;
+  winner?: 'creator' | 'challenger' | 'tie';
+  eloChange?: number;
+  resolvedAt?: string;
+  creatorNotified?: boolean;
 }
 
 export interface DuelState {
