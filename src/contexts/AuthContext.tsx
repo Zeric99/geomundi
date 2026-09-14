@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { authService, UserProfile } from '../services/authService';
+import { cloudSyncService } from '../services/cloudSyncService';
 
 interface AuthContextType {
   user: User | null;
@@ -51,11 +52,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // Comprobar sesión actual
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
-        fetchProfile(currentUser.id);
+        await fetchProfile(currentUser.id);
+        cloudSyncService.migrateLocalDataToCloud(currentUser.id).catch(console.error);
       }
       setLoading(false);
     });
@@ -66,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(currentUser);
       if (currentUser) {
         await fetchProfile(currentUser.id);
+        cloudSyncService.migrateLocalDataToCloud(currentUser.id).catch(console.error);
       } else {
         setProfile(null);
       }

@@ -33,12 +33,15 @@ import { TutorAdvice } from './types/stats';
 import { Achievement } from './types/achievements';
 import { CustomRoomConfig, DuelMode, DuelQuestion, DuelState, MultiplayerType, PlayerProfile } from './types/multiplayer';
 import { DailyArchiveModal } from './components/daily/DailyArchiveModal';
+import { LeaderboardModal } from './components/leaderboard/LeaderboardModal';
 import { FALLBACK_COUNTRIES, GEEK_TERRITORIES } from './data/fallbackCountries';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { achievementService } from './services/achievementService';
 import { dailyChallengeService, DailyStageQuestion } from './services/dailyChallengeService';
 import { challengeService } from './services/challengeService';
 import { multiplayerService } from './services/multiplayerService';
+import { authService } from './services/authService';
+import { cloudSyncService } from './services/cloudSyncService';
 import { Loader2 } from 'lucide-react';
 
 export function App() {
@@ -50,6 +53,7 @@ export function App() {
   const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
   const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState<boolean>(false);
   const [isDonateModalOpen, setIsDonateModalOpen] = useState<boolean>(false);
+  const [isLeaderboardModalOpen, setIsLeaderboardModalOpen] = useState<boolean>(false);
   const [isDailyChallengeActive, setIsDailyChallengeActive] = useState<boolean>(false);
   const [isDailyArchiveOpen, setIsDailyArchiveOpen] = useState<boolean>(false);
   const [activeDailyQuestions, setActiveDailyQuestions] = useState<DailyStageQuestion[]>([]);
@@ -174,9 +178,22 @@ export function App() {
     setActiveTab('singleplayer');
   }, [countries]);
 
-  // Finalizar Desafío Diario y mostrar leaderboard
-  const handleFinishDailyChallenge = useCallback((score: number, accuracy: number, durationSeconds: number) => {
-    dailyChallengeService.recordDailyCompletion(score, accuracy, durationSeconds, activeDailyDateStr || undefined);
+  // Finalizar Desafío Diario y sincronizar con la nube
+  const handleFinishDailyChallenge = useCallback(async (score: number, accuracy: number, durationSeconds: number) => {
+    const activeDate = activeDailyDateStr || dailyChallengeService.getTodayDateString();
+    const streakState = dailyChallengeService.recordDailyCompletion(score, accuracy, durationSeconds, activeDate);
+    const record = streakState.history[activeDate];
+    
+    // Si el usuario está autenticado, sincronizar con Supabase
+    try {
+      const user = await authService.getCurrentUser();
+      if (user && record) {
+        await cloudSyncService.saveDailyChallengeAttempt(user.id, record);
+      }
+    } catch (e) {
+      console.warn('No se pudo sincronizar el reto diario con Supabase:', e);
+    }
+
     setIsDailyChallengeActive(false);
     setActiveDailyQuestions([]);
     setActiveDailyDateStr('');
@@ -360,6 +377,7 @@ export function App() {
         bestStreak={stats.bestStreak}
         onOpenAchievements={() => setIsAchievementsModalOpen(true)}
         onOpenDonate={() => setIsDonateModalOpen(true)}
+        onOpenLeaderboard={() => setIsLeaderboardModalOpen(true)}
       />
 
       {/* Contenido Principal */}
@@ -656,6 +674,12 @@ export function App() {
           setIsDailyArchiveOpen(false);
           handleStartDailyChallenge(dateStr);
         }}
+      />
+
+      {/* Modal de Clasificación Mundial en Vivo (Supabase) */}
+      <LeaderboardModal
+        isOpen={isLeaderboardModalOpen}
+        onClose={() => setIsLeaderboardModalOpen(false)}
       />
 
       {/* Pie de Página */}
