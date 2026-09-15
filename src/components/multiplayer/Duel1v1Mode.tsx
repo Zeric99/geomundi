@@ -257,34 +257,27 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     const updatedResults = [...playerResults, newResult];
     setPlayerResults(updatedResults);
 
-    if (isRanked) {
-      // Avance inmediato en Ranked
+    // Feedback visual en el mapa: verde si acierta, rojo si falla
+    setIsEvaluating(true);
+    const clickedCode = clickedCountry.cca3.toUpperCase();
+    setCountryStatuses({
+      [clickedCode]: isCorrect ? 'correct' : 'wrong'
+    });
+
+    // Retardo ágil de 650ms para que se aprecie con claridad el verde o rojo antes de pasar a la siguiente
+    setTimeout(() => {
+      setIsEvaluating(false);
+      setCountryStatuses({});
+
       const nextIdx = currentIndex + 1;
       if (nextIdx < questions.length) {
         setCurrentIndex(nextIdx);
+        questionStartTimeRef.current = Date.now();
       } else {
         if (timerRef.current) clearInterval(timerRef.current);
         finishDuel(updatedResults);
       }
-    } else {
-      // Modo casual con breve feedback de color
-      setIsEvaluating(true);
-      setCountryStatuses({
-        [clickedCountry.cca3.toUpperCase()]: isCorrect ? 'correct' : 'wrong',
-        ...(isCorrect ? {} : { [currentQuestion.country.cca3.toUpperCase()]: 'hint' })
-      });
-
-      setTimeout(() => {
-        setIsEvaluating(false);
-        setCountryStatuses({});
-        const nextIdx = currentIndex + 1;
-        if (nextIdx < questions.length) {
-          setCurrentIndex(nextIdx);
-        } else {
-          finishDuel(updatedResults);
-        }
-      }, 1000);
-    }
+    }, 650);
   };
 
   // Avanzar a la siguiente pregunta o finalizar el duelo
