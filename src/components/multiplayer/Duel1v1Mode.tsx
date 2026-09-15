@@ -355,7 +355,8 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
       isRanked,
       false,
       effectiveRival.elo,
-      duelMode
+      duelMode,
+      playerProfile
     );
 
     if (winner === 'player') {

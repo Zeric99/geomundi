@@ -811,7 +811,10 @@ export class MultiplayerService {
         winsDelta > 0,
         false,
         50 * processedChallenges.length,
-        rankTier
+        rankTier,
+        undefined,
+        undefined,
+        updatedElos
       );
 
       // Marcar desafíos como notificados en Supabase
@@ -999,7 +1002,8 @@ export class MultiplayerService {
     isRanked: boolean,
     isCustomRoom: boolean = false,
     rivalEloOverride?: number,
-    duelMode: DuelMode = 'pinpoint'
+    duelMode: DuelMode = 'pinpoint',
+    currentProfileOverride?: PlayerProfile
   ): { 
     updatedProfile: PlayerProfile; 
     eloChange: number; 
@@ -1008,7 +1012,7 @@ export class MultiplayerService {
     modeEloChange: number;
     newModeElo: number;
   } {
-    const profile = this.getPlayerProfile();
+    const profile = currentProfileOverride || this.getPlayerProfile();
 
     let winner: 'player' | 'rival' | 'tie' = 'tie';
     if (playerScore > rivalScore) {

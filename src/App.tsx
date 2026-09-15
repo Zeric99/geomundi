@@ -115,6 +115,12 @@ export function App() {
   // Sincronizar el perfil multijugador con el usuario autenticado de Supabase
   useEffect(() => {
     if (profile) {
+      const elos: Record<DuelMode, number> = {
+        pinpoint: profile.elo_pinpoint ?? 1200,
+        countries: profile.elo_countries ?? 1200,
+        capitals: profile.elo_capitals ?? 1200,
+        flags: profile.elo_flags ?? 1200,
+      };
       setPlayerProfile({
         id: profile.id,
         name: profile.nickname || user?.user_metadata?.full_name || 'Tú',
@@ -125,7 +131,8 @@ export function App() {
         losses: profile.losses || 0,
         streak: profile.win_streak || 0,
         xp: profile.xp || 0,
-        level: profile.level || 1
+        level: profile.level || 1,
+        elos
       });
     }
   }, [profile, user]);
@@ -465,7 +472,8 @@ export function App() {
           updateProfileElo(
             newGeneralElo,
             (profile?.wins || 0) + (isWin ? 1 : 0),
-            (profile?.losses || 0) + (!isWin && !isDraw ? 1 : 0)
+            (profile?.losses || 0) + (!isWin && !isDraw ? 1 : 0),
+            updatedElos
           );
           await authService.updateDuelStats(
             user.id,
@@ -475,7 +483,8 @@ export function App() {
             duelState.xpEarned || 150,
             rankTier,
             duelState.duelMode,
-            newModeElo
+            newModeElo,
+            updatedElos
           );
           await refreshProfile();
         }
@@ -548,7 +557,12 @@ export function App() {
             ...result.updatedProfile
           }));
           if (result.updatedProfile.elo) {
-            updateProfileElo(result.updatedProfile.elo, result.updatedProfile.wins, result.updatedProfile.losses);
+            updateProfileElo(
+              result.updatedProfile.elo,
+              result.updatedProfile.wins,
+              result.updatedProfile.losses,
+              result.updatedProfile.elos
+            );
           }
         }
         await refreshProfile();

@@ -106,7 +106,8 @@ export const authService = {
     xpEarned: number,
     rankTier: string,
     duelMode?: DuelMode,
-    modeElo?: number
+    modeElo?: number,
+    allElos?: Partial<Record<DuelMode, number>>
   ): Promise<boolean> {
     if (!supabase) return false;
     try {
@@ -135,6 +136,13 @@ export const authService = {
         level: newLevel,
         updated_at: new Date().toISOString()
       };
+
+      if (allElos) {
+        if (allElos.pinpoint !== undefined) updatePayload.elo_pinpoint = allElos.pinpoint;
+        if (allElos.countries !== undefined) updatePayload.elo_countries = allElos.countries;
+        if (allElos.capitals !== undefined) updatePayload.elo_capitals = allElos.capitals;
+        if (allElos.flags !== undefined) updatePayload.elo_flags = allElos.flags;
+      }
 
       if (duelMode) {
         const modeKey = duelMode;

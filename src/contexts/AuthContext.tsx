@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { authService, UserProfile } from '../services/authService';
 import { cloudSyncService } from '../services/cloudSyncService';
 
+import { DuelMode } from '../types/multiplayer';
+
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
@@ -13,7 +15,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   /** Actualiza el ELO del perfil en memoria al instante (sin esperar a Supabase) */
-  updateProfileElo: (newElo: number, wins?: number, losses?: number) => void;
+  updateProfileElo: (newElo: number, wins?: number, losses?: number, modeElos?: Partial<Record<DuelMode, number>>) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -48,15 +50,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user, fetchProfile]);
 
-  /** Actualiza el ELO (y opcionalmente wins/losses) en el perfil local al instante */
-  const updateProfileElo = useCallback((newElo: number, wins?: number, losses?: number) => {
+  /** Actualiza el ELO (y opcionalmente wins/losses y ELOs por modalidad) en el perfil local al instante */
+  const updateProfileElo = useCallback((newElo: number, wins?: number, losses?: number, modeElos?: Partial<Record<DuelMode, number>>) => {
     setProfile(prev => {
       if (!prev) return prev;
+      const modeEloUpdates: Record<string, number> = {};
+      if (modeElos) {
+        if (modeElos.pinpoint !== undefined) modeEloUpdates.elo_pinpoint = modeElos.pinpoint;
+        if (modeElos.countries !== undefined) modeEloUpdates.elo_countries = modeElos.countries;
+        if (modeElos.capitals !== undefined) modeEloUpdates.elo_capitals = modeElos.capitals;
+        if (modeElos.flags !== undefined) modeEloUpdates.elo_flags = modeElos.flags;
+      }
       return {
         ...prev,
         elo: newElo,
         ...(wins !== undefined ? { wins } : {}),
-        ...(losses !== undefined ? { losses } : {})
+        ...(losses !== undefined ? { losses } : {}),
+        ...modeEloUpdates
       };
     });
   }, []);
