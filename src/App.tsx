@@ -394,7 +394,8 @@ export function App() {
       const creatorId = user?.id || 'player_local';
 
       const newChallenge: CommunityChallenge = {
-        id: `chal_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        id: crypto.randomUUID(),
+
         creatorId,
         creatorName,
         creatorAvatar,
