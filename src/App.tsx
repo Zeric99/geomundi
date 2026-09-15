@@ -526,10 +526,44 @@ export function App() {
       user?.id
     );
 
+    // Guardar en el historial local de duelos siempre que se juegue una partida
+    if (!duelState.isChallengeCreation) {
+      multiplayerService.saveDuelToHistory(duelState);
+    }
+
     if (newAchievements.length > 0) {
       setUnlockedAchievement(newAchievements[0]);
     }
   }, [profile, user, playerProfile.elos, refreshProfile, updateProfileElo, stats]);
+
+  // Sincronizar desafíos resueltos en ausencia para el creador (reclamar victorias/derrotas y sumar ELO)
+  const handleSyncPendingChallenges = useCallback(async () => {
+    if (!user || user.id === 'player_local') return;
+    try {
+      const result = await multiplayerService.processPendingCreatorChallenges(user.id, playerProfile);
+      if (result.processedCount > 0) {
+        if (result.updatedProfile) {
+          setPlayerProfile(prev => ({
+            ...prev,
+            ...result.updatedProfile
+          }));
+          if (result.updatedProfile.elo) {
+            updateProfileElo(result.updatedProfile.elo, result.updatedProfile.wins, result.updatedProfile.losses);
+          }
+        }
+        await refreshProfile();
+      }
+    } catch (e) {
+      console.error('Error sincronizando desafíos resueltos del creador:', e);
+    }
+  }, [user, playerProfile, updateProfileElo, refreshProfile]);
+
+  // Ejecutar sincronización al entrar en la pestaña multijugador
+  useEffect(() => {
+    if (activeTab === 'multiplayer' && user) {
+      handleSyncPendingChallenges();
+    }
+  }, [activeTab, user, handleSyncPendingChallenges]);
 
 
 
@@ -894,6 +928,7 @@ export function App() {
                 onStartDuel={handleStartDuel}
                 onStartChallenge={handleStartChallenge}
                 onCreateChallenge={handleCreateChallenge}
+                onSyncPendingChallenges={handleSyncPendingChallenges}
               />
 
             )}

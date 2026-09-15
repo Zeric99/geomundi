@@ -21,6 +21,7 @@ interface MultiplayerDashboardProps {
   ) => void;
   onStartChallenge?: (challenge: CommunityChallenge) => void;
   onCreateChallenge?: (mode: DuelMode) => void;
+  onSyncPendingChallenges?: () => Promise<void>;
 }
 
 export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
@@ -29,7 +30,8 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
   initialRoomCode,
   onStartDuel,
   onStartChallenge,
-  onCreateChallenge
+  onCreateChallenge,
+  onSyncPendingChallenges
 }) => {
 
   const [activeTab, setActiveTab] = useState<'ranked' | 'custom' | 'history'>('ranked');
@@ -82,6 +84,11 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
   const checkUnnotifiedDuels = async () => {
     if (!playerProfile.id || playerProfile.id === 'player_local') return;
     try {
+      if (onSyncPendingChallenges) {
+        await onSyncPendingChallenges();
+      }
+      const history = await multiplayerService.getUserDuelHistory(playerProfile.id);
+      setDuelHistory(history);
       const unnotified = await multiplayerService.getUnnotifiedResolvedChallenges(playerProfile.id);
       if (unnotified.length > 0) {
         setUnnotifiedDuels(unnotified);
