@@ -41,6 +41,7 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
   const [challenges, setChallenges] = useState<CommunityChallenge[]>([]);
   const [isLoadingChallenges, setIsLoadingChallenges] = useState<boolean>(true);
   const [filterMode, setFilterMode] = useState<DuelMode | 'all'>('all');
+  const [challengesError, setChallengesError] = useState<string | null>(null);
 
   // Estado de exclusividad y desafíos no notificados (offline)
   const [claimingChallengeId, setClaimingChallengeId] = useState<string | null>(null);
@@ -49,11 +50,18 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
 
   const loadChallenges = async () => {
     setIsLoadingChallenges(true);
+    setChallengesError(null);
     try {
       const data = await multiplayerService.getCommunityChallenges(30);
       setChallenges(data);
-    } catch (e) {
+      if (data.length === 0) {
+        // Intentar detectar si es fallo de Supabase vs tablón vacío legítimo
+        // getCommunityChallenges ya loguea el error en consola con código exacto
+        console.log('[MultiplayerDashboard] Tablón vacío tras carga');
+      }
+    } catch (e: any) {
       console.error('Error cargando desafíos:', e);
+      setChallengesError(`Error al cargar: ${e?.message || 'desconocido'}`);
     } finally {
       setIsLoadingChallenges(false);
     }
@@ -532,6 +540,14 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
               ))}
             </div>
 
+            {/* Error de carga visible */}
+            {challengesError && (
+              <div className="p-3 bg-rose-950/60 border border-rose-700/50 rounded-xl text-rose-300 text-xs flex items-center gap-2">
+                <span>⚠️</span>
+                <span>{challengesError} — Revisa la consola del navegador (F12) para más detalles.</span>
+              </div>
+            )}
+
             {/* Lista de Desafíos */}
             {isLoadingChallenges ? (
               <div className="py-12 text-center text-zinc-400 font-mono text-xs flex items-center justify-center gap-2">
@@ -550,7 +566,8 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {filteredChallenges.map(chal => {
-                  const isSelf = chal.creatorId === playerProfile.id || chal.creatorName === playerProfile.name;
+                  // Solo comparar por ID para evitar falsos positivos por nombre duplicado
+                  const isSelf = !!playerProfile.id && playerProfile.id !== 'player_local' && chal.creatorId === playerProfile.id;
                   const rankInfo = multiplayerService.getRankInfo(chal.creatorElo);
                   const modeBadge =
                     chal.mode === 'pinpoint' ? '🎯 Puntería' :
