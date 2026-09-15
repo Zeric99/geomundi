@@ -52,7 +52,8 @@ import { useAuth } from './contexts/AuthContext';
 import { Loader2, Lock, LogIn, Swords } from 'lucide-react';
 
 export function App() {
-  const { user, profile, refreshProfile, signInWithGoogle } = useAuth();
+  const { user, profile, refreshProfile, signInWithGoogle, updateProfileElo } = useAuth();
+
 
   // Detectar si el usuario entra mediante un enlace de invitación a sala (#room=GEO-XXXX o ?room=GEO-XXXX)
   const initialRoomCode = useMemo(() => {
@@ -460,28 +461,35 @@ export function App() {
       const rankTier = multiplayerService.getRankInfo(newGeneralElo).tier;
 
       if (user) {
-        await authService.updateDuelStats(
-          user.id,
-          newGeneralElo,
-          isWin,
-          isDraw,
-          duelState.xpEarned || 150,
-          rankTier,
-          duelState.duelMode,
-          newModeElo
-        );
-        await refreshProfile();
-      }
+          // Actualizar ELO en memoria al instante → Navbar y perfil se actualizan sin esperar a Supabase
+          updateProfileElo(
+            newGeneralElo,
+            (profile?.wins || 0) + (isWin ? 1 : 0),
+            (profile?.losses || 0) + (!isWin && !isDraw ? 1 : 0)
+          );
+          await authService.updateDuelStats(
+            user.id,
+            newGeneralElo,
+            isWin,
+            isDraw,
+            duelState.xpEarned || 150,
+            rankTier,
+            duelState.duelMode,
+            newModeElo
+          );
+          await refreshProfile();
+        }
 
-      setPlayerProfile(prev => ({
-        ...prev,
-        elo: newGeneralElo,
-        rank: multiplayerService.getRankInfo(newGeneralElo),
-        wins: prev.wins + (isWin ? 1 : 0),
-        losses: prev.losses + (!isWin && !isDraw ? 1 : 0),
-        streak: isWin ? prev.streak + 1 : 0,
-        elos: updatedElos
-      }));
+        setPlayerProfile(prev => ({
+          ...prev,
+          elo: newGeneralElo,
+          rank: multiplayerService.getRankInfo(newGeneralElo),
+          wins: prev.wins + (isWin ? 1 : 0),
+          losses: prev.losses + (!isWin && !isDraw ? 1 : 0),
+          streak: isWin ? prev.streak + 1 : 0,
+          elos: updatedElos
+        }));
+
     }
 
     // Actualizar contador en stats.modeStats para los logros y visualización
@@ -521,7 +529,8 @@ export function App() {
     if (newAchievements.length > 0) {
       setUnlockedAchievement(newAchievements[0]);
     }
-  }, [profile, user, playerProfile.elos, refreshProfile, stats]);
+  }, [profile, user, playerProfile.elos, refreshProfile, updateProfileElo, stats]);
+
 
 
   // Manejar acción desde tarjeta del Tutor

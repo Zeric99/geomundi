@@ -94,9 +94,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
               handleRankedTimeOut();
               return 0;
             }
-            const next = prev - 1;
-            playTickSound(next <= 5); // urgente en últimos 5s
-            return next;
+            return prev - 1;
           });
         }, 1000);
       }
@@ -110,9 +108,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
             handleTimeOut();
             return 0;
           }
-          const next = prev - 1;
-          playTickSound(next <= 5); // urgente en últimos 5s
-          return next;
+          return prev - 1;
         });
       }, 1000);
     }
@@ -122,6 +118,14 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     };
 
   }, [currentIndex, isRanked]);
+
+  // Tick de reloj: reacciona a timeLeft directamente para evitar stale closure
+  // Activo mientras el timer corre (timeLeft > 0) y no estamos evaluando
+  useEffect(() => {
+    if (timeLeft > 0 && !isEvaluating) {
+      playTickSound(timeLeft <= 5);
+    }
+  }, [timeLeft]);
 
   // Manejar agotamiento total del tiempo en modo Ranked (25 segundos finalizados)
   const handleRankedTimeOut = () => {

@@ -12,6 +12,8 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  /** Actualiza el ELO del perfil en memoria al instante (sin esperar a Supabase) */
+  updateProfileElo: (newElo: number, wins?: number, losses?: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -21,7 +23,8 @@ const AuthContext = createContext<AuthContextType>({
   isConfigured: false,
   signInWithGoogle: async () => {},
   signOut: async () => {},
-  refreshProfile: async () => {}
+  refreshProfile: async () => {},
+  updateProfileElo: () => {}
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -44,6 +47,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await fetchProfile(user.id);
     }
   }, [user, fetchProfile]);
+
+  /** Actualiza el ELO (y opcionalmente wins/losses) en el perfil local al instante */
+  const updateProfileElo = useCallback((newElo: number, wins?: number, losses?: number) => {
+    setProfile(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        elo: newElo,
+        ...(wins !== undefined ? { wins } : {}),
+        ...(losses !== undefined ? { losses } : {})
+      };
+    });
+  }, []);
 
   useEffect(() => {
     if (!supabase) {
@@ -99,7 +115,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isConfigured,
         signInWithGoogle,
         signOut,
-        refreshProfile
+        refreshProfile,
+        updateProfileElo
       }}
     >
       {children}
