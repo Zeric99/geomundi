@@ -213,6 +213,37 @@ export function useAudioFeedback() {
     } catch (e) {}
   }, [soundEnabled, volume, getAudioContext, triggerHaptic]);
 
+  // Tick de reloj para temporizador de duelo
+  // urgent=false → tick suave cada segundo; urgent=true → doble tick rápido (últimos 5s)
+  const playTickSound = useCallback((urgent: boolean = false) => {
+    if (!soundEnabled || volume <= 0) return;
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      const tickVol = (urgent ? 0.14 : 0.07) * volume;
+
+      const fireTick = (offset: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(urgent ? 1400 : 900, ctx.currentTime + offset);
+        gain.gain.setValueAtTime(tickVol, ctx.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.03);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + offset);
+        osc.stop(ctx.currentTime + offset + 0.035);
+      };
+
+      fireTick(0);
+      if (urgent) {
+        // Doble tick urgente: tock 80ms después
+        fireTick(0.08);
+      }
+    } catch (e) {}
+  }, [soundEnabled, volume, getAudioContext]);
+
   return {
     soundEnabled,
     toggleSound,
@@ -224,6 +255,7 @@ export function useAudioFeedback() {
     playWrongSound,
     playClickSound,
     playHintSound,
-    playVictorySound
+    playVictorySound,
+    playTickSound
   };
 }

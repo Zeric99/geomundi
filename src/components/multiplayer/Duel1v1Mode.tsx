@@ -39,7 +39,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
   onQuit,
   isGeekMode = false
 }) => {
-  const { playCorrectSound, playWrongSound, playVictorySound } = useAudioFeedback();
+  const { playCorrectSound, playWrongSound, playVictorySound, playTickSound } = useAudioFeedback();
 
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [playerResults, setPlayerResults] = useState<PlayerRoundResult[]>([]);
@@ -94,7 +94,9 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
               handleRankedTimeOut();
               return 0;
             }
-            return prev - 1;
+            const next = prev - 1;
+            playTickSound(next <= 5); // urgente en últimos 5s
+            return next;
           });
         }, 1000);
       }
@@ -108,7 +110,9 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
             handleTimeOut();
             return 0;
           }
-          return prev - 1;
+          const next = prev - 1;
+          playTickSound(next <= 5); // urgente en últimos 5s
+          return next;
         });
       }, 1000);
     }
