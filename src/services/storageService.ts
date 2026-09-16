@@ -160,6 +160,42 @@ export class StorageService {
   }
 
   /**
+   * Integra registros de maestría por país descargados de Supabase
+   */
+  mergeCloudMastery(cloudRows: Array<{ cca3: string; correct_count: number; wrong_count: number; last_played?: string }>): UserStatsState {
+    const currentStats = this.getUserStats();
+    const updatedCountries = { ...currentStats.countries };
+
+    for (const row of cloudRows) {
+      const code = row.cca3.toUpperCase();
+      const existing = updatedCountries[code];
+      const correct = Math.max(existing?.firstTrySuccesses || 0, row.correct_count || 0);
+      const mistakes = Math.max(existing?.mistakes || 0, row.wrong_count || 0);
+      const totalAttempts = Math.max(existing?.totalAttempts || 0, correct + mistakes);
+
+      updatedCountries[code] = {
+        cca3: code,
+        nameEs: existing?.nameEs || code,
+        continent: existing?.continent || 'Europe',
+        totalAttempts,
+        firstTrySuccesses: correct,
+        mistakes,
+        lastReviewedAt: row.last_played || existing?.lastReviewedAt || new Date().toISOString(),
+        averageResponseTimeMs: existing?.averageResponseTimeMs || 0,
+        confusionCountries: existing?.confusionCountries || []
+      };
+    }
+
+    const updatedStats: UserStatsState = {
+      ...currentStats,
+      countries: updatedCountries
+    };
+
+    this.saveUserStats(updatedStats);
+    return updatedStats;
+  }
+
+  /**
    * Resetea las estadísticas de estudio
    */
   resetStats(): void {

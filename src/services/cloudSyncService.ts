@@ -1,7 +1,12 @@
 import { supabase } from '../lib/supabase';
-import { StorageService } from './storageService';
-import { DailyChallengeRecord } from './dailyChallengeService';
+import { storageService, StorageService } from './storageService';
+import { dailyChallengeService, DailyChallengeRecord } from './dailyChallengeService';
+import { personalRecordsService } from './personalRecordsService';
+import { achievementService } from './achievementService';
+import { multiplayerService } from './multiplayerService';
+import { customRoomService } from './customRoomService';
 import { DuelMode } from '../types/multiplayer';
+import { GameSummary } from '../types/game';
 
 export interface LeaderboardEntry {
   id: string;
@@ -203,15 +208,13 @@ export const cloudSyncService = {
   },
 
   /**
-   * Migra automáticamente las estadísticas locales del localStorage a Supabase
+   * Migra datos generados en modo invitado local a la nube (Supabase) al iniciar sesión
    */
   async migrateLocalDataToCloud(userId: string): Promise<boolean> {
-    if (!supabase) return false;
+    if (!supabase || !userId) return false;
     try {
-      const storage = new StorageService();
-      const localStats = storage.getUserStats();
-
-      // Si tiene países jugados en local, sincronizarlos
+      // 1. Maestría de países jugados como invitado
+      const localStats = storageService.getUserStats();
       const entries = Object.values(localStats.countries || {});
       if (entries.length > 0) {
         const masteryRows = entries.map(c => ({
@@ -227,10 +230,144 @@ export const cloudSyncService = {
           .upsert(masteryRows, { onConflict: 'user_id,cca3' });
       }
 
+      // 2. Récords personales locales
+      const localRecords = personalRecordsService.getAllRecords();
+      const recordKeys = Object.keys(localRecords);
+      if (recordKeys.length > 0) {
+        const recordRows = recordKeys.map(k => {
+          const r = localRecords[k];
+          return {
+            user_id: userId,
+            game_mode: r.mode,
+            continent: r.continent,
+            correct_count: r.correctCount,
+            total_countries: r.totalQuestions,
+            accuracy_pct: r.accuracyPct,
+            time_seconds: r.timeSeconds,
+            updated_at: r.date || new Date().toISOString()
+          };
+        });
+
+        await supabase
+          .from('personal_records')
+          .upsert(recordRows, { onConflict: 'user_id,game_mode,continent' });
+      }
+
+      // 3. Logros conseguidos como invitado
+      await achievementService.syncWithSupabase(userId);
+
+      // 4. Reto diario de hoy si se completó antes de iniciar sesión
+      const streakState = dailyChallengeService.getStreakState();
+      const today = dailyChallengeService.getTodayDateString();
+      const todayAttempt = streakState.history[today];
+      if (todayAttempt && todayAttempt.completed) {
+        await this.saveDailyChallengeAttempt(userId, todayAttempt);
+      }
+
       return true;
     } catch (e) {
       console.error('Error migrando datos locales a la nube:', e);
       return false;
     }
+  },
+
+  /**
+   * Descarga e hidrata los datos autoritativos del usuario desde Supabase en la sesión actual
+   */
+  async hydrateUserDataFromCloud(userId: string): Promise<void> {
+    if (!supabase || !userId) return;
+    try {
+      // 1. Hidratar maestría de países
+      const { data: masteryData, error: masteryError } = await supabase
+        .from('country_mastery')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (!masteryError && masteryData && masteryData.length > 0) {
+        storageService.mergeCloudMastery(masteryData);
+      }
+
+      // 2. Hidratar récords personales
+      await personalRecordsService.syncFromSupabase(userId);
+
+      // 3. Hidratar logros
+      await achievementService.syncWithSupabase(userId);
+
+      // 4. Hidratar intento del reto diario de hoy si ya se jugó en otro dispositivo
+      const today = dailyChallengeService.getTodayDateString();
+      const { data: dailyData, error: dailyError } = await supabase
+        .from('daily_challenge_attempts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('challenge_date', today)
+        .maybeSingle();
+
+      if (!dailyError && dailyData && dailyData.solved) {
+        dailyChallengeService.hydrateDailyCompletionFromCloud(
+          today,
+          dailyData.score || 0,
+          dailyData.time_seconds || 30
+        );
+      }
+    } catch (e) {
+      console.warn('Error hidratando datos de usuario desde Supabase:', e);
+    }
+  },
+
+  /**
+   * Sincroniza en tiempo real la maestría de países de una partida finalizada a Supabase
+   */
+  async syncGameMastery(userId: string, summary: GameSummary): Promise<void> {
+    if (!supabase || !userId || !summary.results || summary.results.length === 0) return;
+    try {
+      const rows = summary.results.map(r => {
+        const cca3 = r.question.country.cca3.toUpperCase();
+        return {
+          user_id: userId,
+          cca3,
+          correct_count: r.userSuccess && r.firstTry ? 1 : 0,
+          wrong_count: r.userSuccess && r.firstTry ? 0 : 1,
+          last_played: new Date().toISOString()
+        };
+      });
+
+      // Upsert combinando o sumando
+      for (const row of rows) {
+        const { data: existing } = await supabase
+          .from('country_mastery')
+          .select('correct_count, wrong_count')
+          .eq('user_id', userId)
+          .eq('cca3', row.cca3)
+          .maybeSingle();
+
+        const currentCorrect = (existing?.correct_count || 0) + row.correct_count;
+        const currentWrong = (existing?.wrong_count || 0) + row.wrong_count;
+
+        await supabase
+          .from('country_mastery')
+          .upsert({
+            user_id: userId,
+            cca3: row.cca3,
+            correct_count: currentCorrect,
+            wrong_count: currentWrong,
+            last_played: row.last_played
+          }, { onConflict: 'user_id,cca3' });
+      }
+    } catch (e) {
+      console.warn('Error sincronizando maestría de partida con Supabase:', e);
+    }
   }
+};
+
+/**
+ * Limpia absolutamente todos los datos de sesión/usuario guardados en el navegador
+ * (para evitar contaminación cruzada de cuentas al cerrar sesión)
+ */
+export const clearAllUserSessionData = (): void => {
+  storageService.resetStats();
+  achievementService.resetAchievements();
+  personalRecordsService.resetRecords();
+  dailyChallengeService.resetDailyState();
+  multiplayerService.resetLocalProfile();
+  customRoomService.clearRoomCache();
 };

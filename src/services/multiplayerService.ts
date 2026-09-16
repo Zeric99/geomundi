@@ -236,6 +236,17 @@ export class MultiplayerService {
   }
 
   /**
+   * Resetea el perfil y el historial multijugador local (útil al cerrar sesión)
+   */
+  resetLocalProfile(): void {
+    try {
+      localStorage.removeItem(MULTIPLAYER_PROFILE_KEY);
+      localStorage.removeItem(MULTIPLAYER_HISTORY_KEY);
+      localStorage.removeItem(COMMUNITY_CHALLENGES_KEY);
+    } catch (e) {}
+  }
+
+  /**
    * Genera un código de sala personalizada corto (ej. ROOM-4921)
    */
   generateRoomCode(): string {

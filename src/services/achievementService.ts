@@ -758,6 +758,15 @@ export class AchievementService {
   }
 
   /**
+   * Resetea el estado de logros en localStorage
+   */
+  resetAchievements(): void {
+    try {
+      localStorage.removeItem(ACHIEVEMENTS_STORAGE_KEY);
+    } catch (e) {}
+  }
+
+  /**
    * Sincroniza logros desbloqueados con Supabase (para usuarios autenticados)
    */
   async syncWithSupabase(userId?: string): Promise<void> {

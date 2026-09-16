@@ -274,5 +274,18 @@ export const customRoomService = {
     } catch (e) {
       console.warn('Error enviando rival_finished:', e);
     }
+  },
+
+  /**
+   * Limpia el respaldo de salas personalizadas en localStorage
+   */
+  clearRoomCache(): void {
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(ROOM_CHALLENGE_STORAGE_PREFIX)) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {}
   }
 };

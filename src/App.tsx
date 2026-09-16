@@ -145,7 +145,22 @@ export function App() {
   const [finishedDuelResult, setFinishedDuelResult] = useState<DuelState | null>(null);
   const [activeRoomCode, setActiveRoomCode] = useState<string | null>(null);
 
-  // Sincronizar el perfil multijugador con el usuario autenticado de Supabase
+  // Carga de Países
+  const { countries, isLoading } = useCountriesData();
+
+  // Motor de Estadísticas y Tutor IA
+  const {
+    stats,
+    continentalMastery,
+    blindSpots,
+    smartAdvice,
+    recordGame,
+    resetStats,
+    refreshStats,
+    getFocusedPracticeCountries
+  } = useStatsManager(countries);
+
+  // Sincronizar el perfil multijugador y estadísticas con el estado de autenticación
   useEffect(() => {
     if (profile) {
       const elos: Record<DuelMode, number> = {
@@ -167,32 +182,39 @@ export function App() {
         level: profile.level || 1,
         elos
       });
+      refreshStats();
+    } else {
+      // Estado de invitado limpio si no hay sesión activa
+      setPlayerProfile({
+        id: 'player_local',
+        name: 'Tú',
+        avatar: '🎓',
+        elo: 1200,
+        rank: multiplayerService.getRankInfo(1200),
+        wins: 0,
+        losses: 0,
+        streak: 0,
+        xp: 0,
+        level: 1,
+        elos: { pinpoint: 1200, countries: 1200, capitals: 1200, flags: 1200 }
+      });
+      refreshStats();
     }
-  }, [profile, user]);
+  }, [profile, user, refreshStats]);
 
   // Iniciar pre-carga y caché de mapas en segundo plano para velocidad instantánea (0ms)
   useEffect(() => {
     mapPreloadService.startPreload();
   }, []);
 
-
-  // Carga de Países
-  const { countries, isLoading } = useCountriesData();
-
-  // Motor de Estadísticas y Tutor IA
-  const {
-    stats,
-    continentalMastery,
-    blindSpots,
-    smartAdvice,
-    recordGame,
-    resetStats,
-    getFocusedPracticeCountries
-  } = useStatsManager(countries);
-
   // Hook de Juego
   const handleGameComplete = useCallback((summary: GameSummary) => {
     recordGame(summary);
+
+    // Sincronizar progreso de maestría en Supabase si el usuario está autenticado
+    if (user?.id) {
+      cloudSyncService.syncGameMastery(user.id, summary);
+    }
 
     if (isDailyChallengeActive) {
       dailyChallengeService.recordDailyCompletion(summary.score, summary.accuracy, summary.durationSeconds || 30);

@@ -175,6 +175,15 @@ export class PersonalRecordsService {
     }
     return this.getAllRecords();
   }
+  /**
+   * Resetea todos los récords en memoria y en localStorage
+   */
+  resetRecords(): void {
+    this.memoryCache = {};
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+  }
 }
 
 export const personalRecordsService = new PersonalRecordsService();

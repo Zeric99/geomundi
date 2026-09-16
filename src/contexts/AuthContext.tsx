@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { authService, UserProfile } from '../services/authService';
-import { cloudSyncService } from '../services/cloudSyncService';
+import { cloudSyncService, clearAllUserSessionData } from '../services/cloudSyncService';
 
 import { DuelMode } from '../types/multiplayer';
 
@@ -83,20 +83,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(currentUser);
       if (currentUser) {
         await fetchProfile(currentUser.id);
-        cloudSyncService.migrateLocalDataToCloud(currentUser.id).catch(console.error);
+        // 1. Migrar datos de invitado local si existen a Supabase
+        await cloudSyncService.migrateLocalDataToCloud(currentUser.id).catch(console.error);
+        // 2. Hidratar datos de la nube a la sesión local
+        await cloudSyncService.hydrateUserDataFromCloud(currentUser.id).catch(console.error);
       }
       setLoading(false);
     });
 
     // Suscribirse a cambios de sesión (login, logout, refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
         await fetchProfile(currentUser.id);
-        cloudSyncService.migrateLocalDataToCloud(currentUser.id).catch(console.error);
+        await cloudSyncService.migrateLocalDataToCloud(currentUser.id).catch(console.error);
+        await cloudSyncService.hydrateUserDataFromCloud(currentUser.id).catch(console.error);
       } else {
         setProfile(null);
+        if (event === 'SIGNED_OUT') {
+          clearAllUserSessionData();
+        }
       }
       setLoading(false);
     });
@@ -112,6 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     await authService.signOut();
+    clearAllUserSessionData();
     setUser(null);
     setProfile(null);
   };

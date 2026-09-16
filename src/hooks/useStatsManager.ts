@@ -34,6 +34,10 @@ export function useStatsManager(countries: Country[]) {
     setStats(storageService.getUserStats());
   }, []);
 
+  const refreshStats = useCallback(() => {
+    setStats(storageService.getUserStats());
+  }, []);
+
   const getFocusedPracticeCountries = useCallback((limit: number = 10): Country[] => {
     return tutorEngine.getFocusedPracticeCountries(stats, countries, limit);
   }, [stats, countries]);
@@ -45,6 +49,7 @@ export function useStatsManager(countries: Country[]) {
     smartAdvice,
     recordGame,
     resetStats,
+    refreshStats,
     getFocusedPracticeCountries
   };
 }

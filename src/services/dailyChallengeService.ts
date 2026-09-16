@@ -345,6 +345,43 @@ https://geostrike.app/ #GeoStrike`;
 ¡Juega gratis y pon a prueba tu geografía en GeoStrike! 🗺️✨
 https://geostrike.app/`;
   }
+
+  /**
+   * Hidrata un intento completado desde Supabase si se jugó en otro dispositivo
+   */
+  hydrateDailyCompletionFromCloud(dateStr: string, score: number, durationSeconds: number = 30): void {
+    const state = this.getStreakState();
+    if (!state.history[dateStr]?.completed) {
+      const updatedState: DailyStreakState = {
+        ...state,
+        currentStreak: Math.max(state.currentStreak, 1),
+        lastCompletedDate: dateStr,
+        history: {
+          ...state.history,
+          [dateStr]: {
+            dateStr,
+            completed: true,
+            score,
+            accuracy: 100,
+            durationSeconds,
+            completedAt: new Date().toISOString()
+          }
+        }
+      };
+      try {
+        localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify(updatedState));
+      } catch (e) {}
+    }
+  }
+
+  /**
+   * Resetea el estado del reto diario y rachas del localStorage
+   */
+  resetDailyState(): void {
+    try {
+      localStorage.removeItem(DAILY_STORAGE_KEY);
+    } catch (e) {}
+  }
 }
 
 export const dailyChallengeService = new DailyChallengeService();

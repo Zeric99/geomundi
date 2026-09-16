@@ -4,6 +4,14 @@
 - **Cuenta de Supabase del proyecto**: `geostrikeapp@gmail.com`
 - **Proyecto Supabase**: `mklofgtmjbhvqrnnmris` (`https://mklofgtmjbhvqrnnmris.supabase.co`)
 - **Google Cloud Project ID**: `geostrike-508605`
+- **Cuenta de Vercel del proyecto**: `geostrikeapp@gmail.com`
+- **Vercel Recovery Codes (`geostrikeapp@gmail.com`)**:
+  - `28bbde6b-2ac27ef3`
+  - `d6011af5-c9ab02d2`
+  - `21bc27ae-4c71a167`
+  - `b457109a-c41be740`
+  - `4853fdf7-4c09b2b1`
+  - `25f84814-eee157c0`
 
 ## Directrices Clave
 - En modos competitivos (Desafío Diario / Wordle, Duelos 1v1, etc.) NO deben mostrarse pistas ni el botón de pistas.
