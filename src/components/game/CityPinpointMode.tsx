@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { Target, MapPin, Award, Compass, ArrowRight, RotateCcw, Sparkles, Trophy, Globe, Info, Zap, Navigation, Share2, Check, Layers } from 'lucide-react';
 import { Continent } from '../../types/country';
 import { CityTarget, PinpointResult, GameSummary } from '../../types/game';
 import { getRandomCities, CityThemeCategory } from '../../data/citiesData';
 import { calculateHaversineDistance, calculatePinpointScore, checkCountryAndContinentMatch } from '../../utils/haversineScoring';
-import { PinpointWorldMap } from '../map/PinpointWorldMap';
+import { PinpointWorldMap, PinHistoryItem } from '../map/PinpointWorldMap';
 import { generateShareText, copyToClipboard } from '../../utils/shareUtils';
 import { achievementService } from '../../services/achievementService';
+import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import confetti from 'canvas-confetti';
 
 interface CityPinpointModeProps {
@@ -22,6 +24,8 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
   onFinishGame,
   onReturnToMenu
 }) => {
+  const { playCorrectSound, playWrongSound } = useAudioFeedback();
+
   // Inicializar conjunto de 5 ciudades para la partida
   const [citiesList, setCitiesList] = useState<CityTarget[]>(() => getRandomCities(5, continent, themeCategory));
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -34,10 +38,60 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
   const [copiedShare, setCopiedShare] = useState<boolean>(false);
 
+  // Modo rápido (avance automático sin requerir clic manual en Siguiente Ciudad)
+  const [isFastMode, setIsFastMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('geostrike_pinpoint_fast_mode');
+      return saved !== null ? saved === 'true' : false; // Por defecto manual para leer la curiosidad
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const toggleFastMode = useCallback(() => {
+    setIsFastMode(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('geostrike_pinpoint_fast_mode', String(next));
+      } catch (e) {}
+      return next;
+    });
+  }, []);
+
+  // Toast flotante del último tiro completado (igual que en multijugador)
+  const [lastResultToast, setLastResultToast] = useState<{
+    cityName: string;
+    score: number;
+    distanceKm: number;
+    badgeTitle: string;
+  } | null>(null);
+
+  const nextTimerRef = useRef<any>(null);
+
+  // Cancelar temporizador de auto-avance si el usuario desactiva el modo rápido mientras está evaluando
+  useEffect(() => {
+    if (!isFastMode && nextTimerRef.current) {
+      clearTimeout(nextTimerRef.current);
+      nextTimerRef.current = null;
+    }
+  }, [isFastMode]);
+
+  // Historial de pines para dibujarlos en el Globo 3D (igual que en multijugador)
+  const previousPins = useMemo<PinHistoryItem[]>(() => {
+    return resultsHistory.map(r => ({
+      clickedCoords: r.clickedCoordinates,
+      targetCoords: r.city.coordinates,
+      distanceKm: r.distanceKm,
+      score: r.score,
+      cityName: r.city.nameEs
+    }));
+  }, [resultsHistory]);
+
   const currentCity = citiesList[currentIndex];
 
   // Reiniciar partida
   const handleRestartGame = useCallback(() => {
+    if (nextTimerRef.current) clearTimeout(nextTimerRef.current);
     const newCities = getRandomCities(5, continent, themeCategory);
     setCitiesList(newCities);
     setCurrentIndex(0);
@@ -48,6 +102,7 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
     setTotalScore(0);
     setIsGameOver(false);
     setCopiedShare(false);
+    setLastResultToast(null);
   }, [continent, themeCategory]);
 
   // Manejar el clic en el mapa
@@ -68,6 +123,13 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
 
     // 3. Calcular puntos y medalla
     const { score, badgeTitle } = calculatePinpointScore(distanceKm, isSameCountry, isSameContinent);
+
+    // Audio feedback táctico
+    if (score >= 400) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
+    }
 
     const result: PinpointResult = {
       city: currentCity,
@@ -94,25 +156,34 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
       } catch (e) {}
     }
 
-    // Ref para temporizador de avance automático
+    // Si está activo el Modo Rápido, dar tiempo suficiente para ver la animación 3D completa
+    // del rayo láser, la explosión y la distancia en km, y luego avanzar solo
     if (nextTimerRef.current) clearTimeout(nextTimerRef.current);
-    nextTimerRef.current = setTimeout(() => {
-      handleNextCity(result);
-    }, 1400);
+    if (isFastMode) {
+      nextTimerRef.current = setTimeout(() => {
+        handleNextCity(result);
+      }, 2600);
+    }
 
     // Evaluar logros de puntería inmediata (ej. cirujano < 50km, francotirador 1000 pts)
     achievementService.evaluateAchievements(
       { totalGamesPlayed: 0, totalScore: score, bestStreak: 0 },
       { mode: 'city_pinpoint', distanceKm, pinpointScore: score, correctCount: isSameCountry ? 1 : 0 }
     );
-  }, [currentCity, isEvaluated, isGameOver, currentIndex, citiesList.length]);
-
-  const nextTimerRef = useRef<any>(null);
+  }, [currentCity, isEvaluated, isGameOver, isFastMode, playCorrectSound, playWrongSound]);
 
   const handleNextCity = (resultToSave?: PinpointResult) => {
     if (nextTimerRef.current) clearTimeout(nextTimerRef.current);
     const res = resultToSave || currentResult;
     if (!res) return;
+
+    // Toast flotante del tiro que acaba de terminar (como en multijugador)
+    setLastResultToast({
+      cityName: res.city.nameEs,
+      score: res.score,
+      distanceKm: res.distanceKm,
+      badgeTitle: res.badgeTitle
+    });
 
     const newHistory = [...resultsHistory, res];
     setResultsHistory(prev => {
@@ -296,8 +367,23 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
           </div>
         </div>
 
-        {/* Puntuación Acumulada */}
+        {/* Acciones del HUD: Modo Rápido Switch + Puntuación Acumulada */}
         <div className="flex items-center gap-3 flex-wrap">
+          {/* Botón de Modo Rápido en el Banner Superior */}
+          <button
+            type="button"
+            onClick={toggleFastMode}
+            className={`px-3 py-2 rounded-xl border text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer ${
+              isFastMode
+                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 hover:bg-amber-500/30'
+                : 'bg-zinc-900/90 border-zinc-700/80 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600'
+            }`}
+            title={isFastMode ? 'Modo Rápido activado: avanzará automáticamente tras cada tiro' : 'Modo Lectura activado: pulsa "Siguiente Ciudad" para avanzar a tu ritmo'}
+          >
+            <Zap className={`w-3.5 h-3.5 ${isFastMode ? 'text-amber-400 fill-amber-400' : 'text-zinc-500'}`} />
+            <span>{isFastMode ? 'Modo Rápido: ON' : 'Modo Rápido: OFF'}</span>
+          </button>
+
           <div className="flex items-center gap-3 bg-zinc-900/90 border border-zinc-800 px-4 py-2 rounded-xl shadow-inner">
             <Award className="w-5 h-5 text-amber-400" />
             <div>
@@ -312,6 +398,25 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
         </div>
       </div>
 
+      {/* Banner Toast del Tiro Anterior (Muestra distancia y puntos obtenidos mientras juegas la siguiente ronda) */}
+      {lastResultToast && !isEvaluated && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#141d2b]/95 border border-cyan-500/40 px-4 py-2.5 rounded-xl text-xs flex items-center justify-between gap-3 shadow-lg text-zinc-200 font-mono"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-cyan-400 font-bold">📍 Tiro anterior ({lastResultToast.cityName}):</span>
+            <span className="text-zinc-300">{lastResultToast.distanceKm?.toLocaleString()} km</span>
+            <span className="text-zinc-500">•</span>
+            <span className="text-cyan-300 font-sans">{lastResultToast.badgeTitle}</span>
+          </div>
+          <div className="text-emerald-400 font-extrabold text-sm font-mono">
+            +{lastResultToast.score} pts
+          </div>
+        </motion.div>
+      )}
+
       {/* Mapa Interactivo de Puntería */}
       <div className="relative flex-1 min-h-[380px] h-[calc(100vh-230px)] max-h-[calc(100vh-230px)] w-full rounded-xl overflow-hidden shadow-2xl border border-zinc-800 bg-[#050b14]">
         <PinpointWorldMap
@@ -319,14 +424,15 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
           targetCoords={currentCity.coordinates}
           onMapClick={handleMapClick}
           isEvaluated={isEvaluated}
+          previousPins={previousPins}
           continent={continent}
           cityName={currentCity.nameEs}
-          enableCinematicZoom={true}
+          enableCinematicZoom={false}
         />
 
         {/* Modal / Tarjeta de Evaluación al hacer clic */}
         {isEvaluated && currentResult && (
-          <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-[420px] bg-[#141d2b] border border-cyan-800/70 rounded-2xl p-5 shadow-2xl z-30 animate-in slide-in-from-bottom-6 duration-300">
+          <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-[420px] bg-[#141d2b]/95 backdrop-blur-md border border-cyan-800/80 rounded-2xl p-5 shadow-2xl z-30 animate-in slide-in-from-bottom-6 duration-300">
             <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-zinc-800">
               <div className="flex items-center gap-2 text-cyan-400 font-bold text-sm">
                 <Sparkles className="w-4 h-4" />
@@ -359,7 +465,7 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
             </div>
 
             {/* Sabías que... Dato Curioso */}
-            <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 mb-4 text-xs text-zinc-300 space-y-1">
+            <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3.5 mb-3.5 text-xs text-zinc-300 space-y-1">
               <div className="font-semibold text-cyan-300 flex items-center gap-1.5 mb-1">
                 <Info className="w-3.5 h-3.5 text-cyan-400" />
                 <span>¿Sabías que...?</span>
@@ -369,10 +475,36 @@ export const CityPinpointMode: React.FC<CityPinpointModeProps> = ({
               </p>
             </div>
 
+            {/* Selector de Modo Rápido dentro de la propia tarjeta */}
+            <div className="flex items-center justify-between gap-2 mb-3.5 px-3 py-2 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs">
+              <div className="flex items-center gap-2 text-zinc-300">
+                <Zap className={`w-3.5 h-3.5 ${isFastMode ? 'text-amber-400 fill-amber-400' : 'text-zinc-500'}`} />
+                <span className="text-[11px] font-sans">Avance automático</span>
+              </div>
+              <button
+                type="button"
+                onClick={toggleFastMode}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer ${
+                  isFastMode
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+                    : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-200'
+                }`}
+              >
+                {isFastMode ? 'ACTIVADO (RÁPIDO)' : 'DESACTIVADO (MANUAL)'}
+              </button>
+            </div>
+
+            {isFastMode && (
+              <div className="text-[11px] font-mono text-amber-400/90 text-center mb-2.5 animate-pulse flex items-center justify-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>Avanzando automáticamente a la siguiente ciudad...</span>
+              </div>
+            )}
+
             {/* Botón Siguiente */}
             <button
               onClick={() => handleNextCity()}
-              className="w-full py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
+              className="w-full py-3 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-sm cursor-pointer"
             >
               <span>{currentIndex + 1 < citiesList.length ? 'Siguiente Ciudad' : 'Ver Resultados Finales'}</span>
               <ArrowRight className="w-4 h-4" />

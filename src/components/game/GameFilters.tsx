@@ -261,6 +261,18 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                 </button>
               )}
 
+              {/* Botón de Partida Rápida directo junto a JUGAR DESAFÍO DE HOY */}
+              <button
+                type="button"
+                onClick={() => onStartGame({ mode: 'city-pinpoint', continent: 'World' })}
+                className="px-5 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 via-cyan-500 to-teal-500 hover:from-cyan-500 hover:to-teal-400 text-zinc-950 font-black text-xs sm:text-sm shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+                title="Inicia al instante una partida rápida de Puntería Geográfica en el Mundo"
+              >
+                <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />
+                <span>JUGAR PARTIDA RÁPIDA</span>
+                <ArrowRight className="w-4 h-4 text-zinc-950" />
+              </button>
+
               {onOpenDailyArchive && (
                 <button
                   type="button"
