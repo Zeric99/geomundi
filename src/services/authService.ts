@@ -40,6 +40,17 @@ export const authService = {
     return isSupabaseConfigured && supabase !== null;
   },
 
+  async signInAnonymously(): Promise<{ user: User | null; error: Error | null }> {
+    if (!supabase) return { user: null, error: new Error('Supabase no está configurado') };
+    try {
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) return { user: null, error: new Error(error.message) };
+      return { user: data.user, error: null };
+    } catch (err: any) {
+      return { user: null, error: err };
+    }
+  },
+
   async signInWithGoogle(): Promise<{ error: Error | null }> {
     if (!supabase) {
       return { error: new Error('Supabase no está configurado. Añade las claves en .env.local') };

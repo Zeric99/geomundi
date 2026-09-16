@@ -782,20 +782,22 @@ export function App() {
                 />
               </ErrorBoundary>
             ) : !isPlaying ? (
-              <GameFilters
-                config={config}
-                onChangeConfig={(newCfg) => updateConfig(newCfg)}
-                onStartGame={(overrideCfg) => {
-                  setIsDailyChallengeActive(false);
-                  startGame(overrideCfg);
-                }}
-                blindSpots={blindSpots}
-                onStartFocusedPractice={() => handleStartFocusedPractice()}
-                onGoToTutor={() => changeTabWithUrl('tutor')}
-                onGoToExplore={() => changeTabWithUrl('explore')}
-                onStartDaily={() => handleStartDailyChallenge()}
-                onOpenDailyArchive={() => setIsDailyArchiveOpen(true)}
-              />
+              <ErrorBoundary onReset={() => window.location.reload()}>
+                <GameFilters
+                  config={config}
+                  onChangeConfig={(newCfg) => updateConfig(newCfg)}
+                  onStartGame={(overrideCfg) => {
+                    setIsDailyChallengeActive(false);
+                    startGame(overrideCfg);
+                  }}
+                  blindSpots={blindSpots}
+                  onStartFocusedPractice={() => handleStartFocusedPractice()}
+                  onGoToTutor={() => changeTabWithUrl('tutor')}
+                  onGoToExplore={() => changeTabWithUrl('explore')}
+                  onStartDaily={() => handleStartDailyChallenge()}
+                  onOpenDailyArchive={() => setIsDailyArchiveOpen(true)}
+                />
+              </ErrorBoundary>
             ) : (
               <div className="h-full flex flex-col min-h-0 overflow-hidden space-y-1.5">
                 {/* 1. Modo Adivina la Bandera */}

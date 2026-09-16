@@ -14,6 +14,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  ensureUserSession: () => Promise<User | null>;
   /** Actualiza el ELO del perfil en memoria al instante (sin esperar a Supabase) */
   updateProfileElo: (newElo: number, wins?: number, losses?: number, modeElos?: Partial<Record<DuelMode, number>>) => void;
 }
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   signInWithGoogle: async () => {},
   signOut: async () => {},
   refreshProfile: async () => {},
+  ensureUserSession: async () => null,
   updateProfileElo: () => {}
 });
 
@@ -49,6 +51,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await fetchProfile(user.id);
     }
   }, [user, fetchProfile]);
+
+  /**
+   * Garantiza que el usuario tenga una sesión activa en Supabase cuando completa su primera partida.
+   * Si no ha iniciado sesión con Google, crea una cuenta anónima perezosa (Lazy Anonymous Sign-In)
+   * solo en ese instante para no guardar basura de usuarios que abandonan en 2 segundos.
+   */
+  const ensureUserSession = useCallback(async (): Promise<User | null> => {
+    if (user) return user;
+    if (!isConfigured) return null;
+
+    try {
+      const { user: anonUser } = await authService.signInAnonymously();
+      if (anonUser) {
+        setUser(anonUser);
+        await fetchProfile(anonUser.id);
+        await cloudSyncService.migrateLocalDataToCloud(anonUser.id).catch(console.error);
+        return anonUser;
+      }
+    } catch (e) {
+      console.warn('Error iniciando sesión anónima perezosa:', e);
+    }
+    return null;
+  }, [user, isConfigured, fetchProfile]);
 
   /** Actualiza el ELO (y opcionalmente wins/losses y ELOs por modalidad) en el perfil local al instante */
   const updateProfileElo = useCallback((newElo: number, wins?: number, losses?: number, modeElos?: Partial<Record<DuelMode, number>>) => {
@@ -77,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    // Comprobar sesión actual
+    // Comprobar sesión existente (sin forzar creación de anónimo de entrada para evitar registros basura)
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
@@ -134,6 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithGoogle,
         signOut,
         refreshProfile,
+        ensureUserSession,
         updateProfileElo
       }}
     >

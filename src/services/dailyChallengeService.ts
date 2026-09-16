@@ -192,7 +192,13 @@ export class DailyChallengeService {
     try {
       const raw = localStorage.getItem(DAILY_STORAGE_KEY);
       if (!raw) return { currentStreak: 0, bestStreak: 0, lastCompletedDate: '', history: {} };
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      return {
+        currentStreak: typeof parsed?.currentStreak === 'number' ? parsed.currentStreak : 0,
+        bestStreak: typeof parsed?.bestStreak === 'number' ? parsed.bestStreak : 0,
+        lastCompletedDate: parsed?.lastCompletedDate || '',
+        history: (parsed && typeof parsed.history === 'object' && parsed.history !== null) ? parsed.history : {}
+      };
     } catch (e) {
       return { currentStreak: 0, bestStreak: 0, lastCompletedDate: '', history: {} };
     }

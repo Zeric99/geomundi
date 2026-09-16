@@ -112,7 +112,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   const isDailyCompleted = dailyChallengeService.isTodayCompleted();
   const streakState = dailyChallengeService.getStreakState();
   const todayDateStr = dailyChallengeService.getTodayDateString();
-  const todayRecord = streakState.history[todayDateStr];
+  const todayRecord = streakState?.history ? streakState.history[todayDateStr] : undefined;
 
   const continents: { id: Continent; label: string; icon: React.ReactNode }[] = [
     { id: 'World', label: 'Mundo Entero', icon: <Globe className="w-4 h-4 text-cyan-400 shrink-0" /> },
@@ -274,10 +274,10 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                     <Sparkles className="w-3 h-3 text-amber-400" />
                     <span>Desafío Diario · #{todayDateStr}</span>
                   </span>
-                  {streakState.currentStreak > 0 && (
+                  {(streakState?.currentStreak || 0) > 0 && (
                     <span className="text-[10px] font-mono font-bold bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                       <Flame className="w-3 h-3 text-amber-400 fill-amber-400" />
-                      <span>Racha: {streakState.currentStreak} días</span>
+                      <span>Racha: {streakState?.currentStreak || 0} días</span>
                     </span>
                   )}
                 </div>
@@ -414,7 +414,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* 1. Puntería Geográfica (Destacado Estrella) */}
                 {(() => {
-                  const m = modes.find(x => x.id === 'city-pinpoint')!;
+                  const m = modes.find(x => x.id === 'city-pinpoint') || modes[0];
                   return (
                     <div
                       key={m.id}
@@ -451,7 +451,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
                 {/* 2. Adivina la Bandera */}
                 {(() => {
-                  const m = modes.find(x => x.id === 'flag-skip-chain')!;
+                  const m = modes.find(x => x.id === 'flag-skip-chain') || modes[1] || modes[0];
                   return (
                     <div
                       key={m.id}
@@ -505,8 +505,9 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {['list-select', 'click-find', 'input-write'].map((modeId) => {
-                  const m = modes.find(x => x.id === modeId)!;
+                {['list-select', 'capitals-list', 'input-write'].map((modeId) => {
+                  const m = modes.find(x => x.id === modeId);
+                  if (!m) return null;
                   return (
                     <div
                       key={m.id}
@@ -625,7 +626,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
                 {/* 3. Trivia y Curiosidades */}
                 {(() => {
-                  const m = modes.find(x => x.id === 'trivia-curiosities')!;
+                  const m = modes.find(x => x.id === 'trivia-curiosities') || modes[modes.length - 1] || modes[0];
                   return (
                     <div
                       key={m.id}
