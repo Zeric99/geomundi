@@ -290,19 +290,6 @@ export const CountryExplorer: React.FC<CountryExplorerProps> = ({
                 </div>
               )}
             </div>
-
-            {/* Acción de Quiz */}
-            {onStartQuizWithCountry && (
-              <div className="mt-5 pt-4 border-t border-zinc-800">
-                <button
-                  onClick={() => onStartQuizWithCountry(selectedCountry)}
-                  className="w-full py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-sans font-medium text-xs rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95"
-                >
-                  <Play className="w-3.5 h-3.5 fill-white" />
-                  <span>Jugar Partida con {selectedCountry.nameEs}</span>
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>

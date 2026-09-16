@@ -786,6 +786,7 @@ export function App() {
                 blindSpots={blindSpots}
                 onStartFocusedPractice={() => handleStartFocusedPractice()}
                 onGoToTutor={() => changeTabWithUrl('tutor')}
+                onGoToExplore={() => changeTabWithUrl('explore')}
                 onStartDaily={() => handleStartDailyChallenge()}
                 onOpenDailyArchive={() => setIsDailyArchiveOpen(true)}
               />

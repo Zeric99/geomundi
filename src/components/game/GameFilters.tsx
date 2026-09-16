@@ -34,6 +34,7 @@ interface GameFiltersProps {
   onGoToTutor: () => void;
   onStartDaily: () => void;
   onOpenDailyArchive?: () => void;
+  onGoToExplore?: () => void;
 }
 
 export const GameFilters: React.FC<GameFiltersProps> = ({
@@ -44,10 +45,14 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   onStartFocusedPractice,
   onGoToTutor,
   onStartDaily,
-  onOpenDailyArchive
+  onOpenDailyArchive,
+  onGoToExplore
 }) => {
   // Modal de configuración del modo seleccionado
   const [activeConfigMode, setActiveConfigMode] = useState<GameMode | null>(null);
+  const [isCustomCount, setIsCustomCount] = useState<boolean>(() => {
+    return config.totalQuestions !== 10 && config.totalQuestions !== 999;
+  });
 
   const continents: { id: Continent; label: string; icon: string }[] = [
     { id: 'World', label: 'Mundo Entero', icon: '🌍' },
@@ -142,18 +147,6 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       accentText: 'group-hover:text-amber-300',
       btnHover: 'group-hover:bg-amber-600 group-hover:text-zinc-950',
     },
-    {
-      id: 'explore',
-      title: 'Modo Explorador',
-      desc: 'Navegación libre: consulta datos, banderas y fronteras.',
-      bgEmoji: '🧭',
-      cardGradient: 'from-sky-950/40 via-[#18181B] to-[#121214]',
-      borderColor: 'border-sky-800/50',
-      hoverBorder: 'hover:border-sky-500/70',
-      tagStyle: 'bg-sky-950/80 text-sky-300 border-sky-700/60',
-      accentText: 'group-hover:text-sky-300',
-      btnHover: 'group-hover:bg-sky-600 group-hover:text-white',
-    },
   ];
 
   const questionTypes: { id: QuestionType; label: string; icon: React.ReactNode }[] = [
@@ -161,14 +154,6 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     { id: 'flag', label: 'Banderas', icon: <Flag className="w-4 h-4" /> },
     { id: 'capital', label: 'Capitales', icon: <Landmark className="w-4 h-4" /> },
     { id: 'mixed', label: 'Mixto (Variado)', icon: <Zap className="w-4 h-4" /> },
-  ];
-
-  const questionCounts = [
-    { count: 5, label: '5 Países', desc: 'Rápido' },
-    { count: 10, label: '10 Países', desc: 'Estándar' },
-    { count: 20, label: '20 Países', desc: 'Desafío' },
-    { count: 50, label: '50 Países', desc: 'Maratón' },
-    { count: 999, label: '🌍 Todos', desc: 'Todos los países' },
   ];
 
   const handleOpenModeConfig = (modeId: GameMode) => {
@@ -235,6 +220,44 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Banner Destacado: Modo Explorador Libre del Atlas */}
+      <div
+        onClick={() => {
+          if (onGoToExplore) {
+            onGoToExplore();
+          } else {
+            handleOpenModeConfig('explore');
+          }
+        }}
+        className="relative z-10 cursor-pointer p-4 sm:p-5 rounded-2xl border border-sky-800/40 hover:border-sky-500/70 bg-gradient-to-r from-sky-950/40 via-[#18181B] to-[#121214] transition-all duration-200 transform hover:-translate-y-0.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group shadow-sm hover:shadow-md overflow-hidden"
+      >
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="p-3 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 group-hover:scale-110 group-hover:bg-sky-500/25 transition-all shrink-0">
+            <Compass className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-display font-bold text-zinc-100 text-base sm:text-lg group-hover:text-sky-300 transition-colors">
+                🧭 Modo Explorador Libre del Atlas
+              </h3>
+              <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded border border-sky-500/30 font-bold">
+                Sin tiempo ni fallos
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-sans">
+              Navega a tu propio ritmo por el mapa mundial: haz clic en cualquier país para consultar capital, bandera, población, moneda y fronteras.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-semibold text-sky-400 group-hover:text-sky-300 shrink-0 self-end sm:self-center">
+          <span>Abrir Explorador</span>
+          <div className="p-2 rounded-lg bg-sky-500/20 group-hover:bg-sky-500 group-hover:text-black transition-all">
+            <ArrowRight className="w-4 h-4" />
+          </div>
+        </div>
       </div>
 
       {/* Banner de Tutor Personal: Sesión de Refuerzo Personalizada */}
@@ -374,61 +397,89 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                   <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2.5">
                     {activeConfigMode === 'flag-skip-chain' ? '2. Cantidad de Banderas en la Partida' : '3. Duración de la Partida'}
                   </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {questionCounts.map((item) => {
-                      const isSelected = config.totalQuestions === item.count;
-                      return (
-                        <button
-                          key={item.count}
-                          onClick={() => onChangeConfig({ totalQuestions: item.count })}
-                          className={`p-2.5 rounded-xl border text-center transition-all ${
-                            isSelected
-                              ? 'bg-emerald-600 text-white border-emerald-500 font-bold shadow-sm'
-                              : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
-                          }`}
-                        >
-                          <div className="text-xs font-bold truncate">{item.label}</div>
-                          <div className="text-[10px] opacity-70 truncate">{item.desc}</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                  <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+                    {/* Opción 1: 10 Países / Banderas */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomCount(false);
+                        onChangeConfig({ totalQuestions: 10 });
+                      }}
+                      className={`p-3 sm:p-4 rounded-xl border text-center transition-all ${
+                        !isCustomCount && (config.totalQuestions === 10 || !config.totalQuestions)
+                          ? 'bg-emerald-600 text-white border-emerald-500 font-bold shadow-sm'
+                          : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
+                      }`}
+                    >
+                      <div className="text-xs sm:text-sm font-bold">
+                        {activeConfigMode === 'flag-skip-chain' ? '10 Banderas' : '10 Países'}
+                      </div>
+                      <div className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">Partida rápida</div>
+                    </button>
 
-              {/* OPCIÓN: PACK TEMÁTICO DE CIUDADES (City Pinpoint) */}
-              {activeConfigMode === 'city-pinpoint' && (
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2.5">
-                    2. Pack Temático de Ciudades (Opcional)
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {[
-                      { id: 'all', label: '🌐 Mundo Entero', desc: 'Normal (Todas las ciudades)' },
-                      { id: 'megacities', label: '🏙️ Megaciudades', desc: '> 5M habitantes' },
-                      { id: 'historic', label: '🏛️ Históricas', desc: 'Atenas, Roma, Cuzco...' },
-                      { id: 'islands_coastal', label: '🏝️ Islas & Costas', desc: 'Destinos turísticos' },
-                      { id: 'usa', label: '🇺🇸 Solo EE. UU.', desc: 'Ciudades de EE. UU.' },
-                      { id: 'europe', label: '🏰 Solo Europa', desc: 'Ciudades europeas' },
-                    ].map((item) => {
-                      const isSelected = (config.cityTheme || 'all') === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => onChangeConfig({ cityTheme: item.id as any })}
-                          className={`p-3 rounded-xl border text-left transition-all ${
-                            isSelected
-                              ? 'bg-cyan-600 text-white border-cyan-500 font-bold shadow-sm'
-                              : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
-                          }`}
-                        >
-                          <div className="text-xs font-bold">{item.label}</div>
-                          <div className="text-[10px] opacity-75 mt-0.5">{item.desc}</div>
-                        </button>
-                      );
-                    })}
+                    {/* Opción 2: Todos los Países */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomCount(false);
+                        onChangeConfig({ totalQuestions: 999 });
+                      }}
+                      className={`p-3 sm:p-4 rounded-xl border text-center transition-all ${
+                        !isCustomCount && config.totalQuestions === 999
+                          ? 'bg-emerald-600 text-white border-emerald-500 font-bold shadow-sm'
+                          : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
+                      }`}
+                    >
+                      <div className="text-xs sm:text-sm font-bold">🌍 Todos</div>
+                      <div className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">Partida completa</div>
+                    </button>
+
+                    {/* Opción 3: Personalizado */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomCount(true);
+                        if (config.totalQuestions === 10 || config.totalQuestions === 999 || !config.totalQuestions) {
+                          onChangeConfig({ totalQuestions: 15 });
+                        }
+                      }}
+                      className={`p-3 sm:p-4 rounded-xl border text-center transition-all ${
+                        isCustomCount || (config.totalQuestions !== 10 && config.totalQuestions !== 999 && !!config.totalQuestions)
+                          ? 'bg-emerald-600 text-white border-emerald-500 font-bold shadow-sm'
+                          : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
+                      }`}
+                    >
+                      <div className="text-xs sm:text-sm font-bold">✏️ Personalizado</div>
+                      <div className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">Tú eliges cuántos</div>
+                    </button>
                   </div>
+
+                  {/* Selector / Input numérico para cantidad personalizada */}
+                  {(isCustomCount || (config.totalQuestions !== 10 && config.totalQuestions !== 999 && !!config.totalQuestions)) && (
+                    <div className="mt-3 p-3 bg-zinc-950/80 border border-emerald-500/30 rounded-xl flex items-center justify-between gap-3 animate-in fade-in duration-150">
+                      <span className="text-xs text-zinc-300 font-medium">
+                        Número de {activeConfigMode === 'flag-skip-chain' ? 'banderas' : 'países'} que deseas jugar:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          max={250}
+                          value={config.totalQuestions === 999 ? 15 : (config.totalQuestions || 15)}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val > 0) {
+                              onChangeConfig({ totalQuestions: Math.min(250, Math.max(1, val)) });
+                            }
+                          }}
+                          className="w-20 bg-zinc-900 border border-zinc-700 focus:border-emerald-500 text-center text-sm font-bold text-white py-1.5 rounded-lg outline-none transition-colors"
+                        />
+                        <span className="text-xs text-zinc-400 font-medium">
+                          {activeConfigMode === 'flag-skip-chain' ? 'banderas' : 'países'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -495,7 +546,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
               )}
 
               {/* OPCIÓN 4: MODO FRIKI */}
-              {activeConfigMode !== 'trivia-curiosities' && activeConfigMode !== 'explore' && (
+              {activeConfigMode !== 'trivia-curiosities' && activeConfigMode !== 'explore' && activeConfigMode !== 'city-pinpoint' && (
                 <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3">
                     <div className={`p-2.5 rounded-lg border ${
