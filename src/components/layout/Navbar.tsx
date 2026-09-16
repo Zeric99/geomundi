@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Globe2, Brain, Compass, Gamepad2, Volume2, Volume1, VolumeX, Trophy, Award, Coffee, Swords, User, Smartphone } from 'lucide-react';
+import { Globe2, Brain, Compass, Gamepad2, Volume2, Volume1, VolumeX, Trophy, Award, Coffee, Swords, User, Smartphone, Lock } from 'lucide-react';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { UserMenu } from '../auth/UserMenu';
+import { useAuth } from '../../contexts/AuthContext';
 
 export type ActiveTab = 'game' | 'singleplayer' | 'multiplayer' | 'explore' | 'tutor' | 'leaderboard';
 
@@ -26,6 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLeaderboard,
   onOpenProfile
 }) => {
+  const { user } = useAuth();
   const { soundEnabled, toggleSound, volume, setVolume, hapticsEnabled, toggleHaptics, playClickSound } = useAudioFeedback();
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState<boolean>(false);
   const audioMenuRef = useRef<HTMLDivElement>(null);
@@ -58,19 +60,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Globe2 className="w-5 h-5 text-indigo-400" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-display font-bold text-lg sm:text-xl md:text-2xl tracking-wide text-zinc-100">
-                Geo<span className="text-cyan-400">Strike</span>
-              </span>
-            </div>
-            <p className="hidden md:block text-[11px] text-zinc-400 font-sans leading-tight">
-              Geografía interactiva
-            </p>
+            <span className="font-display font-black text-base sm:text-xl text-zinc-100 tracking-wider flex items-center gap-1.5">
+              GEO<span className="text-indigo-400">STRIKE</span>
+            </span>
+            <span className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase block -mt-1">
+              WORLD CHALLENGE
+            </span>
           </div>
         </div>
 
-        {/* Selector de Pestañas Principales (Espacioso y sin slider incómodo) */}
-        <nav className="flex items-center bg-[#18181B] p-1 sm:p-1.5 rounded-xl border border-zinc-800 overflow-x-auto no-scrollbar shrink-0 shadow-inner">
+        {/* NAVEGACIÓN PRINCIPAL ENTRE MODOS */}
+        <nav className="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 shadow-inner overflow-x-auto no-scrollbar max-w-[calc(100vw-210px)] sm:max-w-none">
           {/* Pestaña Un Jugador */}
           <button
             onClick={() => onChangeTab('singleplayer')}
@@ -95,6 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Swords className="w-4 h-4 text-amber-400 shrink-0" />
             <span>Multijugador</span>
+            {!user && <Lock className="w-3 h-3 text-zinc-500 shrink-0 ml-0.5" />}
           </button>
 
           {/* Explorar */}
@@ -121,6 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Brain className="w-4 h-4 shrink-0" />
             <span>Tutor</span>
+            {!user && <Lock className="w-3 h-3 text-zinc-500 shrink-0 ml-0.5" />}
           </button>
 
           {/* Récords */}
@@ -134,6 +136,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
             <span>Récords</span>
+            {!user && <Lock className="w-3 h-3 text-zinc-500 shrink-0 ml-0.5" />}
           </button>
         </nav>
 

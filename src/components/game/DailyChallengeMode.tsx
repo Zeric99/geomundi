@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapPin, Flag, Landmark, Edit3, HelpCircle, CheckCircle2, XCircle, Clock, Trophy, ArrowRight, Sparkles, Send, Share2, Copy, Check, Flame, Award, BarChart2 } from 'lucide-react';
+import { MapPin, Flag, Landmark, Edit3, HelpCircle, CheckCircle2, XCircle, Clock, Trophy, ArrowRight, Sparkles, Send, Share2, Copy, Check, Flame, Award, BarChart2, LogIn } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Country, CountryMapStatus } from '../../types/country';
 import { DailyStageQuestion, dailyChallengeService } from '../../services/dailyChallengeService';
 import { WorldMap } from '../map/WorldMap';
 import { generateDailyShareText } from '../../utils/shareUtils';
 import { ShareButtonsBar } from '../common/ShareButtonsBar';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface DailyChallengeModeProps {
   questions: DailyStageQuestion[];
@@ -32,6 +33,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
   onQuit,
   onOpenFlagModal
 }) => {
+  const { user, signInWithGoogle } = useAuth();
   const activeDate = typeof targetDateStr === 'string' && targetDateStr.trim().length >= 8
     ? targetDateStr.trim()
     : dailyChallengeService.getTodayDateString();
@@ -352,6 +354,33 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
               })}
               shareTitle={`GeoStrike Reto Diario #${activeDate}`}
             />
+
+            {/* Aviso para registrarse y guardar la racha si el usuario es invitado */}
+            {!user && (
+              <div className="bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-transparent border border-amber-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-left shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
+                    <Flame className="w-6 h-6 text-amber-400 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-zinc-100 flex items-center gap-2">
+                      <span>¡Guarda tu racha diaria!</span>
+                      <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">Sin cuenta</span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      Regístrate gratis con Google para acumular tus días seguidos, guardar tus puntos de hoy y aparecer en la clasificación mundial.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={signInWithGoogle}
+                  className="w-full sm:w-auto shrink-0 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs rounded-xl shadow transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Registrarme y Guardar Racha</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Botones finales de navegación */}

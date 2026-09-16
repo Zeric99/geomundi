@@ -154,10 +154,18 @@ export class MultiplayerService {
     return RANKS.bronce;
   }
 
+  private memoryProfile: PlayerProfile | null = null;
+  private memoryDuelHistory: DuelState[] = [];
+  private memoryCommunityChallenges: CommunityChallenge[] = [];
+
   /**
    * Carga el perfil multijugador del jugador local con los 4 ELOs independientes
    */
   getPlayerProfile(): PlayerProfile {
+    if (this.memoryProfile) {
+      return this.memoryProfile;
+    }
+
     const defaultElos: Record<DuelMode, number> = {
       pinpoint: 1200,
       countries: 1200,
@@ -172,45 +180,8 @@ export class MultiplayerService {
       flags: { wins: 0, losses: 0, duels: 0 }
     };
 
-    try {
-      const stored = localStorage.getItem(MULTIPLAYER_PROFILE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const elos: Record<DuelMode, number> = {
-          ...defaultElos,
-          ...(parsed.elos || {})
-        };
-        const statsByMode = {
-          ...defaultStatsByMode,
-          ...(parsed.statsByMode || {})
-        };
-
-        // El ELO general es el promedio ponderado o el guardado
-        const elo = parsed.elo || Math.round(
-          (elos.pinpoint + elos.countries + elos.capitals + elos.flags) / 4
-        );
-        const xp = parsed.xp || 0;
-        const level = Math.floor(Math.sqrt(xp / 100)) + 1;
-
-        return {
-          id: parsed.id || 'player_local',
-          name: parsed.name || 'Tú',
-          avatar: parsed.avatar || '🎓',
-          elo,
-          rank: this.getRankInfo(elo),
-          wins: parsed.wins || 0,
-          losses: parsed.losses || 0,
-          streak: parsed.streak || 0,
-          xp,
-          level,
-          elos,
-          statsByMode
-        };
-      }
-    } catch (e) {}
-
     const defaultElo = 1200;
-    return {
+    const initial: PlayerProfile = {
       id: 'player_local',
       name: 'Tú',
       avatar: '🎓',
@@ -224,21 +195,25 @@ export class MultiplayerService {
       elos: defaultElos,
       statsByMode: defaultStatsByMode
     };
+
+    this.memoryProfile = initial;
+    return initial;
   }
 
   /**
-   * Guarda el perfil multijugador actualizado
+   * Guarda el perfil multijugador actualizado en memoria de la sesión
    */
   savePlayerProfile(profile: PlayerProfile): void {
-    try {
-      localStorage.setItem(MULTIPLAYER_PROFILE_KEY, JSON.stringify(profile));
-    } catch (e) {}
+    this.memoryProfile = profile;
   }
 
   /**
-   * Resetea el perfil y el historial multijugador local (útil al cerrar sesión)
+   * Resetea el perfil y el historial multijugador (al cerrar sesión)
    */
   resetLocalProfile(): void {
+    this.memoryProfile = null;
+    this.memoryDuelHistory = [];
+    this.memoryCommunityChallenges = [];
     try {
       localStorage.removeItem(MULTIPLAYER_PROFILE_KEY);
       localStorage.removeItem(MULTIPLAYER_HISTORY_KEY);
@@ -359,26 +334,18 @@ export class MultiplayerService {
   }
 
   /**
-   * Obtiene el historial de duelos recientes (últimas 10 partidas)
+   * Obtiene el historial de duelos recientes de la sesión actual
    */
   getDuelHistory(): DuelState[] {
-    try {
-      const stored = localStorage.getItem(MULTIPLAYER_HISTORY_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {}
-    return [];
+    return this.memoryDuelHistory;
   }
 
   /**
-   * Guarda un duelo finalizado en el historial local
+   * Guarda un duelo finalizado en el historial en memoria
    */
   saveDuelToHistory(duel: DuelState): void {
-    try {
-      const history = this.getDuelHistory();
-      const filtered = history.filter(h => h.id !== duel.id);
-      const updated = [duel, ...filtered].slice(0, 30);
-      localStorage.setItem(MULTIPLAYER_HISTORY_KEY, JSON.stringify(updated));
-    } catch (e) {}
+    const filtered = this.memoryDuelHistory.filter(h => h.id !== duel.id);
+    this.memoryDuelHistory = [duel, ...filtered].slice(0, 30);
   }
 
   /**
@@ -406,7 +373,7 @@ export class MultiplayerService {
   }
 
   /**
-   * Obtiene los desafíos de la comunidad abiertos y disponibles (Supabase con fallback local)
+   * Obtiene los desafíos de la comunidad abiertos y disponibles desde Supabase
    */
   async getCommunityChallenges(limit = 30): Promise<CommunityChallenge[]> {
     if (supabase) {
@@ -419,10 +386,8 @@ export class MultiplayerService {
           .limit(limit);
 
         if (error) {
-          // Log detallado para depurar errores de RLS o esquema
           console.warn('[community_challenges] Error Supabase:', error.code, error.message, error.details);
         } else if (data) {
-          // Funciona aunque data sea array vacío (tablón legítimamente vacío)
           const mapped: CommunityChallenge[] = data.map((row: any) => ({
             id: row.id,
             creatorId: row.creator_id,
@@ -438,9 +403,7 @@ export class MultiplayerService {
             status: row.status || 'open',
             roomCode: row.room_code
           }));
-          try {
-            localStorage.setItem(COMMUNITY_CHALLENGES_KEY, JSON.stringify(mapped));
-          } catch (e) {}
+          this.memoryCommunityChallenges = mapped;
           return mapped;
         }
       } catch (e) {
@@ -448,20 +411,12 @@ export class MultiplayerService {
       }
     }
 
-    // Fallback local (solo útil para el propio creador sin conexión)
-    try {
-      const cached = localStorage.getItem(COMMUNITY_CHALLENGES_KEY);
-      if (cached) {
-        const parsed: CommunityChallenge[] = JSON.parse(cached);
-        return parsed.filter(c => !c.status || c.status === 'open');
-      }
-    } catch (e) {}
-
-    return [];
+    // Fallback a memoria de la sesión
+    return this.memoryCommunityChallenges.filter(c => !c.status || c.status === 'open');
   }
 
   /**
-   * Publica un nuevo desafío abierto a la comunidad (Supabase + local)
+   * Publica un nuevo desafío abierto a la comunidad (Supabase)
    */
   async saveCommunityChallenge(challenge: CommunityChallenge): Promise<boolean> {
     const enrichedChallenge: CommunityChallenge = {
@@ -470,12 +425,11 @@ export class MultiplayerService {
       creatorNotified: false
     };
 
-    // Guardar en localStorage del creador como caché
-    try {
-      const cached = await this.getCommunityChallenges();
-      const updated = [enrichedChallenge, ...cached.filter(c => c.id !== challenge.id)].slice(0, 30);
-      localStorage.setItem(COMMUNITY_CHALLENGES_KEY, JSON.stringify(updated));
-    } catch (e) {}
+    // Guardar en memoria de sesión
+    this.memoryCommunityChallenges = [
+      enrichedChallenge,
+      ...this.memoryCommunityChallenges.filter(c => c.id !== challenge.id)
+    ].slice(0, 30);
 
     if (supabase) {
       try {

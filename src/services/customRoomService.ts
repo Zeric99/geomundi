@@ -37,6 +37,8 @@ export interface RoomChallengeData {
 const ROOM_CHALLENGE_STORAGE_PREFIX = 'GEOMUNDI_ROOM_CHALLENGE_';
 
 export const customRoomService = {
+  memoryRoomChallenges: new Map<string, RoomChallengeData>(),
+
   /**
    * Genera un código de sala amigable (ej. GEO-4821)
    */
@@ -90,10 +92,8 @@ export const customRoomService = {
       createdAt: new Date().toISOString()
     };
 
-    // Respaldo local inmediato
-    try {
-      localStorage.setItem(`${ROOM_CHALLENGE_STORAGE_PREFIX}${code}`, JSON.stringify(challengePayload));
-    } catch (e) {}
+    // Guardar en memoria de sesión
+    this.memoryRoomChallenges.set(code, challengePayload);
 
     // Guardado en Supabase community_challenges
     if (supabase) {
@@ -111,7 +111,7 @@ export const customRoomService = {
           room_code: code
         });
       } catch (e) {
-        console.warn('No se pudo guardar room_challenge en Supabase, usando respaldo local:', e);
+        console.warn('No se pudo guardar room_challenge en Supabase:', e);
       }
     }
 
@@ -150,18 +150,13 @@ export const customRoomService = {
             createdAt: data.created_at
           };
         }
-      } catch (e) {
-        // Fallback al almacenamiento local
-      }
+      } catch (e) {}
     }
 
-    // 2. Fallback local
-    try {
-      const local = localStorage.getItem(`${ROOM_CHALLENGE_STORAGE_PREFIX}${code}`);
-      if (local) {
-        return JSON.parse(local) as RoomChallengeData;
-      }
-    } catch (e) {}
+    // 2. Fallback en memoria de la sesión actual
+    if (this.memoryRoomChallenges.has(code)) {
+      return this.memoryRoomChallenges.get(code)!;
+    }
 
     return null;
   },
@@ -277,10 +272,11 @@ export const customRoomService = {
   },
 
   /**
-   * Limpia el respaldo de salas personalizadas en localStorage
+   * Limpia el respaldo de salas personalizadas en memoria y posibles restos en localStorage
    */
   clearRoomCache(): void {
     try {
+      this.memoryRoomChallenges.clear();
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith(ROOM_CHALLENGE_STORAGE_PREFIX)) {
           localStorage.removeItem(key);

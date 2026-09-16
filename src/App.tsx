@@ -49,7 +49,8 @@ import { cloudSyncService } from './services/cloudSyncService';
 import { storageService } from './services/storageService';
 import { customRoomService } from './services/customRoomService';
 import { useAuth } from './contexts/AuthContext';
-import { Loader2, Lock, LogIn, Swords } from 'lucide-react';
+import { Loader2, Lock, LogIn, Swords, Brain, Trophy } from 'lucide-react';
+import { AuthRequiredCard } from './components/common/AuthRequiredCard';
 
 export function App() {
   const { user, profile, refreshProfile, signInWithGoogle, updateProfileElo } = useAuth();
@@ -919,58 +920,19 @@ export function App() {
         {activeTab === 'multiplayer' && (
           <div className="h-full flex flex-col min-h-0 overflow-hidden">
             {!user ? (
-              /* ── Pantalla de bloqueo para usuarios no autenticados ── */
-              <div className="flex flex-1 items-center justify-center px-4 py-12">
-                <div className="max-w-md w-full bg-[#18181B]/95 backdrop-blur-md border border-zinc-800 rounded-2xl p-8 text-center shadow-2xl relative overflow-hidden">
-                  {/* Fondo decorativo */}
-                  <div className="absolute -top-20 -right-20 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-                  <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
-
-                  {/* Icono */}
-                  <div className="relative inline-flex items-center justify-center mb-6">
-                    <div className="w-24 h-24 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center">
-                      <Swords className="w-10 h-10 text-zinc-600" />
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 bg-zinc-900 border border-zinc-700 rounded-full p-1.5">
-                      <Lock className="w-4 h-4 text-amber-400" />
-                    </div>
-                  </div>
-
-                  {/* Texto */}
-                  <h2 className="text-2xl font-display font-bold text-zinc-100 mb-2">
-                    Zona Multijugador
-                  </h2>
-                  <p className="text-zinc-400 text-sm leading-relaxed mb-2">
-                    Los duelos 1v1, salas privadas y el tablón de desafíos están reservados para jugadores registrados.
-                  </p>
-                  <p className="text-zinc-500 text-xs leading-relaxed mb-8">
-                    Inicia sesión con Google para competir, ganar ELO y aparecer en el ranking mundial. Es gratis y tarda 5 segundos.
-                  </p>
-
-                  {/* Beneficios */}
-                  <div className="grid grid-cols-3 gap-3 mb-8 text-xs">
-                    {[
-                      { icon: '⚔️', label: 'Duelos 1v1' },
-                      { icon: '🏆', label: 'Ranking ELO' },
-                      { icon: '🏠', label: 'Salas privadas' },
-                    ].map(({ icon, label }) => (
-                      <div key={label} className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-3 flex flex-col items-center gap-1.5">
-                        <span className="text-xl">{icon}</span>
-                        <span className="text-zinc-400 font-medium">{label}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Botón de login */}
-                  <button
-                    onClick={signInWithGoogle}
-                    className="w-full flex items-center justify-center gap-3 py-3.5 bg-zinc-100 hover:bg-white text-zinc-950 font-bold rounded-xl shadow-lg transition-all active:scale-95 text-sm"
-                  >
-                    <LogIn className="w-5 h-5" />
-                    <span>Iniciar sesión con Google</span>
-                  </button>
-                </div>
-              </div>
+              <AuthRequiredCard
+                title="Zona Multijugador"
+                subtitle="Los duelos 1v1, salas privadas con amigos y desafíos de la comunidad requieren una cuenta."
+                description="Inicia sesión con Google para competir, ganar ELO y aparecer en el ranking mundial. Es gratis y tarda 5 segundos."
+                mainIcon={<Swords className="w-10 h-10 text-amber-400" />}
+                accentColor="amber"
+                benefits={[
+                  { icon: '⚔️', label: 'Duelos 1v1' },
+                  { icon: '🏆', label: 'Ranking ELO' },
+                  { icon: '🏠', label: 'Salas privadas' }
+                ]}
+                onSignIn={signInWithGoogle}
+              />
             ) : activeDuelQuestions.length > 0 ? (
               <Duel1v1Mode
                 questions={activeDuelQuestions}
@@ -999,11 +961,9 @@ export function App() {
                 onCreateChallenge={handleCreateChallenge}
                 onSyncPendingChallenges={handleSyncPendingChallenges}
               />
-
             )}
           </div>
         )}
-
 
         {/* PESTAÑA 3: EXPLORAR */}
         {activeTab === 'explore' && (
@@ -1017,20 +977,52 @@ export function App() {
 
         {/* PESTAÑA 4: TUTOR IA & ESTADÍSTICAS */}
         {activeTab === 'tutor' && (
-          <TutorDashboard
-            stats={stats}
-            continentalMastery={continentalMastery}
-            blindSpots={blindSpots}
-            smartAdvice={smartAdvice}
-            onStartFocusedPractice={handleStartFocusedPractice}
-            onAdviceAction={handleAdviceAction}
-            onResetStats={resetStats}
-          />
+          !user ? (
+            <AuthRequiredCard
+              title="Tutor Inteligente IA"
+              subtitle="El análisis de puntos débiles, mapa de calor continental y sesiones personalizadas requieren una cuenta."
+              description="Inicia sesión con Google para guardar y evaluar tu progreso en la nube, repasar países fallados y acelerar tu aprendizaje."
+              mainIcon={<Brain className="w-10 h-10 text-indigo-400" />}
+              accentColor="indigo"
+              benefits={[
+                { icon: '🧠', label: 'Diagnóstico IA' },
+                { icon: '🗺️', label: 'Mapa Maestría' },
+                { icon: '🎯', label: 'Repaso Personal' }
+              ]}
+              onSignIn={signInWithGoogle}
+            />
+          ) : (
+            <TutorDashboard
+              stats={stats}
+              continentalMastery={continentalMastery}
+              blindSpots={blindSpots}
+              smartAdvice={smartAdvice}
+              onStartFocusedPractice={handleStartFocusedPractice}
+              onAdviceAction={handleAdviceAction}
+              onResetStats={resetStats}
+            />
+          )
         )}
 
         {/* PESTAÑA 5: RÉCORDS & CLASIFICACIÓN */}
         {activeTab === 'leaderboard' && (
-          <LeaderboardView stats={stats} />
+          !user ? (
+            <AuthRequiredCard
+              title="Récords y Clasificación"
+              subtitle="La clasificación mundial, el historial de rachas y tus mejores marcas personales están reservados para usuarios registrados."
+              description="Inicia sesión con Google para comparar tus marcas, seguir tus rachas diarias y competir por el top global de GeoStrike."
+              mainIcon={<Trophy className="w-10 h-10 text-amber-400" />}
+              accentColor="amber"
+              benefits={[
+                { icon: '🏆', label: 'Ranking Mundial' },
+                { icon: '🔥', label: 'Rachas Diarias' },
+                { icon: '📊', label: 'Récords Propios' }
+              ]}
+              onSignIn={signInWithGoogle}
+            />
+          ) : (
+            <LeaderboardView stats={stats} />
+          )
         )}
       </main>
 
