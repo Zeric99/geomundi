@@ -53,7 +53,7 @@ export const DonateModal: React.FC<DonateModalProps> = ({ isOpen, onClose }) => 
             </p>
           </div>
 
-          {/* Compromisos de MapTap */}
+          {/* Compromisos de GeoStrike */}
           <div className="bg-[#121214] border border-zinc-800 rounded-xl p-4 space-y-2 text-left text-xs text-zinc-300 font-sans">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />

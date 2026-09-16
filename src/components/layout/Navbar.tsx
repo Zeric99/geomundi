@@ -15,6 +15,7 @@ interface NavbarProps {
   onOpenDonate?: () => void;
   onOpenLeaderboard?: () => void;
   onOpenProfile?: () => void;
+  isInsideGame?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -25,7 +26,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAchievements,
   onOpenDonate,
   onOpenLeaderboard,
-  onOpenProfile
+  onOpenProfile,
+  isInsideGame = false
 }) => {
   const { user } = useAuth();
   const { soundEnabled, toggleSound, volume, setVolume, hapticsEnabled, toggleHaptics, playClickSound } = useAudioFeedback();
@@ -49,28 +51,29 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, [isAudioMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-black border-b border-zinc-800 shadow-md">
-      <div className="w-full px-3 sm:px-6 lg:px-8 xl:px-10 h-16 sm:h-20 flex items-center justify-between gap-3 lg:gap-6">
-        {/* Logo & Marca */}
-        <div
-          onClick={() => onChangeTab('singleplayer')}
-          className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group shrink-0"
-        >
-          <div className="p-2 sm:p-2.5 rounded-xl bg-zinc-800/80 border border-zinc-700/60 text-indigo-400 group-hover:border-zinc-500 transition-all">
-            <Globe2 className="w-5 h-5 text-indigo-400" />
+    <>
+      <header className="sticky top-0 z-40 w-full bg-black border-b border-zinc-800 shadow-md">
+        <div className="w-full px-3 sm:px-6 lg:px-8 xl:px-10 h-16 sm:h-20 flex items-center justify-between gap-3 lg:gap-6">
+          {/* Logo & Marca */}
+          <div
+            onClick={() => onChangeTab('singleplayer')}
+            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group shrink-0"
+          >
+            <div className="p-2 sm:p-2.5 rounded-xl bg-zinc-800/80 border border-zinc-700/60 text-indigo-400 group-hover:border-zinc-500 transition-all">
+              <Globe2 className="w-5 h-5 text-indigo-400" />
+            </div>
+            <div>
+              <span className="font-display font-black text-base sm:text-xl text-zinc-100 tracking-wider flex items-center gap-1.5">
+                GEO<span className="text-indigo-400">STRIKE</span>
+              </span>
+              <span className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase block -mt-1">
+                WORLD CHALLENGE
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="font-display font-black text-base sm:text-xl text-zinc-100 tracking-wider flex items-center gap-1.5">
-              GEO<span className="text-indigo-400">STRIKE</span>
-            </span>
-            <span className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase block -mt-1">
-              WORLD CHALLENGE
-            </span>
-          </div>
-        </div>
 
-        {/* NAVEGACIÓN PRINCIPAL ENTRE MODOS */}
-        <nav className="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 shadow-inner overflow-x-auto no-scrollbar max-w-[calc(100vw-210px)] sm:max-w-none">
+          {/* NAVEGACIÓN PRINCIPAL ENTRE MODOS (Desktop: visible. Móvil: barra inferior ergonómica) */}
+          <nav className="hidden md:flex items-center gap-1 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 shadow-inner">
           {/* Pestaña Un Jugador */}
           <button
             onClick={() => onChangeTab('singleplayer')}
@@ -156,7 +159,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {onOpenDonate && (
             <button
               onClick={onOpenDonate}
-              title="Apoya MapTap (Donar / Invitar a un café)"
+              title="Apoya GeoStrike (Donar / Invitar a un café)"
               className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition-all flex items-center gap-1.5 text-xs font-bold shrink-0"
             >
               <Coffee className="w-4 h-4 text-amber-400 shrink-0" />
@@ -266,5 +269,64 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
     </header>
+
+      {/* Barra de Navegación Ergonómica Inferior para Móvil (Solo visible en dispositivos < md y fuera de partidas) */}
+      {!isInsideGame && (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#121214]/95 backdrop-blur-md border-t border-zinc-800/80 px-2 py-1.5 flex items-center justify-around shadow-2xl safe-area-bottom">
+          <button
+            onClick={() => onChangeTab('singleplayer')}
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
+              isSingle ? 'text-indigo-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <User className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">Un Jugador</span>
+          </button>
+
+          <button
+            onClick={() => onChangeTab('multiplayer')}
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all relative ${
+              activeTab === 'multiplayer' ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Swords className="w-5 h-5 text-amber-400" />
+            <span className="text-[10px] tracking-tight">Duelos 1v1</span>
+            {!user && <Lock className="w-2.5 h-2.5 text-zinc-500 absolute top-1 right-2" />}
+          </button>
+
+          <button
+            onClick={() => onChangeTab('explore')}
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all ${
+              activeTab === 'explore' ? 'text-cyan-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Compass className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">Explorar</span>
+          </button>
+
+          <button
+            onClick={() => onChangeTab('tutor')}
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all relative ${
+              activeTab === 'tutor' ? 'text-indigo-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Brain className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">Tutor SRS</span>
+            {!user && <Lock className="w-2.5 h-2.5 text-zinc-500 absolute top-1 right-2" />}
+          </button>
+
+          <button
+            onClick={() => onChangeTab('leaderboard')}
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all relative ${
+              activeTab === 'leaderboard' ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Trophy className="w-5 h-5 text-amber-400" />
+            <span className="text-[10px] tracking-tight">Récords</span>
+            {!user && <Lock className="w-2.5 h-2.5 text-zinc-500 absolute top-1 right-2" />}
+          </button>
+        </nav>
+      )}
+    </>
   );
 };

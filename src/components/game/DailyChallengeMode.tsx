@@ -7,6 +7,8 @@ import { WorldMap } from '../map/WorldMap';
 import { generateDailyShareText } from '../../utils/shareUtils';
 import { ShareButtonsBar } from '../common/ShareButtonsBar';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAudioFeedback } from '../../hooks/useAudioFeedback';
+import { ShareCardModal } from '../common/ShareCardModal';
 
 interface DailyChallengeModeProps {
   questions: DailyStageQuestion[];
@@ -34,6 +36,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
   onOpenFlagModal
 }) => {
   const { user, signInWithGoogle } = useAuth();
+  const { playCorrectSound, playWrongSound, playClickSound, playVictorySound } = useAudioFeedback();
   const activeDate = typeof targetDateStr === 'string' && targetDateStr.trim().length >= 8
     ? targetDateStr.trim()
     : dailyChallengeService.getTodayDateString();
@@ -46,6 +49,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [finalSummary, setFinalSummary] = useState<ChallengeFinalSummary | null>(null);
   const [copiedTweet, setCopiedTweet] = useState<boolean>(false);
+  const [isShareCardOpen, setIsShareCardOpen] = useState<boolean>(false);
 
   const currentQuestion = (questions && questions.length > 0) ? (questions[currentStageIdx] || questions[0]) : null;
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -53,18 +57,13 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
 
   // Reloj general del reto diario
   useEffect(() => {
-    if (isCompleted) {
-      if (timerRef.current) clearInterval(timerRef.current);
-      return;
-    }
-
     timerRef.current = setInterval(() => {
       setTotalSeconds(prev => prev + 1);
     }, 1000);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isCompleted]);
+  }, []);
 
   // Reiniciar tiempo por etapa al cambiar de pregunta
   useEffect(() => {
@@ -116,6 +115,7 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
       const streakState = dailyChallengeService.recordDailyCompletion(score, accuracy, totalSeconds, activeDate);
 
       if (correctCount >= 3) {
+        playVictorySound();
         try {
           confetti({
             particleCount: 90,
@@ -142,15 +142,18 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
   const handleCountryClick = (clickedCountry: Country) => {
     if (isEvaluating || !currentQuestion?.country || currentQuestion.stageType === 'map-to-input') return;
 
+    playClickSound();
     setIsEvaluating(true);
     const isCorrect = clickedCountry.cca3 === currentQuestion.country.cca3;
 
     if (isCorrect) {
+      playCorrectSound();
       setFeedback({
         isCorrect: true,
         message: '¡Excelente! Has localizado el país correctamente.'
       });
     } else {
+      playWrongSound();
       setFeedback({
         isCorrect: false,
         message: `Incorrecto. Has marcado ${clickedCountry.nameEs || clickedCountry.nameEn || 'otro país'}.`,
@@ -185,11 +188,13 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
     const isCorrect = Boolean((targetNameEs && userClean === targetNameEs) || (targetNameEn && userClean === targetNameEn));
 
     if (isCorrect) {
+      playCorrectSound();
       setFeedback({
         isCorrect: true,
         message: `¡Correcto! Es ${currentQuestion.country.nameEs}.`
       });
     } else {
+      playWrongSound();
       setFeedback({
         isCorrect: false,
         message: `Incorrecto. El país es ${currentQuestion.country.nameEs}.`,
@@ -341,6 +346,15 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
               <p className="text-zinc-400">⏱️ {finalSummary.durationSeconds}s | 🏆 {finalSummary.score.toLocaleString()} pts</p>
             </div>
 
+            {/* Botón para generar Tarjeta PNG de Instagram / WhatsApp */}
+            <button
+              onClick={() => setIsShareCardOpen(true)}
+              className="w-full py-3 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:to-yellow-400 text-zinc-950 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Generar Tarjeta de Imagen para Instagram / WhatsApp</span>
+            </button>
+
             {/* Barra de botones: Copiar 1-clic, WhatsApp, X y nativo */}
             <ShareButtonsBar
               shareText={generateDailyShareText({
@@ -353,6 +367,23 @@ export const DailyChallengeMode: React.FC<DailyChallengeModeProps> = ({
                 stageResults: finalSummary.stageResults
               })}
               shareTitle={`GeoStrike Reto Diario #${activeDate}`}
+            />
+
+            {/* Modal de exportación de Tarjeta PNG */}
+            <ShareCardModal
+              isOpen={isShareCardOpen}
+              onClose={() => setIsShareCardOpen(false)}
+              data={{
+                type: 'daily',
+                title: '¡RETO DIARIO COMPLETADO!',
+                subtitle: `DESAFÍO DIARIO #${activeDate}`,
+                dateStr: activeDate,
+                score: finalSummary.score,
+                accuracy: finalSummary.accuracy,
+                durationSeconds: finalSummary.durationSeconds,
+                streak: finalSummary.streak,
+                stageResults: finalSummary.stageResults
+              }}
             />
 
             {/* Aviso para registrarse y guardar la racha si el usuario es invitado */}

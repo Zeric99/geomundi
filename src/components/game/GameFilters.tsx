@@ -17,7 +17,8 @@ import {
   X,
   ArrowRight,
   SlidersHorizontal,
-  Clock
+  Clock,
+  Crosshair
 } from 'lucide-react';
 import { Continent } from '../../types/country';
 import { GameConfig, GameMode, QuestionType } from '../../types/game';
@@ -54,20 +55,21 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     return config.totalQuestions !== 10 && config.totalQuestions !== 999;
   });
 
-  const continents: { id: Continent; label: string; icon: string }[] = [
-    { id: 'World', label: 'Mundo Entero', icon: '🌍' },
-    { id: 'Europe', label: 'Europa', icon: '🏰' },
-    { id: 'Americas', label: 'América', icon: '🌎' },
-    { id: 'Africa', label: 'África', icon: '🦁' },
-    { id: 'Asia', label: 'Asia', icon: '🏯' },
-    { id: 'Oceania', label: 'Oceanía', icon: '🏝️' },
+  const continents: { id: Continent; label: string; icon: React.ReactNode }[] = [
+    { id: 'World', label: 'Mundo Entero', icon: <Globe className="w-4 h-4 text-cyan-400 shrink-0" /> },
+    { id: 'Europe', label: 'Europa', icon: <Landmark className="w-4 h-4 text-emerald-400 shrink-0" /> },
+    { id: 'Americas', label: 'América', icon: <Compass className="w-4 h-4 text-amber-400 shrink-0" /> },
+    { id: 'Africa', label: 'África', icon: <Flame className="w-4 h-4 text-orange-400 shrink-0" /> },
+    { id: 'Asia', label: 'Asia', icon: <Sparkles className="w-4 h-4 text-purple-400 shrink-0" /> },
+    { id: 'Oceania', label: 'Oceanía', icon: <Layers className="w-4 h-4 text-teal-400 shrink-0" /> },
   ];
 
   const modes: { 
     id: GameMode; 
     title: string; 
     desc: string; 
-    bgEmoji: string;
+    icon: React.ReactNode;
+    headerIcon: React.ReactNode;
     cardGradient: string;
     borderColor: string;
     hoverBorder: string;
@@ -77,9 +79,10 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   }[] = [
     {
       id: 'city-pinpoint',
-      title: '🎯 Puntería Geográfica (GeoStrike)',
+      title: 'Puntería Geográfica',
       desc: 'Te damos una ciudad y debes hacer clic lo más cerca posible para ganar hasta 1,000 pts.',
-      bgEmoji: '🎯',
+      icon: <Crosshair className="w-20 h-20 text-cyan-400/10 group-hover:text-cyan-400/25 transition-all duration-300 transform group-hover:scale-110" />,
+      headerIcon: <Crosshair className="w-6 h-6 text-cyan-400" />,
       cardGradient: 'from-cyan-950/50 via-[#18181B] to-[#121214]',
       borderColor: 'border-cyan-700/60',
       hoverBorder: 'hover:border-cyan-400',
@@ -89,9 +92,10 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     },
     {
       id: 'list-select',
-      title: 'Modo Clásico: Adivinar Países',
+      title: 'Adivinar Países',
       desc: 'Elige un país de la lista superior y encuéntralo en el mapa.',
-      bgEmoji: '🗺️',
+      icon: <Globe className="w-20 h-20 text-emerald-400/10 group-hover:text-emerald-400/25 transition-all duration-300 transform group-hover:scale-110" />,
+      headerIcon: <Globe className="w-6 h-6 text-emerald-400" />,
       cardGradient: 'from-emerald-950/40 via-[#18181B] to-[#121214]',
       borderColor: 'border-emerald-800/50',
       hoverBorder: 'hover:border-emerald-500/70',
@@ -103,7 +107,8 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       id: 'flag-skip-chain',
       title: 'Adivina la Bandera',
       desc: 'Descubre a qué país pertenece cada bandera en el mapa.',
-      bgEmoji: '🚩',
+      icon: <Flag className="w-20 h-20 text-rose-400/10 group-hover:text-rose-400/25 transition-all duration-300 transform group-hover:scale-110" />,
+      headerIcon: <Flag className="w-6 h-6 text-rose-400" />,
       cardGradient: 'from-rose-950/40 via-[#18181B] to-[#121214]',
       borderColor: 'border-rose-800/50',
       hoverBorder: 'hover:border-rose-500/70',
@@ -115,7 +120,8 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       id: 'click-find',
       title: 'Localiza en el Mapa',
       desc: 'Te damos un país, bandera o capital para ubicarlo en el mapa.',
-      bgEmoji: '📍',
+      icon: <MapPin className="w-20 h-20 text-indigo-400/10 group-hover:text-indigo-400/25 transition-all duration-300 transform group-hover:scale-110" />,
+      headerIcon: <MapPin className="w-6 h-6 text-indigo-400" />,
       cardGradient: 'from-indigo-950/40 via-[#18181B] to-[#121214]',
       borderColor: 'border-indigo-800/50',
       hoverBorder: 'hover:border-indigo-500/70',
@@ -127,7 +133,8 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       id: 'input-write',
       title: 'Escribir Países',
       desc: 'El mapa ilumina un país y escribes su nombre con teclado.',
-      bgEmoji: '⌨️',
+      icon: <Type className="w-20 h-20 text-teal-400/10 group-hover:text-teal-400/25 transition-all duration-300 transform group-hover:scale-110" />,
+      headerIcon: <Type className="w-6 h-6 text-teal-400" />,
       cardGradient: 'from-teal-950/40 via-[#18181B] to-[#121214]',
       borderColor: 'border-teal-800/50',
       hoverBorder: 'hover:border-teal-500/70',
@@ -139,7 +146,8 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       id: 'trivia-curiosities',
       title: 'Trivia y Curiosidades',
       desc: 'Preguntas de récords mundiales y geografía sobre el mapa.',
-      bgEmoji: '🏆',
+      icon: <Trophy className="w-20 h-20 text-amber-400/10 group-hover:text-amber-400/25 transition-all duration-300 transform group-hover:scale-110" />,
+      headerIcon: <Trophy className="w-6 h-6 text-amber-400" />,
       cardGradient: 'from-amber-950/40 via-[#18181B] to-[#121214]',
       borderColor: 'border-amber-800/50',
       hoverBorder: 'hover:border-amber-500/70',
@@ -195,9 +203,9 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
             onClick={() => handleOpenModeConfig(m.id)}
             className={`cursor-pointer p-5 sm:p-6 rounded-2xl border ${m.borderColor} ${m.hoverBorder} bg-gradient-to-br ${m.cardGradient} transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden min-h-[175px] shadow-sm hover:shadow-md`}
           >
-            {/* Emoji de fondo */}
-            <div className="absolute top-4 right-4 text-5xl opacity-15 pointer-events-none select-none group-hover:opacity-30 transition-all duration-300 transform group-hover:scale-110 leading-none">
-              {m.bgEmoji}
+            {/* Icono vectorial sutil de fondo */}
+            <div className="absolute -top-2 -right-2 pointer-events-none select-none">
+              {m.icon}
             </div>
 
             {/* Contenido Principal */}
@@ -240,7 +248,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-display font-bold text-zinc-100 text-base sm:text-lg group-hover:text-sky-300 transition-colors">
-                🧭 Modo Explorador Libre del Atlas
+                Modo Explorador Libre del Atlas
               </h3>
               <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded border border-sky-500/30 font-bold">
                 Sin tiempo ni fallos
@@ -322,8 +330,8 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
               {/* Cabecera del Modo */}
               <div className="flex items-center gap-3.5 pr-10">
-                <div className="text-2xl p-2.5 bg-zinc-900 rounded-xl border border-zinc-800 select-none">
-                  {activeModeData.bgEmoji}
+                <div className="p-2.5 bg-zinc-900 rounded-xl border border-zinc-800 select-none flex items-center justify-center">
+                  {activeModeData.headerIcon}
                 </div>
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">
@@ -353,7 +361,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                             : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
                         }`}
                       >
-                        <span className="text-base">{c.icon}</span>
+                        <span className="flex items-center justify-center">{c.icon}</span>
                         <span>{c.label}</span>
                       </button>
                     );
@@ -430,7 +438,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                           : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
                       }`}
                     >
-                      <div className="text-xs sm:text-sm font-bold">🌍 Todos</div>
+                      <div className="text-xs sm:text-sm font-bold">Todos los Países</div>
                       <div className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">Partida completa</div>
                     </button>
 
@@ -449,7 +457,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                           : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
                       }`}
                     >
-                      <div className="text-xs sm:text-sm font-bold">✏️ Personalizado</div>
+                      <div className="text-xs sm:text-sm font-bold">Personalizado</div>
                       <div className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">Tú eliges cuántos</div>
                     </button>
                   </div>
@@ -558,7 +566,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-zinc-100">
-                        🧠 Modo Friki (+40 Territorios Especiales & Estados de Facto)
+                        Modo Friki (+40 Territorios Especiales & Estados de Facto)
                       </h4>
                       <p className="text-[11px] text-zinc-400 mt-0.5 max-w-md">
                         Incluye Puerto Rico, Groenlandia, Bermudas, Caimán, Malvinas, Somalilandia, Cook, etc.

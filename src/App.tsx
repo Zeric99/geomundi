@@ -750,11 +750,16 @@ export function App() {
         onOpenDonate={() => setIsDonateModalOpen(true)}
         onOpenLeaderboard={() => setIsLeaderboardModalOpen(true)}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        isInsideGame={isInsideGame}
       />
 
       {/* Contenido Principal con Z-Index sólido */}
       <main className={`relative z-10 flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col ${
-        isPlaying ? 'px-1 sm:px-2 pt-1 pb-1 overflow-hidden' : isDailyChallengeActive ? 'px-2 sm:px-4 pt-3 pb-8 overflow-y-auto' : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-8'
+        isPlaying
+          ? 'px-1 sm:px-2 pt-1 pb-1 overflow-hidden'
+          : isDailyChallengeActive
+          ? 'px-2 sm:px-4 pt-3 pb-24 md:pb-8 overflow-y-auto'
+          : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-24 md:pb-8'
       }`}>
         {/* PESTAÑA 1: UN JUGADOR (SINGLEPLAYER) */}
         {(activeTab === 'game' || activeTab === 'singleplayer') && (

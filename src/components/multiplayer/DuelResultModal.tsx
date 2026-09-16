@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Swords, CheckCircle2, XCircle, Flame, ArrowRight, Home, RotateCcw, Zap, Crown } from 'lucide-react';
+import { Trophy, Swords, CheckCircle2, XCircle, Flame, ArrowRight, Home, RotateCcw, Zap, Crown, Sparkles } from 'lucide-react';
 import { DuelState } from '../../types/multiplayer';
 import { MODE_ELO_CONFIGS } from '../../services/multiplayerService';
 import { PlayerAvatar } from '../common/PlayerAvatar';
 import { ShareButtonsBar } from '../common/ShareButtonsBar';
 import { generateDuelShareText } from '../../utils/shareUtils';
+import { ShareCardModal } from '../common/ShareCardModal';
 
 interface DuelResultModalProps {
   duelState: DuelState;
@@ -18,6 +19,7 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
   onPlayAgain,
   onReturnToMenu
 }) => {
+  const [isShareCardOpen, setIsShareCardOpen] = useState<boolean>(false);
   const isCreation = duelState.isChallengeCreation;
   const isWinner = duelState.winner === 'player';
   const isTie = duelState.winner === 'tie';
@@ -134,13 +136,22 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
         )}
 
         {/* Compartir resultado del duelo */}
-        <div className="bg-[#121214] border border-zinc-800 p-3.5 rounded-2xl space-y-2 text-left">
+        <div className="bg-[#121214] border border-zinc-800 p-3.5 rounded-2xl space-y-3 text-left">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-zinc-300">
               {isCreation ? 'Comparte tu desafío con amigos' : 'Comparte tu resultado'}
             </span>
             <span className="text-[10px] font-mono text-zinc-500">#GeoStrike1v1</span>
           </div>
+
+          <button
+            onClick={() => setIsShareCardOpen(true)}
+            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Generar Tarjeta de Imagen para Instagram / WhatsApp</span>
+          </button>
+
           <ShareButtonsBar
             shareText={generateDuelShareText({
               modeName: MODE_ELO_CONFIGS[duelState.duelMode]?.name || 'Duelo 1v1',
@@ -154,6 +165,27 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
             shareTitle={`Duelo en GeoStrike - ${MODE_ELO_CONFIGS[duelState.duelMode]?.name || '1v1'}`}
           />
         </div>
+
+        {/* Modal para exportar Tarjeta en Imagen PNG */}
+        <ShareCardModal
+          isOpen={isShareCardOpen}
+          onClose={() => setIsShareCardOpen(false)}
+          data={{
+            type: 'duel',
+            title: isWinner ? '¡VICTORIA EN EL DUELO!' : isTie ? '¡EMPATE TÉCNICO!' : 'DUELO DISPUTADO',
+            subtitle: MODE_ELO_CONFIGS[duelState.duelMode]?.name || 'Duelo 1v1',
+            score: duelState.playerScore,
+            accuracy: 90,
+            durationSeconds: Math.round(duelState.playerTimeTotalMs / 1000),
+            isWinner,
+            isTie,
+            playerElo: duelState.player.elo,
+            rivalName: duelState.rival.name,
+            rivalScore: duelState.rivalScore,
+            rivalElo: duelState.rival.elo,
+            modeName: MODE_ELO_CONFIGS[duelState.duelMode]?.name
+          }}
+        />
 
         {/* Botones de Acción */}
         <div className="grid grid-cols-2 gap-3 pt-2">
