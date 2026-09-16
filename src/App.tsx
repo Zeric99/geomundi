@@ -55,7 +55,7 @@ export function App() {
   const { user, profile, refreshProfile, signInWithGoogle, updateProfileElo } = useAuth();
 
 
-  // Detectar si el usuario entra mediante un enlace de invitación a sala (#room=GEO-XXXX o ?room=GEO-XXXX)
+  // Detectar si el usuario entra mediante un enlace de invitación a sala (#room=GEO-XXXX, ?room=GEO-XXXX o /room/GEO-XXXX)
   const initialRoomCode = useMemo(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -67,13 +67,46 @@ export function App() {
         const match = hash.match(/room=([A-Za-z0-9_-]+)/);
         if (match && match[1]) return match[1].toUpperCase().trim();
       }
+
+      const path = window.location.pathname;
+      const pathMatch = path.match(/room\/([A-Za-z0-9_-]+)/i);
+      if (pathMatch && pathMatch[1]) return pathMatch[1].toUpperCase().trim();
     } catch (e) {}
     return undefined;
   }, []);
 
+  // Inicializar pestaña activa según la URL actual del navegador
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
-    return initialRoomCode ? 'multiplayer' : 'singleplayer';
+    if (initialRoomCode) return 'multiplayer';
+    const cleanPath = window.location.pathname.replace(/^\//, '').split('/')[0].toLowerCase();
+    if (cleanPath === 'multiplayer' || cleanPath === 'explore' || cleanPath === 'tutor' || cleanPath === 'leaderboard') {
+      return cleanPath as ActiveTab;
+    }
+    return 'singleplayer';
   });
+
+  // Cambiar pestaña actualizando la barra de direcciones del navegador
+  const changeTabWithUrl = useCallback((tab: ActiveTab) => {
+    setActiveTab(tab);
+    const targetPath = (tab === 'singleplayer' || tab === 'game') ? '/' : `/${tab}`;
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState(null, '', targetPath);
+    }
+  }, []);
+
+  // Escuchar botones de Atrás / Adelante del navegador
+  useEffect(() => {
+    const handlePopState = () => {
+      const cleanPath = window.location.pathname.replace(/^\//, '').split('/')[0].toLowerCase();
+      if (cleanPath === 'multiplayer' || cleanPath === 'explore' || cleanPath === 'tutor' || cleanPath === 'leaderboard') {
+        setActiveTab(cleanPath as ActiveTab);
+      } else {
+        setActiveTab('singleplayer');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const [explorerContinent, setExplorerContinent] = useState<any>('World');
 
@@ -281,8 +314,8 @@ export function App() {
     setIsDailyChallengeActive(false);
     setActiveDailyQuestions([]);
     setActiveDailyDateStr('');
-    setActiveTab('leaderboard');
-  }, [activeDailyDateStr]);
+    changeTabWithUrl('leaderboard');
+  }, [activeDailyDateStr, changeTabWithUrl]);
 
   // Detectar Reto recibido por URL (?challenge=...)
   useEffect(() => {
@@ -682,10 +715,10 @@ export function App() {
           if (isPlaying) {
             if (window.confirm('Hay una partida en curso. ¿Deseas salir?')) {
               quitGame();
-              setActiveTab(tab);
+              changeTabWithUrl(tab);
             }
           } else {
-            setActiveTab(tab);
+            changeTabWithUrl(tab);
           }
         }}
         totalScore={stats.totalScore}
@@ -729,7 +762,7 @@ export function App() {
                 }}
                 blindSpots={blindSpots}
                 onStartFocusedPractice={() => handleStartFocusedPractice()}
-                onGoToTutor={() => setActiveTab('tutor')}
+                onGoToTutor={() => changeTabWithUrl('tutor')}
                 onStartDaily={() => handleStartDailyChallenge()}
                 onOpenDailyArchive={() => setIsDailyArchiveOpen(true)}
               />
@@ -744,7 +777,7 @@ export function App() {
                     onQuit={quitGame}
                     onGoToTutor={() => {
                       quitGame();
-                      setActiveTab('tutor');
+                      changeTabWithUrl('tutor');
                     }}
                     isGeekMode={config.isGeekMode}
                     onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
@@ -1010,11 +1043,11 @@ export function App() {
           onPlayAgain={() => startGame()}
           onReturnToMenu={() => {
             quitGame();
-            setActiveTab('singleplayer');
+            changeTabWithUrl('singleplayer');
           }}
           onGoToTutor={() => {
             quitGame();
-            setActiveTab('tutor');
+            changeTabWithUrl('tutor');
           }}
           onPracticeMistakes={(mistakeCodes) => handleStartFocusedPractice(mistakeCodes)}
         />
