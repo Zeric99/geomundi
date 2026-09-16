@@ -392,52 +392,64 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       const distKm = computeDistanceKm(userCoords, tCoords);
 
       // ============================================================
-      // 1. PIN DEL JUGADOR (Cian Neón Táctico)
+      // 1. PIN DEL JUGADOR (Ultra-fino, estilizado y de alta precisión)
       // ============================================================
       const userGroup = new THREE.Group();
       alignToSphereSurface(userGroup, userPos);
 
-      // Aro base en la superficie
-      const userRingGeo = new THREE.RingGeometry(0.015, 0.032, 32);
+      // Micro-punto de contacto exacto (Diana central en el suelo)
+      const userDotGeo = new THREE.CircleGeometry(0.0022, 24);
+      userDotGeo.rotateX(-Math.PI / 2);
+      const userDotMat = new THREE.MeshBasicMaterial({
+        color: isHistorical ? 0x0891b2 : 0x22d3ee,
+        side: THREE.DoubleSide
+      });
+      const userDot = new THREE.Mesh(userDotGeo, userDotMat);
+      userDot.position.set(0, 0.0003, 0);
+      userGroup.add(userDot);
+
+      // Anillo concéntrico ultra-fino
+      const userRingGeo = new THREE.RingGeometry(0.0038, 0.0058, 32);
       userRingGeo.rotateX(-Math.PI / 2);
       const userRingMat = new THREE.MeshBasicMaterial({
         color: isHistorical ? 0x0891b2 : 0x06b6d4,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: isHistorical ? 0.6 : 0.95
+        opacity: isHistorical ? 0.5 : 0.95
       });
       const userRing = new THREE.Mesh(userRingGeo, userRingMat);
+      userRing.position.set(0, 0.0002, 0);
       userGroup.add(userRing);
 
-      // Aguja vertical cian
-      const userSpikeGeo = new THREE.ConeGeometry(0.01, 0.055, 16);
-      userSpikeGeo.translate(0, 0.0275, 0);
+      // Aguja vertical ultra-fina (estilete de máxima precisión)
+      const userSpikeGeo = new THREE.CylinderGeometry(0.0018, 0.0005, 0.042, 16);
+      userSpikeGeo.translate(0, 0.021, 0);
       const userSpikeMat = new THREE.MeshBasicMaterial({
         color: isHistorical ? 0x0e7490 : 0x22d3ee,
         transparent: true,
-        opacity: isHistorical ? 0.5 : 0.9
+        opacity: isHistorical ? 0.6 : 0.95
       });
       const userSpike = new THREE.Mesh(userSpikeGeo, userSpikeMat);
       userGroup.add(userSpike);
 
-      // Cabeza esférica brillante del pin
-      const userHeadGeo = new THREE.SphereGeometry(isHistorical ? 0.016 : 0.022, 16, 16);
+      // Cabeza esférica compacta del alfiler (mucho más fina y elegante)
+      const userHeadGeo = new THREE.SphereGeometry(isHistorical ? 0.0045 : 0.0065, 16, 16);
       const userHeadMat = new THREE.MeshBasicMaterial({
         color: isHistorical ? 0x0891b2 : 0xffffff
       });
       const userHead = new THREE.Mesh(userHeadGeo, userHeadMat);
-      userHead.position.set(0, 0.055, 0);
+      userHead.position.set(0, 0.042, 0);
       userGroup.add(userHead);
 
-      // Onda de choque (radar ripple) al impactar el tiro del usuario
+      // Onda de choque sutil (radar ripple) al impactar el tiro del usuario
       if (!isHistorical) {
-        const rippleGeo = new THREE.RingGeometry(0.015, 0.035, 32);
+        const rippleGeo = new THREE.RingGeometry(0.003, 0.006, 32);
         rippleGeo.rotateX(-Math.PI / 2);
         const rippleMat = new THREE.MeshBasicMaterial({
           color: 0x22d3ee,
           side: THREE.DoubleSide,
           transparent: true,
-          opacity: 0.9
+          opacity: 0.85
         });
         const rippleMesh = new THREE.Mesh(rippleGeo, rippleMat);
         userGroup.add(rippleMesh);
@@ -446,9 +458,9 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
         animatorsRef.current.push((delta) => {
           rippleTime += delta;
           const cycle = (rippleTime % 1.2) / 1.2;
-          const scale = 1 + cycle * 2.8;
+          const scale = 1 + cycle * 2.5;
           rippleMesh.scale.set(scale, scale, scale);
-          rippleMat.opacity = Math.max(0, (1 - cycle) * 0.85);
+          rippleMat.opacity = Math.max(0, (1 - cycle) * 0.8);
         });
       }
 
@@ -492,7 +504,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       let tracerMesh: THREE.Mesh | null = null;
       if (!isHistorical) {
         arcGeometry.setDrawRange(0, 2);
-        const tracerGeo = new THREE.SphereGeometry(0.02, 16, 16);
+        const tracerGeo = new THREE.SphereGeometry(0.009, 16, 16);
         const tracerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
         tracerMesh = new THREE.Mesh(tracerGeo, tracerMat);
         tracerMesh.position.copy(arcPoints[0]);
@@ -502,13 +514,24 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
       }
 
       // ============================================================
-      // 3. PIN DEL OBJETIVO REAL (Baliza Neón Esmeralda + Gema Flotante)
+      // 3. PIN DEL OBJETIVO REAL (Ultra-fino, Baliza Esmeralda + Gema)
       // ============================================================
       const targetGroup = new THREE.Group();
       alignToSphereSurface(targetGroup, targetPos);
 
-      // Aro base esmeralda
-      const targetRingGeo = new THREE.RingGeometry(0.016, 0.038, 32);
+      // Micro-punto de contacto exacto (Diana central en el suelo del objetivo)
+      const targetDotGeo = new THREE.CircleGeometry(0.0022, 24);
+      targetDotGeo.rotateX(-Math.PI / 2);
+      const targetDotMat = new THREE.MeshBasicMaterial({
+        color: isHistorical ? 0x047857 : 0x34d399,
+        side: THREE.DoubleSide
+      });
+      const targetDot = new THREE.Mesh(targetDotGeo, targetDotMat);
+      targetDot.position.set(0, 0.0003, 0);
+      targetGroup.add(targetDot);
+
+      // Anillo concéntrico esmeralda ultra-fino
+      const targetRingGeo = new THREE.RingGeometry(0.0042, 0.0068, 32);
       targetRingGeo.rotateX(-Math.PI / 2);
       const targetRingMat = new THREE.MeshBasicMaterial({
         color: isHistorical ? 0x059669 : 0x10b981,
@@ -517,19 +540,20 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
         opacity: isHistorical ? 0.6 : 0.95
       });
       const targetRing = new THREE.Mesh(targetRingGeo, targetRingMat);
+      targetRing.position.set(0, 0.0002, 0);
       targetGroup.add(targetRing);
 
-      // Aguja vertical dorada/esmeralda
-      const targetSpikeGeo = new THREE.ConeGeometry(0.012, 0.065, 16);
-      targetSpikeGeo.translate(0, 0.0325, 0);
+      // Aguja vertical esmeralda ultra-fina (estilete de máxima precisión)
+      const targetSpikeGeo = new THREE.CylinderGeometry(0.0018, 0.0005, 0.045, 16);
+      targetSpikeGeo.translate(0, 0.0225, 0);
       const targetSpikeMat = new THREE.MeshBasicMaterial({
         color: isHistorical ? 0x047857 : 0x34d399
       });
       const targetSpike = new THREE.Mesh(targetSpikeGeo, targetSpikeMat);
       targetGroup.add(targetSpike);
 
-      // Gema / Diamante giratorio flotante en el objetivo
-      const gemGeo = new THREE.OctahedronGeometry(isHistorical ? 0.018 : 0.026, 0);
+      // Gema / Diamante giratorio flotante compacto en el objetivo
+      const gemGeo = new THREE.OctahedronGeometry(isHistorical ? 0.006 : 0.009, 0);
       const gemMat = new THREE.MeshStandardMaterial({
         color: isHistorical ? 0x10b981 : 0x4ade80,
         emissive: isHistorical ? 0x047857 : 0x10b981,
@@ -538,14 +562,14 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
         metalness: 0.8
       });
       const gemMesh = new THREE.Mesh(gemGeo, gemMat);
-      gemMesh.position.set(0, 0.08, 0);
+      gemMesh.position.set(0, 0.052, 0);
       targetGroup.add(gemMesh);
 
       // Ondas de choque en el objetivo cuando impacta
       let targetRipple1: THREE.Mesh | null = null;
       let targetRipple2: THREE.Mesh | null = null;
       if (!isHistorical) {
-        const tRippGeo = new THREE.RingGeometry(0.02, 0.045, 32);
+        const tRippGeo = new THREE.RingGeometry(0.0035, 0.007, 32);
         tRippGeo.rotateX(-Math.PI / 2);
         const tRippMat1 = new THREE.MeshBasicMaterial({
           color: 0x34d399,
@@ -577,7 +601,7 @@ export const PinpointWorldMap: React.FC<PinpointWorldMapProps> = ({
         badgeSprite = new THREE.Sprite(spriteMat);
         badgeSprite.center.set(0.5, 0.0); // El puntero inferior apunta al pin
         badgeSprite.scale.set(0, 0, 1); // Empieza en 0 para animación elástica
-        badgeSprite.position.set(0, 0.12, 0);
+        badgeSprite.position.set(0, 0.072, 0);
         targetGroup.add(badgeSprite);
       }
 
