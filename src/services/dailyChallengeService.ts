@@ -325,7 +325,7 @@ ${emojis}
 ⏱️ Tiempo: ${durationSeconds}s | 🏆 Puntos: ${score.toLocaleString()} pts
 
 ¿Puedes superarme? Juega gratis aquí:
-https://zeric99.github.io/geomundi/ #GeoStrike`;
+https://geostrike.app/ #GeoStrike`;
   }
 
   /**
@@ -343,7 +343,7 @@ https://zeric99.github.io/geomundi/ #GeoStrike`;
 🟩🟩🟩🟩🟩 (5/5 Pruebas Superadas)
 
 ¡Juega gratis y pon a prueba tu geografía en GeoStrike! 🗺️✨
-https://zeric99.github.io/geomundi/`;
+https://geostrike.app/`;
   }
 }
 

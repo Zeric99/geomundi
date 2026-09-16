@@ -26,7 +26,7 @@ export interface DuelShareOptions {
   durationSeconds: number;
 }
 
-export const WEBSITE_URL = 'https://zeric99.github.io/geomundi/';
+export const WEBSITE_URL = 'https://geostrike.app/';
 
 /**
  * Genera una representación con emojis estilo Wordle/MapTap del resultado de la partida
