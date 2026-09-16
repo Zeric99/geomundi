@@ -1,7 +1,7 @@
 import { Continent, Country } from './country';
 import { CityThemeCategory } from '../data/citiesData';
 
-export type GameMode = 'click-find' | 'input-write' | 'match-cards' | 'trivia-curiosities' | 'list-select' | 'explore' | 'flag-skip-chain' | 'city-pinpoint';
+export type GameMode = 'click-find' | 'input-write' | 'match-cards' | 'trivia-curiosities' | 'list-select' | 'explore' | 'flag-skip-chain' | 'city-pinpoint' | 'capitals-list';
 
 export type QuestionType = 'name' | 'flag' | 'capital' | 'mixed' | 'trivia' | 'city-location';
 

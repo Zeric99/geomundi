@@ -8,6 +8,7 @@ import { InputWriteMode } from './components/game/InputWriteMode';
 import { TriviaCuriositiesMode } from './components/game/TriviaCuriositiesMode';
 import { ListSelectMode } from './components/game/ListSelectMode';
 import { FlagSkipChainMode } from './components/game/FlagSkipChainMode';
+import { CapitalsListMode } from './components/game/CapitalsListMode';
 import { DailyChallengeMode } from './components/game/DailyChallengeMode';
 import { CityPinpointMode } from './components/game/CityPinpointMode';
 import { CountryExplorer } from './components/explore/CountryExplorer';
@@ -871,29 +872,17 @@ export function App() {
                   );
                 })()}
 
-                {/* 5. Modo Localiza en el Mapa (Click & Find) */}
-                {config.mode === 'click-find' && currentQuestion && (
-                  <>
-                    <GameHeader
-                      currentIndex={currentIndex}
-                      totalQuestions={questions.length}
-                      lives={lives}
-                      score={score}
-                      streak={streak}
-                      onQuit={quitGame}
-                    />
-                    <ClickAndFindMode
-                      question={currentQuestion}
-                      countryStatuses={countryStatuses}
-                      onCountryClick={submitAnswer}
-                      onUseHint={useHint}
-                      activeHint={activeHint}
-                      isEvaluating={isEvaluating}
-                      isGeekMode={config.isGeekMode}
-                      continent={config.continent}
-                      onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
-                    />
-                  </>
+                {/* 5. Modo Capitales del Mundo */}
+                {(config.mode === 'capitals-list' || config.mode === 'click-find') && (
+                  <CapitalsListMode
+                    countries={countries}
+                    continent={config.continent}
+                    totalQuestions={config.totalQuestions}
+                    onFinishGame={handleGameComplete}
+                    onQuit={quitGame}
+                    isGeekMode={config.isGeekMode}
+                    onOpenFlagModal={(c) => setPreviewFlagCountry(c)}
+                  />
                 )}
 
                 {/* 6. Modo Explorador Libre */}

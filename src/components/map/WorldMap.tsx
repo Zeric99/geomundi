@@ -69,6 +69,7 @@ interface WorldMapProps {
   onCountryClick?: (country: Country, cca3: string) => void;
   continent?: Continent;
   enableTooltip?: boolean;
+  tooltipMode?: 'full' | 'country-only' | 'none';
   interactive?: boolean;
   className?: string;
   onSelectContinent?: (continent: Continent) => void;
@@ -84,6 +85,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   onCountryClick,
   continent = 'World',
   enableTooltip = true,
+  tooltipMode = 'full',
   interactive = true,
   className = '',
   onSelectContinent,
@@ -696,19 +698,41 @@ export const WorldMap: React.FC<WorldMapProps> = ({
 
       {/* 7. Ficha de pista con información del país fijada arriba a la izquierda */}
       {hintsAllowed && tooltipsEnabled && hoveredCountry && !isDraggingRef.current && (
-        <MapTooltip
-          country={hoveredCountry}
-          status={
-            !isGeekMode && hoveredCountry.cca3.toUpperCase() === 'GUF'
-              ? countryStatuses['FRA']
-              : countryStatuses[hoveredCountry.cca3.toUpperCase()]
-          }
-          isPinned={isCardPinned}
-          onClose={() => {
-            setHoveredCountry(null);
-            setIsCardPinned(false);
-          }}
-        />
+        tooltipMode === 'country-only' ? (
+          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-40 pointer-events-auto select-none animate-in fade-in slide-in-from-top-2 duration-150 shadow-2xl">
+            <div className="bg-[#18181B]/95 backdrop-blur-md border border-cyan-500/50 rounded-2xl px-3.5 py-2 sm:px-4 sm:py-2.5 shadow-2xl flex items-center gap-3 text-zinc-100">
+              <div className="w-8 h-5.5 rounded overflow-hidden border border-zinc-700 shadow-sm shrink-0 bg-zinc-900">
+                <img
+                  src={hoveredCountry.flagSvg}
+                  alt={`Bandera de ${hoveredCountry.nameEs}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase font-mono font-bold text-cyan-400 leading-none">
+                  País Explorando
+                </div>
+                <div className="text-sm sm:text-base font-display font-bold text-zinc-100 truncate mt-0.5">
+                  {hoveredCountry.nameEs}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : tooltipMode !== 'none' ? (
+          <MapTooltip
+            country={hoveredCountry}
+            status={
+              !isGeekMode && hoveredCountry.cca3.toUpperCase() === 'GUF'
+                ? countryStatuses['FRA']
+                : countryStatuses[hoveredCountry.cca3.toUpperCase()]
+            }
+            isPinned={isCardPinned}
+            onClose={() => {
+              setHoveredCountry(null);
+              setIsCardPinned(false);
+            }}
+          />
+        ) : null
       )}
     </div>
   );

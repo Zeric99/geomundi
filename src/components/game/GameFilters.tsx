@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Globe, 
@@ -18,12 +18,17 @@ import {
   ArrowRight,
   SlidersHorizontal,
   Clock,
-  Crosshair
+  Crosshair,
+  Calendar,
+  CheckCircle2,
+  ChevronRight,
+  Play
 } from 'lucide-react';
 import { Continent } from '../../types/country';
 import { GameConfig, GameMode, QuestionType } from '../../types/game';
 import { BlindSpotItem } from '../../types/stats';
 import { DailyChallengeCard } from '../daily/DailyChallengeCard';
+import { dailyChallengeService } from '../../services/dailyChallengeService';
 import { personalRecordsService } from '../../services/personalRecordsService';
 
 interface GameFiltersProps {
@@ -54,6 +59,60 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   const [isCustomCount, setIsCustomCount] = useState<boolean>(() => {
     return config.totalQuestions !== 10 && config.totalQuestions !== 999;
   });
+
+  // Switch de 1 clic para alternar entre el nuevo diseño moderno agrupado y el clásico de cuadrícula
+  const [useStreamlinedLayout, setUseStreamlinedLayout] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('geostrike_use_streamlined_layout');
+      return saved !== null ? saved === 'true' : true;
+    } catch (e) {
+      return true;
+    }
+  });
+
+  const toggleLayout = () => {
+    setUseStreamlinedLayout(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('geostrike_use_streamlined_layout', String(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  // Filtro de categorías del nuevo diseño: 'all' | 'precision' | 'classic' | 'study'
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'precision' | 'classic' | 'study'>('all');
+
+  // Reloj de cuenta atrás para el Desafío Diario
+  const [timeLeftStr, setTimeLeftStr] = useState<string>(() => {
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const diffSec = Math.max(0, Math.floor((midnight.getTime() - now.getTime()) / 1000));
+    const h = String(Math.floor(diffSec / 3600)).padStart(2, '0');
+    const m = String(Math.floor((diffSec % 3600) / 60)).padStart(2, '0');
+    const s = String(diffSec % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const diffSec = Math.max(0, Math.floor((midnight.getTime() - now.getTime()) / 1000));
+      const h = String(Math.floor(diffSec / 3600)).padStart(2, '0');
+      const m = String(Math.floor((diffSec % 3600) / 60)).padStart(2, '0');
+      const s = String(diffSec % 60).padStart(2, '0');
+      setTimeLeftStr(`${h}:${m}:${s}`);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const isDailyCompleted = dailyChallengeService.isTodayCompleted();
+  const streakState = dailyChallengeService.getStreakState();
+  const todayDateStr = dailyChallengeService.getTodayDateString();
+  const todayRecord = streakState.history[todayDateStr];
 
   const continents: { id: Continent; label: string; icon: React.ReactNode }[] = [
     { id: 'World', label: 'Mundo Entero', icon: <Globe className="w-4 h-4 text-cyan-400 shrink-0" /> },
@@ -117,17 +176,17 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
       btnHover: 'group-hover:bg-rose-600 group-hover:text-white',
     },
     {
-      id: 'click-find',
-      title: 'Localiza en el Mapa',
-      desc: 'Te damos un país, bandera o capital para ubicarlo en el mapa.',
-      icon: <MapPin className="w-20 h-20 text-indigo-400/10 group-hover:text-indigo-400/25 transition-all duration-300 transform group-hover:scale-110" />,
-      headerIcon: <MapPin className="w-6 h-6 text-indigo-400" />,
-      cardGradient: 'from-indigo-950/40 via-[#18181B] to-[#121214]',
-      borderColor: 'border-indigo-800/50',
-      hoverBorder: 'hover:border-indigo-500/70',
-      tagStyle: 'bg-indigo-950/80 text-indigo-300 border-indigo-700/60',
-      accentText: 'group-hover:text-indigo-300',
-      btnHover: 'group-hover:bg-indigo-600 group-hover:text-white',
+      id: 'capitals-list',
+      title: 'Capitales del Mundo',
+      desc: 'Elige una capital de la lista y ubica su país en el mapa.',
+      icon: <Landmark className="w-20 h-20 text-violet-400/10 group-hover:text-violet-400/25 transition-all duration-300 transform group-hover:scale-110" />,
+      headerIcon: <Landmark className="w-6 h-6 text-violet-400" />,
+      cardGradient: 'from-violet-950/40 via-[#18181B] to-[#121214]',
+      borderColor: 'border-violet-800/50',
+      hoverBorder: 'hover:border-violet-500/70',
+      tagStyle: 'bg-violet-950/80 text-violet-300 border-violet-700/60',
+      accentText: 'group-hover:text-violet-300',
+      btnHover: 'group-hover:bg-violet-600 group-hover:text-white',
     },
     {
       id: 'input-write',
@@ -157,13 +216,6 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
     },
   ];
 
-  const questionTypes: { id: QuestionType; label: string; icon: React.ReactNode }[] = [
-    { id: 'name', label: 'Nombres', icon: <Type className="w-4 h-4" /> },
-    { id: 'flag', label: 'Banderas', icon: <Flag className="w-4 h-4" /> },
-    { id: 'capital', label: 'Capitales', icon: <Landmark className="w-4 h-4" /> },
-    { id: 'mixed', label: 'Mixto (Variado)', icon: <Zap className="w-4 h-4" /> },
-  ];
-
   const handleOpenModeConfig = (modeId: GameMode) => {
     onChangeConfig({ mode: modeId });
     setActiveConfigMode(modeId);
@@ -178,125 +230,555 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
   return (
     <div className="relative w-full max-w-6xl mx-auto space-y-6 overflow-visible">
-      {/* Tarjeta Destacada: Desafío Diario */}
-      <div className="relative z-10">
-        <DailyChallengeCard onStartDaily={onStartDaily} onOpenArchive={onOpenDailyArchive} />
-      </div>
-
-      {/* Título de Selección de Modalidades */}
-      <div className="relative z-10 flex items-center justify-between pt-2">
+      {/* Cabecera Superior con selector de vista (1 clic para alternar o revertir) */}
+      <div className="relative z-10 flex items-center justify-between gap-4 flex-wrap pt-1">
         <div>
           <h2 className="text-2xl sm:text-3xl font-display font-bold text-zinc-100 tracking-wide">
-            Elige una Modalidad de Juego
+            {useStreamlinedLayout ? 'Modalidades de Juego' : 'Elige una Modalidad de Juego'}
           </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-sans">
-            Selecciona el modo de estudio o desafío que prefieras para calibrar tu aprendizaje.
+          <p className="text-xs sm:text-sm text-zinc-400 mt-0.5 font-sans">
+            {useStreamlinedLayout
+              ? 'Elige tu desafío geográfico o practica a tu propio ritmo con el mapa interactivo.'
+              : 'Selecciona el modo de estudio o desafío que prefieras para calibrar tu aprendizaje.'}
           </p>
         </div>
+
+        {/* Interruptor 1-clic: permite ver la vista moderna o volver a la vista clásica al instante */}
+        <button
+          type="button"
+          onClick={toggleLayout}
+          className="text-xs font-mono px-3 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700/80 hover:border-zinc-600 transition-all flex items-center gap-2 shadow-sm shrink-0 active:scale-95 cursor-pointer"
+          title="Alternar entre la Vista Moderna Agrupada y la Vista Clásica en Cuadrícula"
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
+          <span>{useStreamlinedLayout ? 'Vista Clásica' : 'Vista Moderna'}</span>
+        </button>
       </div>
 
-      {/* Grid Principal de Tarjetas de Modos de Juego */}
-      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-        {modes.map((m) => (
-          <div
-            key={m.id}
-            onClick={() => handleOpenModeConfig(m.id)}
-            className={`cursor-pointer p-5 sm:p-6 rounded-2xl border ${m.borderColor} ${m.hoverBorder} bg-gradient-to-br ${m.cardGradient} transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden min-h-[175px] shadow-sm hover:shadow-md`}
-          >
-            {/* Icono vectorial sutil de fondo */}
-            <div className="absolute -top-2 -right-2 pointer-events-none select-none">
-              {m.icon}
-            </div>
+      {/* ========================================================= */}
+      {/* VISTA 1: NUEVO DISEÑO MODERNO (HERO + CATEGORÍAS + RÁPIDO) */}
+      {/* ========================================================= */}
+      {useStreamlinedLayout && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* MASTER HERO: Desafío Diario + Partida Rápida 1-Click */}
+          <div className="relative z-10 bg-gradient-to-br from-[#18181B] via-[#141416] to-[#0e0e10] border border-zinc-800/90 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl overflow-hidden group">
+            {/* Destellos ambientales */}
+            <div className="absolute -top-16 -left-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-16 -right-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Contenido Principal */}
-            <div className="relative z-10 space-y-1.5 pr-6">
-              <h3 className={`font-display font-bold text-zinc-100 text-lg sm:text-xl tracking-wide leading-snug transition-colors ${m.accentText}`}>
-                {m.title}
-              </h3>
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              {/* Columna Izquierda: Desafío Diario Principal */}
+              <div className="space-y-3.5 max-w-xl">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-mono uppercase tracking-widest font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-amber-400" />
+                    <span>Desafío Diario · #{todayDateStr}</span>
+                  </span>
+                  {streakState.currentStreak > 0 && (
+                    <span className="text-[10px] font-mono font-bold bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Flame className="w-3 h-3 text-amber-400 fill-amber-400" />
+                      <span>Racha: {streakState.currentStreak} días</span>
+                    </span>
+                  )}
+                </div>
 
-              <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-sans">
-                {m.desc}
-              </p>
-            </div>
+                <div>
+                  <h3 className="text-2xl sm:text-3xl font-display font-black text-zinc-100 tracking-wide">
+                    Desafío Mundial del Día
+                  </h3>
+                  <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-sans leading-relaxed">
+                    5 etapas cronometradas de mapa, banderas y capitales calibradas para hoy con ranking competitivo global.
+                  </p>
+                </div>
 
-            {/* Botón Inferior: Configurar y Jugar */}
-            <div className="relative z-10 pt-3.5 mt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs font-sans font-medium text-zinc-300 group-hover:text-white">
-              <span>{m.id === 'city-pinpoint' ? '¡Jugar Ahora!' : 'Configurar y Jugar'}</span>
-              <div className={`p-1.5 rounded-lg bg-zinc-800 transition-all ${m.btnHover}`}>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-3 pt-1 flex-wrap">
+                  {isDailyCompleted ? (
+                    <div className="flex items-center gap-3 bg-emerald-950/60 border border-emerald-500/50 px-4 py-2.5 rounded-xl shadow-inner">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                      <div>
+                        <span className="text-xs font-mono font-bold text-emerald-300 block">
+                          ¡Completado Hoy!
+                        </span>
+                        <span className="text-[11px] text-zinc-400 font-mono">
+                          {todayRecord?.score || 0} pts · {todayRecord?.accuracy || 0}% precisión
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onStartDaily()}
+                      className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-zinc-950 font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(245,158,11,0.35)] transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 text-zinc-950 fill-zinc-950" />
+                      <span>JUGAR DESAFÍO DE HOY</span>
+                      <ArrowRight className="w-4 h-4 text-zinc-950" />
+                    </button>
+                  )}
+
+                  {onOpenDailyArchive && (
+                    <button
+                      type="button"
+                      onClick={onOpenDailyArchive}
+                      className="px-4 py-2.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 font-medium text-xs border border-zinc-700/80 transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Archivo</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Columna Derecha: Reloj de Cuenta Atrás + Partida Rápida 1 Clic */}
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 lg:min-w-[270px]">
+                {/* Contador regresivo hasta medianoche */}
+                <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-3 flex items-center justify-between gap-3 shadow-inner">
+                  <div className="flex items-center gap-2 text-zinc-400 text-xs">
+                    <Clock className="w-4 h-4 text-amber-400" />
+                    <span>Tiempo restante hoy:</span>
+                  </div>
+                  <span className="font-mono font-bold text-xs sm:text-sm text-zinc-200 tracking-wider">
+                    {timeLeftStr}
+                  </span>
+                </div>
+
+                {/* Botón de Partida Rápida directa */}
+                <div
+                  onClick={() => onStartGame({ mode: 'city-pinpoint', continent: 'World' })}
+                  className="cursor-pointer bg-zinc-900/90 hover:bg-zinc-800/90 border border-cyan-800/60 hover:border-cyan-400/80 p-3.5 rounded-xl flex items-center justify-between gap-3 transition-all group shadow-sm active:scale-98"
+                  title="Inicia al instante una partida de Puntería Geográfica en el Mundo entero sin configurar nada"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-cyan-950/80 border border-cyan-700/60 rounded-lg text-cyan-400 group-hover:scale-110 transition-transform">
+                      <Zap className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-zinc-100 group-hover:text-cyan-300 transition-colors flex items-center gap-1.5">
+                        <span>Partida Rápida</span>
+                        <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">1 Clic</span>
+                      </div>
+                      <div className="text-[10px] text-zinc-400 font-sans">
+                        Puntería Geográfica · Mundo
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 group-hover:bg-cyan-500 group-hover:text-zinc-950 transition-all">
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Banner Destacado: Modo Explorador Libre del Atlas */}
-      <div
-        onClick={() => {
-          if (onGoToExplore) {
-            onGoToExplore();
-          } else {
-            handleOpenModeConfig('explore');
-          }
-        }}
-        className="relative z-10 cursor-pointer p-4 sm:p-5 rounded-2xl border border-sky-800/40 hover:border-sky-500/70 bg-gradient-to-r from-sky-950/40 via-[#18181B] to-[#121214] transition-all duration-200 transform hover:-translate-y-0.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group shadow-sm hover:shadow-md overflow-hidden"
-      >
-        <div className="flex items-center gap-4 relative z-10">
-          <div className="p-3 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 group-hover:scale-110 group-hover:bg-sky-500/25 transition-all shrink-0">
-            <Compass className="w-6 h-6" />
+          {/* Píldoras de Filtro Rápido */}
+          <div className="relative z-10 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {[
+              { id: 'all', label: 'Todos los Modos' },
+              { id: 'precision', label: '🎯 Habilidad y Puntería' },
+              { id: 'classic', label: '🗺️ Modos Clásicos' },
+              { id: 'study', label: '📚 Estudio Libre' },
+            ].map((tab) => {
+              const isActive = categoryFilter === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setCategoryFilter(tab.id as any)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                    isActive
+                      ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
+                      : 'bg-[#18181B] text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80 border border-zinc-800'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-display font-bold text-zinc-100 text-base sm:text-lg group-hover:text-sky-300 transition-colors">
-                Modo Explorador Libre del Atlas
-              </h3>
-              <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded border border-sky-500/30 font-bold">
-                Sin tiempo ni fallos
-              </span>
+
+          {/* SECCIÓN 1: DESAFÍOS DE HABILIDAD & PUNTERÍA */}
+          {(categoryFilter === 'all' || categoryFilter === 'precision') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-display font-bold text-zinc-100 flex items-center gap-2">
+                    <Crosshair className="w-4 h-4 text-cyan-400" />
+                    <span>Desafíos de Precisión y Habilidad</span>
+                  </h3>
+                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">
+                    2 Modos
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 1. Puntería Geográfica (Destacado Estrella) */}
+                {(() => {
+                  const m = modes.find(x => x.id === 'city-pinpoint')!;
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => handleOpenModeConfig(m.id)}
+                      className="cursor-pointer p-5 sm:p-6 rounded-2xl border border-cyan-500/50 hover:border-cyan-400 bg-gradient-to-br from-cyan-950/60 via-[#18181B] to-[#121214] transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden min-h-[175px] shadow-md hover:shadow-cyan-500/10"
+                    >
+                      <div className="absolute -top-2 -right-2 pointer-events-none select-none">
+                        {m.icon}
+                      </div>
+
+                      <div className="relative z-10 space-y-1.5 pr-6">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">
+                            Modo Estrella
+                          </span>
+                        </div>
+                        <h4 className="font-display font-bold text-zinc-100 text-lg sm:text-xl tracking-wide group-hover:text-cyan-300 transition-colors">
+                          {m.title}
+                        </h4>
+                        <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-sans">
+                          {m.desc}
+                        </p>
+                      </div>
+
+                      <div className="relative z-10 pt-3.5 mt-3 border-t border-cyan-900/40 flex items-center justify-between text-xs font-sans font-medium text-cyan-300 group-hover:text-white">
+                        <span>¡Jugar Ahora!</span>
+                        <div className="p-1.5 rounded-lg bg-cyan-500/20 group-hover:bg-cyan-500 group-hover:text-zinc-950 transition-all">
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 2. Adivina la Bandera */}
+                {(() => {
+                  const m = modes.find(x => x.id === 'flag-skip-chain')!;
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => handleOpenModeConfig(m.id)}
+                      className="cursor-pointer p-5 sm:p-6 rounded-2xl border border-rose-800/50 hover:border-rose-500/70 bg-gradient-to-br from-rose-950/40 via-[#18181B] to-[#121214] transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden min-h-[175px] shadow-sm hover:shadow-md"
+                    >
+                      <div className="absolute -top-2 -right-2 pointer-events-none select-none">
+                        {m.icon}
+                      </div>
+
+                      <div className="relative z-10 space-y-1.5 pr-6">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">
+                            Racha Rápida
+                          </span>
+                        </div>
+                        <h4 className="font-display font-bold text-zinc-100 text-lg sm:text-xl tracking-wide group-hover:text-rose-300 transition-colors">
+                          {m.title}
+                        </h4>
+                        <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-sans">
+                          {m.desc}
+                        </p>
+                      </div>
+
+                      <div className="relative z-10 pt-3.5 mt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs font-sans font-medium text-zinc-300 group-hover:text-white">
+                        <span>Configurar y Jugar</span>
+                        <div className="p-1.5 rounded-lg bg-zinc-800 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
-            <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-sans">
-              Navega a tu propio ritmo por el mapa mundial: haz clic en cualquier país para consultar capital, bandera, población, moneda y fronteras.
-            </p>
-          </div>
-        </div>
+          )}
 
-        <div className="flex items-center gap-2 text-xs font-semibold text-sky-400 group-hover:text-sky-300 shrink-0 self-end sm:self-center">
-          <span>Abrir Explorador</span>
-          <div className="p-2 rounded-lg bg-sky-500/20 group-hover:bg-sky-500 group-hover:text-black transition-all">
-            <ArrowRight className="w-4 h-4" />
-          </div>
-        </div>
-      </div>
+          {/* SECCIÓN 2: MODOS CLÁSICOS DE MAPA */}
+          {(categoryFilter === 'all' || categoryFilter === 'classic') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-display font-bold text-zinc-100 flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-emerald-400" />
+                    <span>Modos Clásicos de Mapa</span>
+                  </h3>
+                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">
+                    3 Modos
+                  </span>
+                </div>
+              </div>
 
-      {/* Banner de Tutor Personal: Sesión de Refuerzo Personalizada */}
-      <div className="relative z-10 bg-[#18181B] border border-indigo-500/30 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap shadow-sm mt-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-500/15 border border-indigo-500/30 rounded-xl text-indigo-400">
-            <Brain className="w-5 h-5" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {['list-select', 'click-find', 'input-write'].map((modeId) => {
+                  const m = modes.find(x => x.id === modeId)!;
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => handleOpenModeConfig(m.id)}
+                      className={`cursor-pointer p-5 rounded-2xl border ${m.borderColor} ${m.hoverBorder} bg-gradient-to-br ${m.cardGradient} transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden min-h-[160px] shadow-sm hover:shadow-md`}
+                    >
+                      <div className="absolute -top-2 -right-2 pointer-events-none select-none">
+                        {m.icon}
+                      </div>
+
+                      <div className="relative z-10 space-y-1.5 pr-6">
+                        <h4 className={`font-display font-bold text-zinc-100 text-base sm:text-lg tracking-wide leading-snug transition-colors ${m.accentText}`}>
+                          {m.title}
+                        </h4>
+                        <p className="text-xs text-zinc-400 leading-relaxed font-sans">
+                          {m.desc}
+                        </p>
+                      </div>
+
+                      <div className="relative z-10 pt-3 mt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-xs font-sans font-medium text-zinc-300 group-hover:text-white">
+                        <span>Configurar</span>
+                        <div className={`p-1.5 rounded-lg bg-zinc-800 transition-all ${m.btnHover}`}>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* SECCIÓN 3: ESTUDIO LIBRE Y PRÁCTICA */}
+          {(categoryFilter === 'all' || categoryFilter === 'study') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-display font-bold text-zinc-100 flex items-center gap-2">
+                    <Compass className="w-4 h-4 text-sky-400" />
+                    <span>Estudio Libre y Práctica</span>
+                  </h3>
+                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/20 font-bold">
+                    Sin tiempo ni fallos
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 1. Explorador Libre del Atlas */}
+                <div
+                  onClick={() => {
+                    if (onGoToExplore) {
+                      onGoToExplore();
+                    } else {
+                      handleOpenModeConfig('explore');
+                    }
+                  }}
+                  className="cursor-pointer p-5 rounded-2xl border border-sky-800/40 hover:border-sky-500/70 bg-gradient-to-br from-sky-950/40 via-[#18181B] to-[#121214] transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden min-h-[160px] shadow-sm hover:shadow-md"
+                >
+                  <div className="absolute -top-2 -right-2 pointer-events-none select-none">
+                    <Compass className="w-20 h-20 text-sky-400/10 group-hover:text-sky-400/25 transition-all duration-300 transform group-hover:scale-110" />
+                  </div>
+
+                  <div className="relative z-10 space-y-1.5 pr-6">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold">
+                        Modo Libre
+                      </span>
+                    </div>
+                    <h4 className="font-display font-bold text-zinc-100 text-base sm:text-lg tracking-wide group-hover:text-sky-300 transition-colors">
+                      Modo Explorador del Atlas
+                    </h4>
+                    <p className="text-xs text-zinc-400 leading-relaxed font-sans">
+                      Haz clic en cualquier país para consultar su capital, bandera, población y fronteras.
+                    </p>
+                  </div>
+
+                  <div className="relative z-10 pt-3 mt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-xs font-sans font-medium text-sky-300 group-hover:text-white">
+                    <span>Abrir Atlas</span>
+                    <div className="p-1.5 rounded-lg bg-sky-500/20 group-hover:bg-sky-500 group-hover:text-zinc-950 transition-all">
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Tutor Inteligente SRS */}
+                <div
+                  onClick={onGoToTutor}
+                  className="cursor-pointer p-5 rounded-2xl border border-indigo-800/40 hover:border-indigo-500/70 bg-gradient-to-br from-indigo-950/40 via-[#18181B] to-[#121214] transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden min-h-[160px] shadow-sm hover:shadow-md"
+                >
+                  <div className="absolute -top-2 -right-2 pointer-events-none select-none">
+                    <Brain className="w-20 h-20 text-indigo-400/10 group-hover:text-indigo-400/25 transition-all duration-300 transform group-hover:scale-110" />
+                  </div>
+
+                  <div className="relative z-10 space-y-1.5 pr-6">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold">
+                        {blindSpots.length > 0 ? `${blindSpots.length} Países Prioritarios` : 'Repetición Espaciada'}
+                      </span>
+                    </div>
+                    <h4 className="font-display font-bold text-zinc-100 text-base sm:text-lg tracking-wide group-hover:text-indigo-300 transition-colors">
+                      Tutor Inteligente SRS
+                    </h4>
+                    <p className="text-xs text-zinc-400 leading-relaxed font-sans">
+                      Sesión de refuerzo personalizada enfocada en los países que más se te resisten.
+                    </p>
+                  </div>
+
+                  <div className="relative z-10 pt-3 mt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-xs font-sans font-medium text-indigo-300 group-hover:text-white">
+                    <span>Ir al Tutor</span>
+                    <div className="p-1.5 rounded-lg bg-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Trivia y Curiosidades */}
+                {(() => {
+                  const m = modes.find(x => x.id === 'trivia-curiosities')!;
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => handleOpenModeConfig(m.id)}
+                      className="cursor-pointer p-5 rounded-2xl border border-amber-800/50 hover:border-amber-500/70 bg-gradient-to-br from-amber-950/40 via-[#18181B] to-[#121214] transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden min-h-[160px] shadow-sm hover:shadow-md"
+                    >
+                      <div className="absolute -top-2 -right-2 pointer-events-none select-none">
+                        {m.icon}
+                      </div>
+
+                      <div className="relative z-10 space-y-1.5 pr-6">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                            Cultura General
+                          </span>
+                        </div>
+                        <h4 className="font-display font-bold text-zinc-100 text-base sm:text-lg tracking-wide group-hover:text-amber-300 transition-colors">
+                          {m.title}
+                        </h4>
+                        <p className="text-xs text-zinc-400 leading-relaxed font-sans">
+                          {m.desc}
+                        </p>
+                      </div>
+
+                      <div className="relative z-10 pt-3 mt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-xs font-sans font-medium text-zinc-300 group-hover:text-white">
+                        <span>Configurar</span>
+                        <div className="p-1.5 rounded-lg bg-zinc-800 group-hover:bg-amber-600 group-hover:text-zinc-950 transition-all">
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* VISTA 2: CLÁSICA (PRESERVADA ÍNTEGRAMENTE PÍXEL A PÍXEL) */}
+      {/* ========================================================= */}
+      {!useStreamlinedLayout && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Tarjeta Destacada: Desafío Diario */}
+          <div className="relative z-10">
+            <DailyChallengeCard onStartDaily={onStartDaily} onOpenArchive={onOpenDailyArchive} />
           </div>
-          <div>
-            <h3 className="text-sm sm:text-base font-bold text-zinc-100 flex items-center gap-2">
-              Tutor personal: Sesión de refuerzo personalizada
-              {blindSpots.length > 0 && (
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded border border-amber-500/30 font-bold">
-                  {blindSpots.length} Países Prioritarios
-                </span>
-              )}
-            </h3>
-            <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
-              Accede a la sección de Tutor para revisar tu mazo de tarjetas, consultar diagnósticos e iniciar la práctica de repaso.
-            </p>
+
+          {/* Grid Principal de Tarjetas de Modos de Juego */}
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {modes.map((m) => (
+              <div
+                key={m.id}
+                onClick={() => handleOpenModeConfig(m.id)}
+                className={`cursor-pointer p-5 sm:p-6 rounded-2xl border ${m.borderColor} ${m.hoverBorder} bg-gradient-to-br ${m.cardGradient} transition-all duration-200 transform hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden min-h-[175px] shadow-sm hover:shadow-md`}
+              >
+                {/* Icono vectorial sutil de fondo */}
+                <div className="absolute -top-2 -right-2 pointer-events-none select-none">
+                  {m.icon}
+                </div>
+
+                {/* Contenido Principal */}
+                <div className="relative z-10 space-y-1.5 pr-6">
+                  <h3 className={`font-display font-bold text-zinc-100 text-lg sm:text-xl tracking-wide leading-snug transition-colors ${m.accentText}`}>
+                    {m.title}
+                  </h3>
+
+                  <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed font-sans">
+                    {m.desc}
+                  </p>
+                </div>
+
+                {/* Botón Inferior: Configurar y Jugar */}
+                <div className="relative z-10 pt-3.5 mt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs font-sans font-medium text-zinc-300 group-hover:text-white">
+                  <span>{m.id === 'city-pinpoint' ? '¡Jugar Ahora!' : 'Configurar y Jugar'}</span>
+                  <div className={`p-1.5 rounded-lg bg-zinc-800 transition-all ${m.btnHover}`}>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Banner Destacado: Modo Explorador Libre del Atlas */}
+          <div
+            onClick={() => {
+              if (onGoToExplore) {
+                onGoToExplore();
+              } else {
+                handleOpenModeConfig('explore');
+              }
+            }}
+            className="relative z-10 cursor-pointer p-4 sm:p-5 rounded-2xl border border-sky-800/40 hover:border-sky-500/70 bg-gradient-to-r from-sky-950/40 via-[#18181B] to-[#121214] transition-all duration-200 transform hover:-translate-y-0.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group shadow-sm hover:shadow-md overflow-hidden"
+          >
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="p-3 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 group-hover:scale-110 group-hover:bg-sky-500/25 transition-all shrink-0">
+                <Compass className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-display font-bold text-zinc-100 text-base sm:text-lg group-hover:text-sky-300 transition-colors">
+                    Modo Explorador Libre del Atlas
+                  </h3>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-sky-500/20 text-sky-300 rounded border border-sky-500/30 font-bold">
+                    Sin tiempo ni fallos
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-sans">
+                  Navega a tu propio ritmo por el mapa mundial: haz clic en cualquier país para consultar capital, bandera, población, moneda y fronteras.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs font-semibold text-sky-400 group-hover:text-sky-300 shrink-0 self-end sm:self-center">
+              <span>Abrir Explorador</span>
+              <div className="p-2 rounded-lg bg-sky-500/20 group-hover:bg-sky-500 group-hover:text-black transition-all">
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+
+          {/* Banner de Tutor Personal: Sesión de Refuerzo Personalizada */}
+          <div className="relative z-10 bg-[#18181B] border border-indigo-500/30 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap shadow-sm mt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-indigo-500/15 border border-indigo-500/30 rounded-xl text-indigo-400">
+                <Brain className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-zinc-100 flex items-center gap-2">
+                  Tutor personal: Sesión de refuerzo personalizada
+                  {blindSpots.length > 0 && (
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded border border-amber-500/30 font-bold">
+                      {blindSpots.length} Países Prioritarios
+                    </span>
+                  )}
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
+                  Accede a la sección de Tutor para revisar tu mazo de tarjetas, consultar diagnósticos e iniciar la práctica de repaso.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onGoToTutor}
+              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 active:scale-95 border border-indigo-500"
+            >
+              <Brain className="w-4 h-4" />
+              <span>Ir al Tutor Personal</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
-        <button
-          onClick={onGoToTutor}
-          className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 active:scale-95 border border-indigo-500"
-        >
-          <Brain className="w-4 h-4" />
-          <span>Ir al Tutor Personal</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
+      )}
 
       {/* Modal de Configuración Específica del Modo Elegido */}
       <AnimatePresence>
@@ -369,44 +851,21 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                 </div>
               </div>
 
-              {/* OPCIÓN 2: QUÉ DESEAS IDENTIFICAR (Click & Find) */}
-              {activeConfigMode === 'click-find' && (
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2.5">
-                    2. ¿Qué deseas identificar?
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {questionTypes.map((q) => {
-                      const isSelected = config.questionType === q.id;
-                      return (
-                        <button
-                          key={q.id}
-                          onClick={() => onChangeConfig({ questionType: q.id })}
-                          className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                            isSelected
-                              ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
-                              : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
-                          }`}
-                        >
-                          {q.icon}
-                          <span>{q.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* OPCIÓN 3: DURACIÓN / CANTIDAD DE PAÍSES */}
+              {/* OPCIÓN: DURACIÓN / CANTIDAD DE PREGUNTAS */}
               {(activeConfigMode === 'flag-skip-chain' || 
+                activeConfigMode === 'capitals-list' || 
                 activeConfigMode === 'click-find' || 
                 activeConfigMode === 'input-write') && (
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2.5">
-                    {activeConfigMode === 'flag-skip-chain' ? '2. Cantidad de Banderas en la Partida' : '3. Duración de la Partida'}
+                    {activeConfigMode === 'flag-skip-chain' 
+                      ? '2. Cantidad de Banderas en la Partida' 
+                      : (activeConfigMode === 'capitals-list' || activeConfigMode === 'click-find')
+                      ? '2. Cantidad de Capitales en la Partida'
+                      : '2. Duración de la Partida'}
                   </label>
                   <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                    {/* Opción 1: 10 Países / Banderas */}
+                    {/* Opción 1: 10 Países / Banderas / Capitales */}
                     <button
                       type="button"
                       onClick={() => {
@@ -420,12 +879,16 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                       }`}
                     >
                       <div className="text-xs sm:text-sm font-bold">
-                        {activeConfigMode === 'flag-skip-chain' ? '10 Banderas' : '10 Países'}
+                        {activeConfigMode === 'flag-skip-chain' 
+                          ? '10 Banderas' 
+                          : (activeConfigMode === 'capitals-list' || activeConfigMode === 'click-find')
+                          ? '10 Capitales'
+                          : '10 Países'}
                       </div>
                       <div className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">Partida rápida</div>
                     </button>
 
-                    {/* Opción 2: Todos los Países */}
+                    {/* Opción 2: Todos */}
                     <button
                       type="button"
                       onClick={() => {
@@ -438,8 +901,10 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                           : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
                       }`}
                     >
-                      <div className="text-xs sm:text-sm font-bold">Todos los Países</div>
-                      <div className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">Partida completa</div>
+                      <div className="text-xs sm:text-sm font-bold">🌍 Todos</div>
+                      <div className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">
+                        {activeConfigMode === 'capitals-list' || activeConfigMode === 'click-find' ? 'Todas las capitales' : 'Todos los países'}
+                      </div>
                     </button>
 
                     {/* Opción 3: Personalizado */}
@@ -457,7 +922,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                           : 'bg-zinc-900/80 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
                       }`}
                     >
-                      <div className="text-xs sm:text-sm font-bold">Personalizado</div>
+                      <div className="text-xs sm:text-sm font-bold">✏️ Personalizado</div>
                       <div className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">Tú eliges cuántos</div>
                     </button>
                   </div>
@@ -466,7 +931,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                   {(isCustomCount || (config.totalQuestions !== 10 && config.totalQuestions !== 999 && !!config.totalQuestions)) && (
                     <div className="mt-3 p-3 bg-zinc-950/80 border border-emerald-500/30 rounded-xl flex items-center justify-between gap-3 animate-in fade-in duration-150">
                       <span className="text-xs text-zinc-300 font-medium">
-                        Número de {activeConfigMode === 'flag-skip-chain' ? 'banderas' : 'países'} que deseas jugar:
+                        Número de {activeConfigMode === 'flag-skip-chain' ? 'banderas' : (activeConfigMode === 'capitals-list' || activeConfigMode === 'click-find') ? 'capitales' : 'países'} que deseas jugar:
                       </span>
                       <div className="flex items-center gap-2">
                         <input
@@ -483,7 +948,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                           className="w-20 bg-zinc-900 border border-zinc-700 focus:border-emerald-500 text-center text-sm font-bold text-white py-1.5 rounded-lg outline-none transition-colors"
                         />
                         <span className="text-xs text-zinc-400 font-medium">
-                          {activeConfigMode === 'flag-skip-chain' ? 'banderas' : 'países'}
+                          {activeConfigMode === 'flag-skip-chain' ? 'banderas' : (activeConfigMode === 'capitals-list' || activeConfigMode === 'click-find') ? 'capitales' : 'países'}
                         </span>
                       </div>
                     </div>
