@@ -261,18 +261,6 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                 </button>
               )}
 
-              {/* Botón de Partida Rápida directo junto a JUGAR DESAFÍO DE HOY */}
-              <button
-                type="button"
-                onClick={() => onStartGame({ mode: 'city-pinpoint', continent: 'World' })}
-                className="px-5 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 via-cyan-500 to-teal-500 hover:from-cyan-500 hover:to-teal-400 text-zinc-950 font-black text-xs sm:text-sm shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
-                title="Inicia al instante una partida rápida de Puntería Geográfica en el Mundo"
-              >
-                <Zap className="w-4 h-4 text-zinc-950 fill-zinc-950" />
-                <span>JUGAR PARTIDA RÁPIDA</span>
-                <ArrowRight className="w-4 h-4 text-zinc-950" />
-              </button>
-
               {onOpenDailyArchive && (
                 <button
                   type="button"
@@ -280,48 +268,26 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
                   className="px-4 py-2.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 font-medium text-xs border border-zinc-700/80 transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Archivo</span>
+                  <span>Archivo de Desafíos</span>
                 </button>
               )}
             </div>
           </div>
 
-          {/* Columna Derecha: Reloj de Cuenta Atrás + Partida Rápida 1 Clic */}
-          <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 lg:min-w-[270px]">
+          {/* Columna Derecha: Reloj de Cuenta Atrás hasta el próximo desafío */}
+          <div className="flex flex-col gap-3 shrink-0 lg:min-w-[240px] justify-center">
             {/* Contador regresivo hasta medianoche */}
-            <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-3 flex items-center justify-between gap-3 shadow-inner">
-              <div className="flex items-center gap-2 text-zinc-400 text-xs">
+            <div className="bg-zinc-900/90 border border-zinc-800/90 rounded-2xl p-4 flex flex-col gap-2 shadow-inner">
+              <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
                 <Clock className="w-4 h-4 text-amber-400" />
                 <span>Tiempo restante hoy:</span>
               </div>
-              <span className="font-mono font-bold text-xs sm:text-sm text-zinc-200 tracking-wider">
+              <span className="font-mono font-black text-xl sm:text-2xl text-zinc-100 tracking-wider">
                 {timeLeftStr}
               </span>
-            </div>
-
-            {/* Botón de Partida Rápida directa */}
-            <div
-              onClick={() => onStartGame({ mode: 'city-pinpoint', continent: 'World' })}
-              className="cursor-pointer bg-zinc-900/90 hover:bg-zinc-800/90 border border-cyan-800/60 hover:border-cyan-400/80 p-3.5 rounded-xl flex items-center justify-between gap-3 transition-all group shadow-sm active:scale-98"
-              title="Inicia al instante una partida de Puntería Geográfica en el Mundo entero sin configurar nada"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-cyan-950/80 border border-cyan-700/60 rounded-lg text-cyan-400 group-hover:scale-110 transition-transform">
-                  <Zap className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-zinc-100 group-hover:text-cyan-300 transition-colors flex items-center gap-1.5">
-                    <span>Partida Rápida</span>
-                    <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">1 Clic</span>
-                  </div>
-                  <div className="text-[10px] text-zinc-400 font-sans">
-                    Puntería Geográfica · Mundo
-                  </div>
-                </div>
-              </div>
-              <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 group-hover:bg-cyan-500 group-hover:text-zinc-950 transition-all">
-                <ArrowRight className="w-3.5 h-3.5" />
-              </div>
+              <span className="text-[10px] text-zinc-500 font-sans">
+                Se renueva automáticamente a medianoche
+              </span>
             </div>
           </div>
         </div>
