@@ -884,13 +884,25 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
           return;
         }
 
-        if (!clickedTile.isCoast && !clickedTile.isSmallIsland) {
+        const isTargetIsland = Boolean(
+          clickedTile.isSmallIsland || 
+          clickedTile.islandGroupId || 
+          geoGridService.getTile(clickedTile.id)?.isSmallIsland
+        );
+
+        if (!clickedTile.isCoast && !isTargetIsland) {
           triggerExpeditionError('Esta casilla está en el interior. Las expediciones marítimas solo desembarcan en costas o islas.');
           return;
         }
 
         const originTile = geoGridService.getTile(expeditionOriginTileId);
-        if (originTile && clickedTile.countryCode === originTile.countryCode && !clickedTile.isSmallIsland) {
+        const isOriginIsland = Boolean(
+          originTile?.isSmallIsland || 
+          originTile?.islandGroupId || 
+          (originTile && geoGridService.getTile(originTile.id)?.isSmallIsland)
+        );
+
+        if (originTile && clickedTile.countryCode === originTile.countryCode && !isTargetIsland && !isOriginIsland) {
           triggerExpeditionError(`No puedes enviar barcos dentro del mismo país continental (${originTile.countryName || 'origen'}). Elige otro país o una isla.`);
           return;
         }

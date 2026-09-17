@@ -63,13 +63,16 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
   const cost = empireStorageService.getNextTileCost();
 
   // Lógica de Islas y Agrupación Insular
-  const islandTiles = tile.islandGroupId ? geoGridService.getTilesByIslandGroup(tile.islandGroupId) : [];
+  const baseTile = geoGridService.getTile(tile.id);
+  const isIsland = Boolean(tile.isSmallIsland || baseTile?.isSmallIsland || ownedData?.isSmallIsland || ownedData?.islandGroupId || baseTile?.islandGroupId);
+  const effectiveIslandGroupId = tile.islandGroupId || baseTile?.islandGroupId || ownedData?.islandGroupId || (isIsland ? `island_${tile.id}` : undefined);
+  const islandTiles = effectiveIslandGroupId ? geoGridService.getTilesByIslandGroup(effectiveIslandGroupId) : [];
   const islandSettlement = islandTiles.find(t => {
     const col = empire.colonizedTiles[t.id];
     return col && (col.role === 'settlement' || (col.settlementTier && col.settlementTier > 0));
   });
-  const isSecondaryIslandTile = Boolean(tile.isSmallIsland && islandSettlement && islandSettlement.id !== tile.id);
-  const islandSpec = tile.islandGroupId ? empire.islandSpecializations?.[tile.islandGroupId] : null;
+  const isSecondaryIslandTile = Boolean(isIsland && islandSettlement && islandSettlement.id !== tile.id);
+  const islandSpec = effectiveIslandGroupId ? empire.islandSpecializations?.[effectiveIslandGroupId] : null;
   const isNavalHub = islandSpec === 'naval_hub';
 
   const [isEditingCity, setIsEditingCity] = useState(false);
@@ -179,7 +182,15 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
     return 'Faltan requisitos';
   }, [upgradeCheck, canUpgrade, empire.coins, empire.nationalMaterials, empire.nationalFood]);
 
-  const canBuildPort = isSettlement && tier >= 3 && tile.isCoast && !hasPort && empire.coins >= 50;
+  const isCoastTile = Boolean(tile.isCoast || baseTile?.isCoast || ownedData?.isCoast);
+  const minTierForPort = isIsland ? 1 : 2; // En islas desde Aldea (Nivel 1), en costa continental desde Pueblo (Nivel 2)
+  const canBuildPort = isSettlement && tier >= minTierForPort && isCoastTile && !hasPort && empire.coins >= 50;
+
+  // Lógica estricta de barcos vitalicios: 1 barco por ciudad, 2 si es Megaciudad (Nivel 4)
+  const maxLifetimeShips = (tier === 4) ? 2 : 1;
+  const launchedShipsCount = ownedData?.expeditionsLaunchedCount || 0;
+  const isSailingFromHere = (empire.expeditions || []).some(e => e.status === 'sailing' && e.originTileId === tile.id);
+  const canLaunchShip = hasPort && !isSailingFromHere && (launchedShipsCount < maxLifetimeShips);
 
   // Calcular recursos dentro del radio de influencia (Mecánica Buscaminas)
   const nearbyResources = React.useMemo(() => {
@@ -450,7 +461,78 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
                   )}
                 </div>
 
-                {/* PUERTO MARÍTIMO (Si ya está construido o si puede construirse) */}
+                {/* ─── ESPECIALIZACIÓN INSULAR (Prominente en islas como Mallorca y territorios de ultramar) ─── */}
+                {isIsland && effectiveIslandGroupId && (
+                  <div className="tactical-card p-3 space-y-2.5 border-amber-500/40 bg-[#101726] shadow-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">🏝️</span>
+                        <div>
+                          <p className="text-xs font-bold text-amber-200">Especialización de la Isla</p>
+                          <p className="text-[10px] text-slate-400">
+                            {islandSpec 
+                              ? `Especialidad: ${islandSpec === 'naval_hub' ? '⚓ Hub Naval (Puerto Activo)' : islandSpec === 'fiscal_paradise' ? '🏦 Banco Offshore' : '🏖️ Resort Turístico'}` 
+                              : 'Selecciona una función estratégica para esta isla:'}
+                          </p>
+                        </div>
+                      </div>
+                      {islandSpec && (
+                        <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-400/40">
+                          Activa
+                        </span>
+                      )}
+                    </div>
+
+                    {islandError && (
+                      <div className="p-2 bg-red-950/50 border border-red-800/60 rounded text-[11px] text-red-300 animate-in fade-in">
+                        ⚠️ {islandError}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-3 gap-2 mt-1">
+                      {[
+                        { 
+                          key: 'naval_hub' as IslandSpecialization, 
+                          icon: '⚓', 
+                          label: 'Hub Naval', 
+                          desc: 'Puerto gratis + Barco bonificado' 
+                        },
+                        { 
+                          key: 'fiscal_paradise' as IslandSpecialization, 
+                          icon: '🏦', 
+                          label: 'Banco Offshore', 
+                          desc: '+15% oro en Duelos' 
+                        },
+                        { 
+                          key: 'tourist_resort' as IslandSpecialization, 
+                          icon: '🏖️', 
+                          label: 'Resort', 
+                          desc: '+40 🪙/día en Baúl' 
+                        },
+                      ].map(spec => (
+                        <button
+                          key={spec.key}
+                          onClick={() => {
+                            const res = empireStorageService.setIslandSpecialization(effectiveIslandGroupId, spec.key);
+                            if (!res.success) setIslandError(res.error || 'No se puede especializar');
+                            else setIslandError(null);
+                          }}
+                          className={`p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-between min-h-[72px] ${
+                            islandSpec === spec.key
+                              ? 'tactical-btn-active text-amber-300 border-amber-400 bg-amber-500/20 shadow-md ring-1 ring-amber-400/50'
+                              : 'tactical-btn text-slate-300 hover:text-white hover:border-slate-600 bg-[#0c121e]'
+                          }`}
+                        >
+                          <span className="text-lg">{spec.icon}</span>
+                          <span className="text-[11px] font-bold block leading-tight">{spec.label}</span>
+                          <span className="text-[9px] text-slate-400 block font-mono leading-tight">{spec.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* PUERTO MARÍTIMO */}
                 {hasPort ? (
                   <div className="tactical-card p-3 space-y-2.5 border-sky-800/40 bg-[#0d1626]">
                     <div className="flex items-center justify-between">
@@ -459,12 +541,22 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
                         <div>
                           <p className="text-xs font-bold text-sky-200">Puerto Marítimo Activo</p>
                           <p className="text-[10px] text-sky-400/80">
-                            {isNavalHub ? 'Hub Naval (Expediciones ultrarrápidas)' : 'Muelle comercial y de ultramar'}
+                            {isNavalHub 
+                              ? 'Hub Naval (Puerto instantáneo y rutas aceleradas)' 
+                              : 'Muelle comercial y de ultramar'}
                           </p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-mono font-bold text-sky-300 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/50">
-                        {docksAvailable} / {maxDocks} libre
+                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+                        canLaunchShip
+                          ? 'text-emerald-300 bg-emerald-950/60 border-emerald-800/50'
+                          : 'text-amber-300 bg-amber-950/60 border-amber-800/50'
+                      }`}>
+                        {isSailingFromHere 
+                          ? 'En Navegación' 
+                          : launchedShipsCount >= maxLifetimeShips 
+                          ? `Agotado (${launchedShipsCount}/${maxLifetimeShips})` 
+                          : `Disponible (${launchedShipsCount}/${maxLifetimeShips})`}
                       </span>
                     </div>
 
@@ -475,22 +567,30 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
                           onClose();
                         }
                       }}
-                      disabled={docksAvailable <= 0}
+                      disabled={!canLaunchShip}
                       className={`w-full py-2.5 px-3 text-xs tracking-wider uppercase font-black transition-all rounded-lg flex items-center justify-center gap-2 ${
-                        docksAvailable > 0
+                        canLaunchShip
                           ? 'tactical-btn-cta text-black'
                           : 'tactical-btn text-slate-400 opacity-60 cursor-not-allowed'
                       }`}
                     >
                       <Compass className="w-4 h-4 shrink-0" />
                       <span>
-                        {docksAvailable > 0 
-                          ? ((empire.freeExpeditions || 0) > 0 ? 'Fletar Barco (Bonificado)' : 'Fletar Barco a Nuevas Tierras') 
-                          : 'Muelle Ocupado (Barco Navegando)'}
+                        {isSailingFromHere
+                          ? 'Muelle Ocupado (Barco Navegando)'
+                          : launchedShipsCount >= maxLifetimeShips
+                          ? (tier < 4 ? 'Barco ya fletado (1/1) · Requiere Megaciudad' : 'Cupo náutico agotado (2/2)')
+                          : ((empire.freeExpeditions || 0) > 0 ? 'Fletar Barco (Bonificado)' : 'Fletar Barco a Nuevas Tierras')}
                       </span>
                     </button>
+
+                    {launchedShipsCount >= maxLifetimeShips && tier < 4 && (
+                      <p className="text-[10px] text-amber-300/80 font-mono bg-amber-500/10 p-2 rounded border border-amber-500/20 text-center">
+                        💡 Esta ciudad ya fletó su barco histórico. Sube la ciudad a 🌆 <strong>Megaciudad (Nivel 4)</strong> para desbloquear un segundo barco.
+                      </p>
+                    )}
                   </div>
-                ) : tile.isCoast && tier >= 3 ? (
+                ) : isCoastTile && tier >= minTierForPort ? (
                   <button
                     onClick={handleBuildPort}
                     disabled={!canBuildPort}
@@ -503,11 +603,11 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
                     <Anchor className="w-4 h-4" />
                     <span>Construir Puerto Marítimo — 50 🪙</span>
                   </button>
-                ) : tile.isCoast && tier < 3 ? (
+                ) : isCoastTile && tier < minTierForPort ? (
                   <div className="px-3 py-2 bg-[#0c121e] border border-slate-800/80 rounded-lg flex items-center gap-2.5 text-slate-400">
                     <span className="text-base opacity-40">⚓</span>
                     <span className="text-[11px]">
-                      Puerto disponible al ascender a <strong className="text-slate-300">🏙️ Ciudad (Nivel 3)</strong>.
+                      Puerto disponible al ascender a <strong className="text-slate-300">{isIsland ? 'Aldea (Nivel 1)' : 'Pueblo (Nivel 2)'}</strong>{isIsland ? ' o eligiendo Hub Naval ⚓' : ''}.
                     </span>
                   </div>
                 ) : null}
@@ -926,56 +1026,6 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
                     </div>
                   )}
                 </div>
-
-                {/* ESPECIALIZACIÓN INSULAR SI CORRESPONDE */}
-                {tile.isSmallIsland && tile.islandGroupId && (
-                  <div className="tactical-card p-0 overflow-hidden border-slate-800">
-                    <button
-                      onClick={() => setShowIslandSpec(prev => !prev)}
-                      className="w-full p-3 flex items-center justify-between text-xs font-bold text-slate-300 hover:bg-slate-800/40 transition-colors"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>🏝️</span>
-                        <span>Especialización Insular: <strong className="text-amber-300 font-mono">{islandSpec || 'Sin asignar'}</strong></span>
-                      </div>
-                      {showIslandSpec ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                    </button>
-
-                    {showIslandSpec && (
-                      <div className="p-3 pt-0 border-t border-slate-800/80 space-y-2 mt-1">
-                        {islandError && (
-                          <div className="p-2 bg-red-950/40 border border-red-800/50 rounded text-[11px] text-red-300 mt-2">
-                            ⚠️ {islandError}
-                          </div>
-                        )}
-                        <div className="grid grid-cols-3 gap-1.5 mt-2">
-                          {[
-                            { key: 'tourist_resort' as IslandSpecialization, label: 'Resort 🏖️', desc: '+40 🪙/día' },
-                            { key: 'fiscal_paradise' as IslandSpecialization, label: 'Banco 🏦', desc: '+15% oro duelos' },
-                            { key: 'naval_hub' as IslandSpecialization, label: 'Hub Naval ⚓', desc: 'Barco bonificado' },
-                          ].map(spec => (
-                            <button
-                              key={spec.key}
-                              onClick={() => {
-                                const res = empireStorageService.setIslandSpecialization(tile.islandGroupId!, spec.key);
-                                if (!res.success) setIslandError(res.error || 'No se puede especializar');
-                                else setIslandError(null);
-                              }}
-                              className={`p-2 rounded-lg border text-center transition-all flex flex-col items-center justify-between min-h-[60px] ${
-                                islandSpec === spec.key
-                                  ? 'tactical-btn-active text-amber-300 border-amber-400'
-                                  : 'tactical-btn text-slate-400 hover:text-slate-200'
-                              }`}
-                            >
-                              <span className="text-[11px] font-bold block">{spec.label}</span>
-                              <span className="text-[9px] text-slate-400 block font-mono">{spec.desc}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             )}
           </div>

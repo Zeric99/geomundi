@@ -148,7 +148,6 @@ export const LaunchExpeditionModal: React.FC<LaunchExpeditionModalProps> = ({
             <button
               onClick={() => {
                 onSelectOnMap(originTileId);
-                onClose();
               }}
               className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-colors shadow-lg shadow-blue-600/20 flex items-center gap-1.5 shrink-0"
             >

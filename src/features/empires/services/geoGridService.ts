@@ -294,7 +294,7 @@ export class GeoGridService {
             }
           }
 
-          if (group.length <= 12) {
+          if (group.length <= 45) {
             const groupId = `island_${islandCounter++}`;
             group.forEach(t => {
               t.isSmallIsland = true;

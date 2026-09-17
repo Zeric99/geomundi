@@ -325,6 +325,7 @@ export interface GridTile {
   resourceTier?: number; // 1, 2, 3 para huertos (crops) y canteras (resources)
   maxSlots?: number;
   hasPort?: boolean;
+  expeditionsLaunchedCount?: number; // Total de expediciones marítimas fletadas desde esta ciudad (máx 1, o 2 si es Megaciudad)
 }
 
 export type IslandSpecialization = 'fiscal_paradise' | 'tourist_resort' | 'naval_hub';
