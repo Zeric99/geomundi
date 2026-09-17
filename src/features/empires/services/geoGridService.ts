@@ -647,6 +647,39 @@ export class GeoGridService {
 
     return neighbors;
   }
+
+  /**
+   * Comprueba si dos casillas están directamente conectadas por tierra firme contigua
+   * sin tener que navegar por agua.
+   */
+  public areTilesConnectedByLand(tileIdA: string, tileIdB: string, maxDepth = 60): boolean {
+    if (tileIdA === tileIdB) return true;
+    const tileA = this.tilesMap.get(tileIdA);
+    const tileB = this.tilesMap.get(tileIdB);
+    if (!tileA || !tileB) return false;
+
+    // Si alguna es isla pequeña, seguro está aislada por mar
+    if (tileA.isSmallIsland || tileB.isSmallIsland) return false;
+
+    const visited = new Set<string>([tileIdA]);
+    const queue: { id: string; depth: number }[] = [{ id: tileIdA, depth: 0 }];
+
+    while (queue.length > 0) {
+      const { id, depth } = queue.shift()!;
+      if (id === tileIdB) return true;
+      if (depth >= maxDepth) continue;
+
+      const neighbors = this.getAdjacentLandTiles(id);
+      for (const n of neighbors) {
+        if (!visited.has(n.id)) {
+          visited.add(n.id);
+          queue.push({ id: n.id, depth: depth + 1 });
+        }
+      }
+    }
+
+    return false;
+  }
 }
 
 export const geoGridService = new GeoGridService();

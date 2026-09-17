@@ -606,20 +606,81 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
         const ox = camX + (originTile.x + 0.5) * tileSize;
         const oy = camY + (originTile.y + 0.5) * tileSize;
 
-        // Visualizar radio máximo del puerto
+        // A. Visualizar radio máximo del puerto con gradiente y doble aro pulsante
         if (isFinite(maxRange)) {
+          const rPixels = maxRange * tileSize;
+          const pulse = (Math.sin(now / 300) + 1) * 0.5;
+
           ctx.save();
+          // Relleno con área de alcance
+          const grad = ctx.createRadialGradient(ox, oy, rPixels * 0.1, ox, oy, rPixels);
+          grad.addColorStop(0, 'rgba(6, 182, 212, 0.03)');
+          grad.addColorStop(0.8, 'rgba(6, 182, 212, 0.08)');
+          grad.addColorStop(1, 'rgba(6, 182, 212, 0.22)');
+
           ctx.beginPath();
-          ctx.arc(ox, oy, maxRange * tileSize, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
+          ctx.arc(ox, oy, rPixels, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
           ctx.fill();
-          ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([4, 4]);
+
+          // Anillo exterior brillante y visible
+          ctx.strokeStyle = `rgba(6, 182, 212, ${0.7 + pulse * 0.3})`;
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([8, 6]);
           ctx.stroke();
+
+          // Anillo interior sutil
+          ctx.beginPath();
+          ctx.arc(ox, oy, rPixels - 3, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(6, 182, 212, 0.35)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([]);
+          ctx.stroke();
+
+          // Badge indicador de radio náutico en el borde superior del círculo
+          const badgeY = oy - rPixels;
+          if (badgeY >= 10 && badgeY <= height - 10 && ox >= 60 && ox <= width - 60) {
+            const badgeText = `⚓ ALCANCE MÁXIMO: ${maxRange} CASILLAS`;
+            ctx.font = 'bold 11px system-ui, sans-serif';
+            const bWidth = ctx.measureText(badgeText).width + 16;
+            ctx.fillStyle = 'rgba(8, 12, 22, 0.95)';
+            ctx.strokeStyle = '#06b6d4';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(ox - bWidth / 2, badgeY - 12, bWidth, 24, 12);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#67e8f9';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(badgeText, ox, badgeY);
+          }
           ctx.restore();
         }
 
+        // B. Iluminar en verde esmeralda todas las costas e islas alcanzables dentro del rango
+        const landTiles = geoGridService.getAllLandTiles();
+        landTiles.forEach(tile => {
+          if ((tile.isCoast || tile.isSmallIsland) && !empire.colonizedTiles[tile.id]) {
+            const dist = Math.hypot(tile.x - originTile.x, tile.y - originTile.y);
+            if (!isFinite(maxRange) || dist <= maxRange) {
+              const tx = camX + tile.x * tileSize;
+              const ty = camY + tile.y * tileSize;
+              if (tx + tileSize >= 0 && tx <= width && ty + tileSize >= 0 && ty <= height) {
+                const pulse = (Math.sin((now + tile.x * 40 + tile.y * 30) / 280) + 1) * 0.5;
+                ctx.save();
+                ctx.fillStyle = `rgba(16, 185, 129, ${0.15 + pulse * 0.18})`;
+                ctx.fillRect(tx, ty, tileSize, tileSize);
+                ctx.strokeStyle = `rgba(52, 211, 153, ${0.6 + pulse * 0.4})`;
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(tx + 0.5, ty + 0.5, tileSize - 1, tileSize - 1);
+                ctx.restore();
+              }
+            }
+          }
+        });
+
+        // C. Hover sobre destino: previsualizar ruta marítima náutica
         if (hoveredTile) {
           const hx = camX + hoveredTile.x * tileSize;
           const hy = camY + hoveredTile.y * tileSize;
@@ -628,13 +689,13 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
             const previewRoute = geoGridService.findSeaRoute(originTile.x, originTile.y, hoveredTile.x, hoveredTile.y);
             const inRange = previewRoute ? previewRoute.length <= maxRange : false;
             const lineColor = inRange ? '#10b981' : '#f43f5e';
-            const fillColor = inRange ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)';
+            const fillColor = inRange ? 'rgba(16, 185, 129, 0.35)' : 'rgba(244, 63, 94, 0.35)';
 
             ctx.save();
             if (previewRoute && previewRoute.length >= 2) {
-              ctx.setLineDash([3, 4]);
+              ctx.setLineDash([4, 4]);
               ctx.strokeStyle = lineColor;
-              ctx.lineWidth = 2;
+              ctx.lineWidth = 2.5;
               ctx.beginPath();
               previewRoute.forEach((pt, idx) => {
                 const px = camX + (pt.x + 0.5) * tileSize;
@@ -648,7 +709,32 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
             ctx.fillStyle = fillColor;
             ctx.fillRect(hx, hy, tileSize, tileSize);
             ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 2;
             ctx.strokeRect(hx, hy, tileSize, tileSize);
+
+            // Tooltip flotante informativo
+            if (previewRoute) {
+              const durSec = Math.min(85, Math.max(22, Math.round(18 + previewRoute.length * 1.1)));
+              const costCoins = (empire.freeExpeditions || 0) > 0 ? 0 : Math.min(150, Math.max(25, Math.round(20 + previewRoute.length * 0.5)));
+              const tooltipText = inRange
+                ? `⚓ ${hoveredTile.countryName || 'Costa'} · ${previewRoute.length} casillas · ⏱️ ${durSec}s · ${costCoins} 🪙`
+                : `⚠️ Fuera de rango (${previewRoute.length}/${maxRange} casillas)`;
+              ctx.font = 'bold 11px system-ui, sans-serif';
+              const tw = ctx.measureText(tooltipText).width + 18;
+              const tpx = Math.min(width - tw - 12, Math.max(12, hx + tileSize / 2 - tw / 2));
+              const tpy = Math.max(24, hy - 16);
+              ctx.fillStyle = inRange ? 'rgba(6, 78, 59, 0.95)' : 'rgba(127, 29, 29, 0.95)';
+              ctx.strokeStyle = lineColor;
+              ctx.lineWidth = 1.5;
+              ctx.beginPath();
+              ctx.roundRect(tpx, tpy - 10, tw, 22, 6);
+              ctx.fill();
+              ctx.stroke();
+              ctx.fillStyle = '#ffffff';
+              ctx.textAlign = 'left';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(tooltipText, tpx + 9, tpy + 1);
+            }
             ctx.restore();
           }
         }
@@ -826,7 +912,7 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
       const dx = e.clientX - dragStart.current.x;
       const dy = e.clientY - dragStart.current.y;
 
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
         hasMoved.current = true;
       }
 
@@ -874,40 +960,66 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
 
       // Si estamos en modo de selección de destino de expedición marítima (Elegir en Mapa):
       if (expeditionOriginTileId) {
-        if (!clickedTile) {
-          triggerExpeditionError('Has hecho clic en el océano. Debes seleccionar una costa de tierra firme o isla.');
+        let targetTile: GridTile | null = clickedTile || null;
+
+        // Magnetismo Inteligente (Smart Snap): Si el usuario hizo clic en el agua adyacente o cerca,
+        // buscar la costa o isla más cercana en un radio de tolerancia de hasta 3 casillas.
+        if (!targetTile) {
+          let closestDist = Infinity;
+          for (let dx = -3; dx <= 3; dx++) {
+            for (let dy = -3; dy <= 3; dy++) {
+              const neighbor = geoGridService.getTileByXY(tileCol + dx, tileRow + dy);
+              if (neighbor && (neighbor.isCoast || neighbor.isSmallIsland)) {
+                const d = Math.hypot(dx, dy);
+                if (d < closestDist) {
+                  closestDist = d;
+                  targetTile = neighbor;
+                }
+              }
+            }
+          }
+        } else if (!targetTile.isCoast && !targetTile.isSmallIsland) {
+          // Si hizo clic en tierra interior de una isla o península, magnetizar a la costa más próxima
+          let closestDist = Infinity;
+          let bestCoast: GridTile | null = null;
+          for (let dx = -3; dx <= 3; dx++) {
+            for (let dy = -3; dy <= 3; dy++) {
+              const neighbor = geoGridService.getTileByXY(tileCol + dx, tileRow + dy);
+              if (neighbor && neighbor.isCoast) {
+                const d = Math.hypot(dx, dy);
+                if (d < closestDist) {
+                  closestDist = d;
+                  bestCoast = neighbor;
+                }
+              }
+            }
+          }
+          if (bestCoast) targetTile = bestCoast;
+        }
+
+        if (!targetTile) {
+          triggerExpeditionError('Has hecho clic en mar abierto. Haz clic en cualquiera de las costas o islas verdes iluminadas.');
           return;
         }
 
-        if (empire.colonizedTiles[clickedTile.id]) {
+        if (empire.colonizedTiles[targetTile.id]) {
           triggerExpeditionError('Esta casilla ya pertenece a tu imperio. Selecciona una costa libre en ultramar.');
           return;
         }
 
-        const isTargetIsland = Boolean(
-          clickedTile.isSmallIsland || 
-          clickedTile.islandGroupId || 
-          geoGridService.getTile(clickedTile.id)?.isSmallIsland
-        );
-
-        if (!clickedTile.isCoast && !isTargetIsland) {
-          triggerExpeditionError('Esta casilla está en el interior. Las expediciones marítimas solo desembarcan en costas o islas.');
-          return;
-        }
-
         const originTile = geoGridService.getTile(expeditionOriginTileId);
-        const isOriginIsland = Boolean(
-          originTile?.isSmallIsland || 
-          originTile?.islandGroupId || 
-          (originTile && geoGridService.getTile(originTile.id)?.isSmallIsland)
-        );
 
-        if (originTile && clickedTile.countryCode === originTile.countryCode && !isTargetIsland && !isOriginIsland) {
-          triggerExpeditionError(`No puedes enviar barcos dentro del mismo país continental (${originTile.countryName || 'origen'}). Elige otro país o una isla.`);
-          return;
+        // Si el origen y destino son del mismo país, comprobar si están unidas por tierra firme continua.
+        // Si están separadas por agua (islas Baleares, Canarias, etc.), el barco SÍ puede zarpar hacia allá.
+        if (originTile && targetTile.countryCode === originTile.countryCode) {
+          const isDirectlyConnectedByLand = geoGridService.areTilesConnectedByLand(originTile.id, targetTile.id);
+          if (isDirectlyConnectedByLand) {
+            triggerExpeditionError(`Esta costa está unida por tierra con tu capital en ${originTile.countryName}. Usa la expansión terrestre normal para expandirte aquí.`);
+            return;
+          }
         }
 
-        const routeParams = empireStorageService.calculateExpeditionParams(expeditionOriginTileId, clickedTile.id);
+        const routeParams = empireStorageService.calculateExpeditionParams(expeditionOriginTileId, targetTile.id);
         if (!routeParams) {
           triggerExpeditionError('No existe una ruta marítima navegable hacia esta costa.');
           return;
@@ -915,12 +1027,12 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
 
         if (routeParams.outOfRange) {
           const maxR = isFinite(routeParams.maxRange) ? `${routeParams.maxRange} casillas` : 'Ilimitado';
-          triggerExpeditionError(`Destino fuera de alcance (${routeParams.distance} casillas, máx: ${maxR}). Establece un Hub Naval intermedio.`);
+          triggerExpeditionError(`Destino fuera de alcance (${routeParams.distance} casillas navegadas, máx: ${maxR}). Establece un Hub Naval intermedio como escala.`);
           return;
         }
 
         // Destino completamente válido -> Fletar expedición marítima directamente
-        const res = empireStorageService.launchExpedition(expeditionOriginTileId, clickedTile.id);
+        const res = empireStorageService.launchExpedition(expeditionOriginTileId, targetTile.id);
         if (res.success) {
           empireSound.playShipHorn();
           setExpeditionError(null);
@@ -1036,8 +1148,8 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
         onWheel={handleWheel}
       />
 
-      {/* Indicador de País bajo el cursor (Hover) - Centrado arriba */}
-      {hoveredTile && (
+      {/* Indicador de País bajo el cursor (Hover) - Solo si no estamos en modo expedición */}
+      {hoveredTile && !expeditionOriginTileId && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-zinc-950/90 border border-zinc-700/80 px-4 py-1.5 rounded-full shadow-2xl backdrop-blur-md pointer-events-none z-20 flex items-center gap-2.5 animate-in fade-in zoom-in-95 duration-100">
           <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
           <span className="text-xs sm:text-sm font-black text-white tracking-wide">
@@ -1104,37 +1216,56 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
       </div>
 
       {/* Banner de Modo Navegación / Fletar Barco */}
-      {expeditionOriginTileId && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 max-w-xl w-full px-4 z-30 pointer-events-auto select-none">
-          <div className={`px-4 py-2.5 rounded-2xl shadow-2xl backdrop-blur-md flex items-center justify-between gap-3 border transition-all duration-200 ${
-            expeditionError 
-              ? 'bg-red-950/95 border-red-500/80 text-red-200 animate-shake' 
-              : 'bg-blue-950/95 border-blue-400 text-blue-100 animate-pulse'
-          }`}>
-            <div className="flex items-center gap-2.5 min-w-0">
-              {expeditionError ? (
-                <span className="text-base shrink-0">⚠️</span>
-              ) : (
-                <Anchor className="w-4 h-4 text-blue-400 shrink-0" />
+      {expeditionOriginTileId && (() => {
+        const originTile = geoGridService.getTile(expeditionOriginTileId);
+        const originCol = empire.colonizedTiles[expeditionOriginTileId];
+        const maxRange = empireStorageService.getMaxNavalRange(expeditionOriginTileId);
+        const rangeText = isFinite(maxRange) ? `${maxRange} casillas` : 'Ilimitado';
+        const cityName = originCol?.cityName || originTile?.countryName || 'Puerto';
+        const tierName = originCol?.settlementTier === 4 ? 'Megaciudad' : originCol?.settlementTier === 3 ? 'Ciudad' : 'Pueblo/Isla';
+
+        return (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 max-w-2xl w-full px-4 z-30 pointer-events-auto select-none animate-in fade-in slide-in-from-top-3 duration-200">
+            <div className={`px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center justify-between gap-3 border transition-all duration-200 ${
+              expeditionError 
+                ? 'bg-red-950/95 border-red-500/80 text-red-200 animate-shake ring-2 ring-red-500/30' 
+                : 'bg-[#091528]/95 border-cyan-400/80 text-cyan-100 shadow-[0_0_30px_rgba(6,182,212,0.25)]'
+            }`}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-xl bg-cyan-500/20 border border-cyan-400/30 text-cyan-300 shrink-0">
+                  {expeditionError ? <span className="text-base">⚠️</span> : <Anchor className="w-5 h-5 text-cyan-400 animate-pulse" />}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs sm:text-sm font-black text-white tracking-wide">
+                      {expeditionError ? 'Destino no válido' : `Zarpar desde ${cityName} (${tierName})`}
+                    </span>
+                    {!expeditionError && (
+                      <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/25 border border-cyan-400/40 text-cyan-200">
+                        ⚓ Rango Máximo: {rangeText}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-cyan-200/80 truncate mt-0.5">
+                    {expeditionError || '🧭 Haz clic en cualquiera de las costas o islas verdes iluminadas en el mapa'}
+                  </p>
+                </div>
+              </div>
+              {onCancelExpeditionMode && (
+                <button
+                  onClick={() => {
+                    setExpeditionError(null);
+                    onCancelExpeditionMode();
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-zinc-800/90 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition-colors shrink-0 border border-zinc-600 shadow-md"
+                >
+                  Cancelar
+                </button>
               )}
-              <span className="text-xs sm:text-sm font-bold truncate">
-                {expeditionError || '🧭 Haz clic en una costa libre de ultramar o isla para zarpar inmediatamente'}
-              </span>
             </div>
-            {onCancelExpeditionMode && (
-              <button
-                onClick={() => {
-                  setExpeditionError(null);
-                  onCancelExpeditionMode();
-                }}
-                className="px-2.5 py-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition-colors shrink-0 border border-zinc-700"
-              >
-                Cancelar
-              </button>
-            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Guía Flotante Inicial para Nuevos Jugadores */}
       {!empire.capitalTileId && (
