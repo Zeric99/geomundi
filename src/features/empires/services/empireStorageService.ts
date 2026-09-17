@@ -375,8 +375,38 @@ export class EmpireStorageService {
             }
           });
 
+          // Reconciliar cupo histórico de barcos (expeditionsLaunchedCount):
+          // 1. A partir de expediciones en curso o históricas
+          (this.empire.expeditions || []).forEach(e => {
+            if (e && e.originTileId && this.empire?.colonizedTiles[e.originTileId]) {
+              const tileData = this.empire.colonizedTiles[e.originTileId];
+              tileData.expeditionsLaunchedCount = Math.max(tileData.expeditionsLaunchedCount || 0, 1);
+            }
+          });
+
+          // 2. Si el jugador ya posee casillas en islas o en otros territorios de ultramar desconectados,
+          // los puertos continentales que se utilizaron deben tener expeditionsLaunchedCount >= 1.
+          const hasOverseasColonies = Object.values(this.empire.colonizedTiles || {}).some(t => {
+            if (!t || !t.id) return false;
+            if (t.isSmallIsland || t.islandGroupId) return true;
+            const cap = this.empire?.capitalTileId ? this.empire.colonizedTiles[this.empire.capitalTileId] : null;
+            if (cap && t.countryCode !== cap.countryCode) return true;
+            return false;
+          });
+
+          if (hasOverseasColonies) {
+            Object.values(this.empire.colonizedTiles || {}).forEach(t => {
+              if (t.hasPort && !t.isSmallIsland && !t.islandGroupId) {
+                if (!t.expeditionsLaunchedCount || t.expeditionsLaunchedCount < 1) {
+                  t.expeditionsLaunchedCount = 1;
+                }
+              }
+            });
+          }
+
           this.recalculateMetrics();
           this.checkAndUpdateExpeditions();
+          this.saveEmpire();
           return;
         }
       }
@@ -1798,6 +1828,7 @@ export class EmpireStorageService {
     if (!emp.expeditions) emp.expeditions = [];
     emp.expeditions.push(expedition);
 
+    this.saveEmpire();
     this.notify();
     return { success: true, expedition };
   }
@@ -1862,6 +1893,7 @@ export class EmpireStorageService {
     }
 
     if (hasChanges) {
+      this.saveEmpire();
       this.notify();
     }
     return hasChanges;

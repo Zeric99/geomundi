@@ -543,6 +543,8 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
                           <p className="text-[10px] text-sky-400/80">
                             {isNavalHub 
                               ? 'Hub Naval (Puerto instantáneo y rutas aceleradas)' 
+                              : launchedShipsCount >= maxLifetimeShips
+                              ? (tier < 4 ? 'Muelle inactivo · Cupo de 1 barco alcanzado' : 'Muelle inactivo · Cupo náutico máximo alcanzado')
                               : 'Muelle comercial y de ultramar'}
                           </p>
                         </div>
@@ -550,13 +552,13 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
                       <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
                         canLaunchShip
                           ? 'text-emerald-300 bg-emerald-950/60 border-emerald-800/50'
-                          : 'text-amber-300 bg-amber-950/60 border-amber-800/50'
+                          : 'text-red-400 bg-red-950/60 border-red-800/50'
                       }`}>
                         {isSailingFromHere 
                           ? 'En Navegación' 
                           : launchedShipsCount >= maxLifetimeShips 
                           ? `Agotado (${launchedShipsCount}/${maxLifetimeShips})` 
-                          : `Disponible (${launchedShipsCount}/${maxLifetimeShips})`}
+                          : `Libre (${maxLifetimeShips - launchedShipsCount}/${maxLifetimeShips})`}
                       </span>
                     </div>
 
