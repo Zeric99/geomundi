@@ -64,8 +64,23 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
 
   // Lógica de Islas y Agrupación Insular
   const baseTile = geoGridService.getTile(tile.id);
-  const isIsland = Boolean(tile.isSmallIsland || baseTile?.isSmallIsland || ownedData?.isSmallIsland || ownedData?.islandGroupId || baseTile?.islandGroupId);
-  const effectiveIslandGroupId = tile.islandGroupId || baseTile?.islandGroupId || ownedData?.islandGroupId || (isIsland ? `island_${tile.id}` : undefined);
+  const isBalearesOrCanarias = Boolean(
+    (tile.countryCode === 'ESP' || baseTile?.countryCode === 'ESP' || ownedData?.countryCode === 'ESP') &&
+    ((tile.lon > 1.0 && tile.lon < 5.0 && tile.lat > 38.0 && tile.lat < 40.5) || (tile.lon < -13.0 && tile.lat < 30.0))
+  );
+  const isIsland = Boolean(
+    isBalearesOrCanarias ||
+    tile.isSmallIsland || 
+    baseTile?.isSmallIsland || 
+    ownedData?.isSmallIsland || 
+    ownedData?.islandGroupId || 
+    baseTile?.islandGroupId
+  );
+  const effectiveIslandGroupId = 
+    tile.islandGroupId || 
+    baseTile?.islandGroupId || 
+    ownedData?.islandGroupId || 
+    (isBalearesOrCanarias ? (tile.lon < -13 ? 'island_canarias' : 'island_baleares') : (isIsland ? `island_${tile.id}` : undefined));
   const islandTiles = effectiveIslandGroupId ? geoGridService.getTilesByIslandGroup(effectiveIslandGroupId) : [];
   const islandSettlement = islandTiles.find(t => {
     const col = empire.colonizedTiles[t.id];
@@ -182,7 +197,7 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
     return 'Faltan requisitos';
   }, [upgradeCheck, canUpgrade, empire.coins, empire.nationalMaterials, empire.nationalFood]);
 
-  const isCoastTile = Boolean(tile.isCoast || baseTile?.isCoast || ownedData?.isCoast);
+  const isCoastTile = Boolean(tile.isCoast || baseTile?.isCoast || ownedData?.isCoast || isIsland);
   const minTierForPort = isIsland ? 1 : 2; // En islas desde Aldea (Nivel 1), en costa continental desde Pueblo (Nivel 2)
   const canBuildPort = isSettlement && tier >= minTierForPort && isCoastTile && !hasPort && empire.coins >= 50;
 

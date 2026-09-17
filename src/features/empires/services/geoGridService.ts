@@ -294,12 +294,27 @@ export class GeoGridService {
             }
           }
 
-          if (group.length <= 45) {
+          if (group.length <= 150) {
             const groupId = `island_${islandCounter++}`;
             group.forEach(t => {
               t.isSmallIsland = true;
               t.islandGroupId = groupId;
             });
+          }
+        });
+
+        // Garantizar que archipiélagos e islas como Baleares (Mallorca) y Canarias siempre queden marcados
+        tempTiles.forEach((tile) => {
+          if (tile.countryCode === 'ESP') {
+            if (tile.lon > 1.0 && tile.lon < 5.0 && tile.lat > 38.0 && tile.lat < 40.5) {
+              tile.isSmallIsland = true;
+              tile.islandGroupId = 'island_baleares';
+              tile.isCoast = true;
+            } else if (tile.lon < -13.0 && tile.lat < 30.0) {
+              tile.isSmallIsland = true;
+              tile.islandGroupId = 'island_canarias';
+              tile.isCoast = true;
+            }
           }
         });
 

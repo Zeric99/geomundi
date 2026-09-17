@@ -372,6 +372,20 @@ export class EmpireStorageService {
                 if (base.islandGroupId) t.islandGroupId = base.islandGroupId;
                 if (base.isCoast) t.isCoast = true;
               }
+              // Garantizar Baleares (Mallorca) y Canarias de forma infalible
+              const lon = t.lon ?? base?.lon;
+              const lat = t.lat ?? base?.lat;
+              if (t.countryCode === 'ESP' && lon !== undefined && lat !== undefined) {
+                if (lon > 1.0 && lon < 5.0 && lat > 38.0 && lat < 40.5) {
+                  t.isSmallIsland = true;
+                  t.islandGroupId = 'island_baleares';
+                  t.isCoast = true;
+                } else if (lon < -13.0 && lat < 30.0) {
+                  t.isSmallIsland = true;
+                  t.islandGroupId = 'island_canarias';
+                  t.isCoast = true;
+                }
+              }
             }
           });
 
@@ -1114,10 +1128,14 @@ export class EmpireStorageService {
     if (!tile || !baseTile) return false;
     if (tile.role !== 'settlement') return false;
     
-    const isIsland = Boolean(baseTile.isSmallIsland || tile.isSmallIsland || tile.islandGroupId || baseTile.islandGroupId);
+    const isBalearesOrCanarias = Boolean(
+      (baseTile.countryCode === 'ESP' || tile.countryCode === 'ESP') &&
+      ((baseTile.lon > 1.0 && baseTile.lon < 5.0 && baseTile.lat > 38.0 && baseTile.lat < 40.5) || (baseTile.lon < -13.0 && baseTile.lat < 30.0))
+    );
+    const isIsland = Boolean(isBalearesOrCanarias || baseTile.isSmallIsland || tile.isSmallIsland || tile.islandGroupId || baseTile.islandGroupId);
     const minTier = isIsland ? 1 : 2; // En islas desde Aldea (Nivel 1), en costa continental desde Pueblo (Nivel 2)
     if (((tile.settlementTier as number) || 1) < minTier) return false;
-    if (!baseTile.isCoast) return false;
+    if (!baseTile.isCoast && !isIsland) return false;
     if (tile.hasPort) return false; // Ya tiene puerto
 
     const cost = 50;
@@ -1126,6 +1144,7 @@ export class EmpireStorageService {
     emp.coins -= cost;
     tile.hasPort = true;
 
+    this.saveEmpire();
     this.notify();
     return true;
   }
@@ -1257,14 +1276,14 @@ export class EmpireStorageService {
       }
     });
 
-    // Escala progresiva accesible de hitos poblacionales (primera isla a partir de 25 habitantes)
-    const POPULATION_THRESHOLDS = [25, 100, 300, 1000, 3000, 10000, 25000, 50000];
-    let maxAllowed = 0;
+    // Escala progresiva accesible: la primera isla siempre se puede especializar libremente
+    const POPULATION_THRESHOLDS = [100, 300, 1000, 3000, 10000, 25000, 50000];
+    let maxAllowed = 1;
     let nextPopRequired = POPULATION_THRESHOLDS[0];
 
     for (let i = 0; i < POPULATION_THRESHOLDS.length; i++) {
       if (emp.totalPopulation >= POPULATION_THRESHOLDS[i]) {
-        maxAllowed = i + 1;
+        maxAllowed = i + 2;
         nextPopRequired = POPULATION_THRESHOLDS[i + 1] ?? 999999;
       } else {
         nextPopRequired = POPULATION_THRESHOLDS[i];
@@ -1336,32 +1355,35 @@ export class EmpireStorageService {
     // En islas pequeñas, la especialización activa directamente el asentamiento principal
     const islandTiles = geoGridService.getTilesByIslandGroup(islandGroupId);
     let mainSettlement = islandTiles.find(t => emp.colonizedTiles[t.id]?.role === 'settlement')
-      || islandTiles.find(t => emp.colonizedTiles[t.id]);
+      || islandTiles.find(t => emp.colonizedTiles[t.id])
+      || Object.values(emp.colonizedTiles).find(t => t.islandGroupId === islandGroupId);
 
-    if (mainSettlement && emp.colonizedTiles[mainSettlement.id]) {
-      const colData = emp.colonizedTiles[mainSettlement.id];
+    const targetTileId = mainSettlement?.id;
+    if (targetTileId && emp.colonizedTiles[targetTileId]) {
+      const colData = emp.colonizedTiles[targetTileId];
       colData.role = 'settlement';
-      if (!colData.settlementTier || colData.settlementTier < 2) {
-        colData.settlementTier = 2; // Pueblo insular portuario
+      if (!colData.settlementTier || colData.settlementTier < 1) {
+        colData.settlementTier = 1;
       }
       if (spec === 'naval_hub') {
-        colData.hasPort = true; // Puerto desbloqueado y activo con 3 muelles
+        colData.hasPort = true; // Puerto desbloqueado y activo de forma inmediata y gratuita
         emp.freeExpeditions = (emp.freeExpeditions || 0) + 1; // 1 expedición gratis!
         if (!colData.cityName || colData.cityName.includes('Costera') || colData.cityName.includes('Poblado')) {
-          colData.cityName = `${mainSettlement.countryName} Hub Naval`;
+          colData.cityName = `${colData.countryName || 'Isla'} Hub Naval`;
         }
       } else if (spec === 'tourist_resort') {
         if (!colData.cityName || colData.cityName.includes('Costera') || colData.cityName.includes('Poblado')) {
-          colData.cityName = `${mainSettlement.countryName} Resort`;
+          colData.cityName = `${colData.countryName || 'Isla'} Resort`;
         }
       } else if (spec === 'fiscal_paradise') {
         if (!colData.cityName || colData.cityName.includes('Costera') || colData.cityName.includes('Poblado')) {
-          colData.cityName = `${mainSettlement.countryName} Banco Offshore`;
+          colData.cityName = `${colData.countryName || 'Isla'} Banco Offshore`;
         }
       }
     }
 
     this.recalculateMetrics();
+    this.saveEmpire();
     this.notify();
     return { success: true };
   }
