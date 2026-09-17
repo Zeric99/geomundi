@@ -385,13 +385,15 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     onFinishDuel(state);
   };
 
-  // Prevenir abandono accidental por recarga o cierre de pestaña del navegador
+  // Prevenir abandono accidental o reinicio tramposo por recarga/cierre de pestaña
   useEffect(() => {
-    if (isChallengeCreation) return;
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
-      e.returnValue = '¿Estás seguro de que quieres salir? Te contará como derrota.';
-      return e.returnValue;
+      const msg = isChallengeCreation
+        ? '¿Estás seguro de que quieres salir? Tu reto se publicará con los puntos que lleves hasta ahora.'
+        : '¿Estás seguro de que quieres salir? Te contará como derrota.';
+      e.returnValue = msg;
+      return msg;
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
@@ -399,13 +401,50 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     };
   }, [isChallengeCreation]);
 
-  // Confirmar rendición / abandono (cuenta como derrota)
+  // Confirmar rendición / abandono (cuenta como derrota en 1v1 o publica con puntos actuales en creación)
   const handleConfirmSurrender = () => {
     setShowSurrenderConfirm(false);
     if (timerRef.current) clearInterval(timerRef.current);
 
     if (isChallengeCreation) {
-      onQuit();
+      // Para evitar trampas/reinicios, si el creador sale a medias, el reto se publica
+      // igualmente con la puntuación que lleve (las preguntas restantes puntúan 0).
+      const filledResults: PlayerRoundResult[] = [...playerResults];
+      for (let i = playerResults.length; i < questions.length; i++) {
+        filledResults.push({
+          questionIndex: i,
+          userSuccess: false,
+          timeSpentMs: 0,
+          points: 0
+        });
+      }
+
+      const playerTotalScore = filledResults.reduce((acc, r) => acc + r.points, 0);
+      const playerTotalTime = Math.max(
+        filledResults.reduce((acc, r) => acc + r.timeSpentMs, 0),
+        (30 - timeLeft) * 1000
+      );
+
+      const state: DuelState = {
+        id: `challenge_run_${Date.now()}`,
+        type: 'ranked',
+        duelMode,
+        questions,
+        player: playerProfile,
+        rival: playerProfile,
+        playerResults: filledResults,
+        rivalResults: [],
+        playerScore: playerTotalScore,
+        rivalScore: 0,
+        playerTimeTotalMs: playerTotalTime,
+        rivalTimeTotalMs: 0,
+        winner: 'player',
+        eloChange: 0,
+        xpEarned: Math.max(25, Math.round(playerTotalScore / 30)),
+        isChallengeCreation: true
+      };
+
+      onFinishDuel(state);
       return;
     }
 
@@ -626,18 +665,27 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-[#18181b] border border-zinc-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center"
             >
-              <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+              <div className={`w-12 h-12 rounded-full border flex items-center justify-center mx-auto ${
+                isChallengeCreation 
+                  ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' 
+                  : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+              }`}>
                 <AlertTriangle className="w-6 h-6" />
               </div>
 
               <div className="space-y-1.5">
                 <h3 className="text-base sm:text-lg font-bold text-zinc-100 font-serif">
-                  {isChallengeCreation ? '¿Descartar desafío?' : '¿Estás seguro de que quieres salir?'}
+                  ¿Estás seguro de que quieres salir?
                 </h3>
                 {isChallengeCreation ? (
-                  <p className="text-xs text-zinc-400">
-                    Si sales ahora, la grabación no se publicará en el tablón de la comunidad y se descartará el progreso.
-                  </p>
+                  <div className="space-y-2">
+                    <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl py-2 px-3 text-amber-300 font-bold text-xs">
+                      ⚠️ Tu reto se publicará con tu puntuación actual
+                    </div>
+                    <p className="text-xs text-zinc-400 leading-relaxed">
+                      Para garantizar el juego limpio y evitar reinicios fraudulentos, si sales ahora tu reto se publicará en la comunidad con los puntos que lleves hasta este momento (las preguntas restantes puntuarán 0).
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     <div className="bg-rose-500/10 border border-rose-500/25 rounded-xl py-2 px-3 text-rose-300 font-bold text-xs">
@@ -661,9 +709,13 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
                 <button
                   type="button"
                   onClick={handleConfirmSurrender}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors shadow-lg shadow-rose-900/20"
+                  className={`flex-1 py-2.5 px-4 rounded-xl text-white font-bold text-xs transition-colors shadow-lg ${
+                    isChallengeCreation 
+                      ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-900/20' 
+                      : 'bg-rose-600 hover:bg-rose-500 shadow-rose-900/20'
+                  }`}
                 >
-                  {isChallengeCreation ? 'Descartar' : 'Salir y rendirse'}
+                  {isChallengeCreation ? 'Salir y publicar' : 'Salir y rendirse'}
                 </button>
               </div>
             </motion.div>
