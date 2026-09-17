@@ -363,28 +363,14 @@ export class EmpireStorageService {
             }
           });
 
-          // Sincronizar propiedades insulares y costeras actualizadas con geoGridService
+          // Sincronizar propiedades insulares y costeras actualizadas con geoGridService (< 10 casillas = Isla Pequeña, >= 10 = Normal)
           Object.values(this.empire.colonizedTiles || {}).forEach(t => {
             if (t && t.id) {
               const base = geoGridService.getTile(t.id);
               if (base) {
-                if (base.isSmallIsland) t.isSmallIsland = true;
-                if (base.islandGroupId) t.islandGroupId = base.islandGroupId;
+                t.isSmallIsland = Boolean(base.isSmallIsland);
+                t.islandGroupId = base.islandGroupId;
                 if (base.isCoast) t.isCoast = true;
-              }
-              // Garantizar Baleares (Mallorca) y Canarias de forma infalible
-              const lon = t.lon ?? base?.lon;
-              const lat = t.lat ?? base?.lat;
-              if (t.countryCode === 'ESP' && lon !== undefined && lat !== undefined) {
-                if (lon > 1.0 && lon < 5.0 && lat > 38.0 && lat < 40.5) {
-                  t.isSmallIsland = true;
-                  t.islandGroupId = 'island_baleares';
-                  t.isCoast = true;
-                } else if (lon < -13.0 && lat < 30.0) {
-                  t.isSmallIsland = true;
-                  t.islandGroupId = 'island_canarias';
-                  t.isCoast = true;
-                }
               }
             }
           });
@@ -1128,12 +1114,8 @@ export class EmpireStorageService {
     if (!tile || !baseTile) return false;
     if (tile.role !== 'settlement') return false;
     
-    const isBalearesOrCanarias = Boolean(
-      (baseTile.countryCode === 'ESP' || tile.countryCode === 'ESP') &&
-      ((baseTile.lon > 1.0 && baseTile.lon < 5.0 && baseTile.lat > 38.0 && baseTile.lat < 40.5) || (baseTile.lon < -13.0 && baseTile.lat < 30.0))
-    );
-    const isIsland = Boolean(isBalearesOrCanarias || baseTile.isSmallIsland || tile.isSmallIsland || tile.islandGroupId || baseTile.islandGroupId);
-    const minTier = isIsland ? 1 : 3; // En islas desde Aldea (Nivel 1), en costa continental requiere Ciudad (Nivel 3)
+    const isIsland = Boolean(baseTile ? baseTile.isSmallIsland : (tile.isSmallIsland && tile.islandGroupId));
+    const minTier = isIsland ? 1 : 3; // En islas pequeñas (< 10 casillas) desde Aldea (Nivel 1), en tierra normal/continente requiere Ciudad (Nivel 3)
     if (((tile.settlementTier as number) || 1) < minTier) return false;
     if (!baseTile.isCoast && !isIsland) return false;
     if (tile.hasPort) return false; // Ya tiene puerto

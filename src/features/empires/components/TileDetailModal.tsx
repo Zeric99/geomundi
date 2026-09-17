@@ -62,25 +62,10 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
   const isAdjacentToOwned = adjacentTiles.some(adj => empire.colonizedTiles[adj.id]);
   const cost = empireStorageService.getNextTileCost();
 
-  // Lógica de Islas y Agrupación Insular
+  // Lógica de Islas y Agrupación Insular (< 10 casillas = Isla Pequeña, >= 10 casillas = Construcción Normal)
   const baseTile = geoGridService.getTile(tile.id);
-  const isBalearesOrCanarias = Boolean(
-    (tile.countryCode === 'ESP' || baseTile?.countryCode === 'ESP' || ownedData?.countryCode === 'ESP') &&
-    ((tile.lon > 1.0 && tile.lon < 5.0 && tile.lat > 38.0 && tile.lat < 40.5) || (tile.lon < -13.0 && tile.lat < 30.0))
-  );
-  const isIsland = Boolean(
-    isBalearesOrCanarias ||
-    tile.isSmallIsland || 
-    baseTile?.isSmallIsland || 
-    ownedData?.isSmallIsland || 
-    ownedData?.islandGroupId || 
-    baseTile?.islandGroupId
-  );
-  const effectiveIslandGroupId = 
-    tile.islandGroupId || 
-    baseTile?.islandGroupId || 
-    ownedData?.islandGroupId || 
-    (isBalearesOrCanarias ? (tile.lon < -13 ? 'island_canarias' : 'island_baleares') : (isIsland ? `island_${tile.id}` : undefined));
+  const isIsland = Boolean(baseTile ? baseTile.isSmallIsland : (tile.isSmallIsland && tile.islandGroupId));
+  const effectiveIslandGroupId = baseTile?.islandGroupId || (isIsland ? tile.islandGroupId : undefined);
   const islandTiles = effectiveIslandGroupId ? geoGridService.getTilesByIslandGroup(effectiveIslandGroupId) : [];
   const islandSettlement = islandTiles.find(t => {
     const col = empire.colonizedTiles[t.id];

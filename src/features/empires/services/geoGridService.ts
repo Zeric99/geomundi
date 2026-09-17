@@ -287,6 +287,12 @@ export class GeoGridService {
                 if (nx < 0 || nx >= GRID_COLS || ny < 0 || ny >= GRID_ROWS) continue;
                 const neighbor = tempArray[ny * GRID_COLS + nx];
                 if (neighbor && !visited.has(neighbor.id)) {
+                  // Si es diagonal, evitar cruzar canales de agua estrechos entre dos esquinas
+                  if (dx !== 0 && dy !== 0) {
+                    const side1 = tempArray[current.y * GRID_COLS + (current.x + dx)];
+                    const side2 = tempArray[(current.y + dy) * GRID_COLS + current.x];
+                    if (!side1 && !side2) continue; // Separadas por agua en diagonal
+                  }
                   visited.add(neighbor.id);
                   queue.push(neighbor);
                 }
@@ -294,27 +300,20 @@ export class GeoGridService {
             }
           }
 
-          if (group.length <= 150) {
+          // Regla oficial: Si la masa de tierra tiene menos de 10 cuadrados y está rodeada de mar, es Isla Pequeña.
+          // Si la isla es más grande que eso (>= 10), se puede construir normal como tierra continental.
+          if (group.length < 10) {
             const groupId = `island_${islandCounter++}`;
             group.forEach(t => {
               t.isSmallIsland = true;
               t.islandGroupId = groupId;
+              t.isCoast = true;
             });
-          }
-        });
-
-        // Garantizar que archipiélagos e islas como Baleares (Mallorca) y Canarias siempre queden marcados
-        tempTiles.forEach((tile) => {
-          if (tile.countryCode === 'ESP') {
-            if (tile.lon > 1.0 && tile.lon < 5.0 && tile.lat > 38.0 && tile.lat < 40.5) {
-              tile.isSmallIsland = true;
-              tile.islandGroupId = 'island_baleares';
-              tile.isCoast = true;
-            } else if (tile.lon < -13.0 && tile.lat < 30.0) {
-              tile.isSmallIsland = true;
-              tile.islandGroupId = 'island_canarias';
-              tile.isCoast = true;
-            }
+          } else {
+            group.forEach(t => {
+              t.isSmallIsland = false;
+              t.islandGroupId = undefined;
+            });
           }
         });
 
