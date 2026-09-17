@@ -32,6 +32,7 @@ export interface UserProfile {
   wins_capitals?: number;
   duels_flags?: number;
   wins_flags?: number;
+  empire_data?: any;
   created_at: string;
 }
 

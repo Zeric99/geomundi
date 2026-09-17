@@ -326,84 +326,92 @@ export class EmpireStorageService {
     return host !== 'localhost' && host !== '127.0.0.1' && !host.startsWith('192.168.') && !host.endsWith('.local');
   }
 
+  private sanitizeAndNormalizeEmpire(raw: any): UserEmpire {
+    const emp: UserEmpire = { ...raw };
+    if (!emp.expeditions) emp.expeditions = [];
+    if (!emp.islandSpecializations) emp.islandSpecializations = {};
+    if (emp.freeExpeditions === undefined) emp.freeExpeditions = 0;
+    if (!emp.claimedMissions) emp.claimedMissions = [];
+    if (!emp.colonizedTiles) emp.colonizedTiles = {};
+    if (!emp.localCensusByCountry) emp.localCensusByCountry = {};
+
+    // Reestablecer tesorería equilibrada si venía de pruebas con 999.999 monedas
+    if (emp.coins >= 999999) {
+      emp.coins = 150;
+    }
+    if (emp.nationalMaterials === undefined || emp.nationalMaterials < 30) {
+      emp.nationalMaterials = 60;
+    }
+
+    // Si hay islas con Hub Naval, asegurar que su puerto esté activo y desbloqueado
+    Object.entries(emp.islandSpecializations || {}).forEach(([groupId, spec]) => {
+      if (spec === 'naval_hub') {
+        const islandTiles = geoGridService.getTilesByIslandGroup(groupId);
+        const st = islandTiles.find(t => emp.colonizedTiles[t.id]?.role === 'settlement')
+          || islandTiles.find(t => emp.colonizedTiles[t.id]);
+        if (st && emp.colonizedTiles[st.id]) {
+          const colData = emp.colonizedTiles[st.id];
+          colData.role = 'settlement';
+          colData.hasPort = true;
+          if (!colData.settlementTier || colData.settlementTier < 2) colData.settlementTier = 2;
+          if (!colData.cityName || colData.cityName.includes('Costera')) {
+            colData.cityName = `${st.countryName} Hub Naval`;
+          }
+        }
+      }
+    });
+
+    // Sincronizar propiedades insulares y costeras actualizadas con geoGridService (< 10 casillas = Isla Pequeña, >= 10 = Normal)
+    Object.values(emp.colonizedTiles || {}).forEach(t => {
+      if (t && t.id) {
+        const base = geoGridService.getTile(t.id);
+        if (base) {
+          t.isSmallIsland = Boolean(base.isSmallIsland);
+          t.islandGroupId = base.islandGroupId;
+          if (base.isCoast) t.isCoast = true;
+        }
+      }
+    });
+
+    // Reconciliar cupo histórico de barcos (expeditionsLaunchedCount):
+    // 1. A partir de expediciones en curso o históricas
+    (emp.expeditions || []).forEach(e => {
+      if (e && e.originTileId && emp.colonizedTiles[e.originTileId]) {
+        const tileData = emp.colonizedTiles[e.originTileId];
+        tileData.expeditionsLaunchedCount = Math.max(tileData.expeditionsLaunchedCount || 0, 1);
+      }
+    });
+
+    // 2. Si el jugador ya posee casillas en islas o en otros territorios de ultramar desconectados,
+    // los puertos continentales que se utilizaron deben tener expeditionsLaunchedCount >= 1.
+    const hasOverseasColonies = Object.values(emp.colonizedTiles || {}).some(t => {
+      if (!t || !t.id) return false;
+      if (t.isSmallIsland || t.islandGroupId) return true;
+      const cap = emp.capitalTileId ? emp.colonizedTiles[emp.capitalTileId] : null;
+      if (cap && t.countryCode !== cap.countryCode) return true;
+      return false;
+    });
+
+    if (hasOverseasColonies) {
+      Object.values(emp.colonizedTiles || {}).forEach(t => {
+        if (t.hasPort && !t.isSmallIsland && !t.islandGroupId) {
+          if (!t.expeditionsLaunchedCount || t.expeditionsLaunchedCount < 1) {
+            t.expeditionsLaunchedCount = 1;
+          }
+        }
+      });
+    }
+
+    return emp;
+  }
+
   private loadFromStorage(): void {
     try {
       const raw = localStorage.getItem(EMPIRE_STORAGE_KEY);
       if (raw) {
-        this.empire = JSON.parse(raw);
-        if (this.empire) {
-          if (!this.empire.expeditions) this.empire.expeditions = [];
-          if (!this.empire.islandSpecializations) this.empire.islandSpecializations = {};
-          if (this.empire.freeExpeditions === undefined) this.empire.freeExpeditions = 0;
-          if (!this.empire.claimedMissions) this.empire.claimedMissions = [];
-
-          // Reestablecer tesorería equilibrada si venía de pruebas con 999.999 monedas
-          if (this.empire.coins >= 999999) {
-            this.empire.coins = 150;
-          }
-          if (this.empire.nationalMaterials === undefined || this.empire.nationalMaterials < 30) {
-            this.empire.nationalMaterials = 60;
-          }
-
-          // Si hay islas con Hub Naval, asegurar que su puerto esté activo y desbloqueado
-          Object.entries(this.empire.islandSpecializations || {}).forEach(([groupId, spec]) => {
-            if (spec === 'naval_hub') {
-              const islandTiles = geoGridService.getTilesByIslandGroup(groupId);
-              const st = islandTiles.find(t => this.empire?.colonizedTiles[t.id]?.role === 'settlement')
-                || islandTiles.find(t => this.empire?.colonizedTiles[t.id]);
-              if (st && this.empire?.colonizedTiles[st.id]) {
-                const colData = this.empire.colonizedTiles[st.id];
-                colData.role = 'settlement';
-                colData.hasPort = true;
-                if (!colData.settlementTier || colData.settlementTier < 2) colData.settlementTier = 2;
-                if (!colData.cityName || colData.cityName.includes('Costera')) {
-                  colData.cityName = `${st.countryName} Hub Naval`;
-                }
-              }
-            }
-          });
-
-          // Sincronizar propiedades insulares y costeras actualizadas con geoGridService (< 10 casillas = Isla Pequeña, >= 10 = Normal)
-          Object.values(this.empire.colonizedTiles || {}).forEach(t => {
-            if (t && t.id) {
-              const base = geoGridService.getTile(t.id);
-              if (base) {
-                t.isSmallIsland = Boolean(base.isSmallIsland);
-                t.islandGroupId = base.islandGroupId;
-                if (base.isCoast) t.isCoast = true;
-              }
-            }
-          });
-
-          // Reconciliar cupo histórico de barcos (expeditionsLaunchedCount):
-          // 1. A partir de expediciones en curso o históricas
-          (this.empire.expeditions || []).forEach(e => {
-            if (e && e.originTileId && this.empire?.colonizedTiles[e.originTileId]) {
-              const tileData = this.empire.colonizedTiles[e.originTileId];
-              tileData.expeditionsLaunchedCount = Math.max(tileData.expeditionsLaunchedCount || 0, 1);
-            }
-          });
-
-          // 2. Si el jugador ya posee casillas en islas o en otros territorios de ultramar desconectados,
-          // los puertos continentales que se utilizaron deben tener expeditionsLaunchedCount >= 1.
-          const hasOverseasColonies = Object.values(this.empire.colonizedTiles || {}).some(t => {
-            if (!t || !t.id) return false;
-            if (t.isSmallIsland || t.islandGroupId) return true;
-            const cap = this.empire?.capitalTileId ? this.empire.colonizedTiles[this.empire.capitalTileId] : null;
-            if (cap && t.countryCode !== cap.countryCode) return true;
-            return false;
-          });
-
-          if (hasOverseasColonies) {
-            Object.values(this.empire.colonizedTiles || {}).forEach(t => {
-              if (t.hasPort && !t.isSmallIsland && !t.islandGroupId) {
-                if (!t.expeditionsLaunchedCount || t.expeditionsLaunchedCount < 1) {
-                  t.expeditionsLaunchedCount = 1;
-                }
-              }
-            });
-          }
-
+        const parsed = JSON.parse(raw);
+        if (parsed) {
+          this.empire = this.sanitizeAndNormalizeEmpire(parsed);
           this.recalculateMetrics();
           this.checkAndUpdateExpeditions();
           this.saveEmpire();
@@ -416,6 +424,66 @@ export class EmpireStorageService {
     this.empire = this.createDefaultEmpire();
   }
 
+  /**
+   * Sincroniza e hidrata el imperio del usuario desde Supabase (al iniciar sesión o cargar la app)
+   */
+  public async syncEmpireFromCloud(cloudEmpire: any | null, userId?: string): Promise<void> {
+    if (!cloudEmpire || !cloudEmpire.capitalTileId) {
+      // Si en la nube no hay imperio pero localmente el usuario ya tiene un imperio con capital fundada,
+      // subimos el imperio local a Supabase para que quede registrado en su cuenta.
+      if (this.empire?.capitalTileId && userId && isSupabaseConfigured && supabase) {
+        try {
+          await supabase.from('profiles').update({
+            empire_data: this.empire,
+            updated_at: new Date().toISOString()
+          }).eq('id', userId);
+        } catch (err) {
+          console.warn('[EmpireStorageService] Error subiendo imperio local inicial a Supabase:', err);
+        }
+      }
+      return;
+    }
+
+    // Si la nube tiene un imperio con capital:
+    // Comprobamos si el local está vacío o si la nube es la versión autoritativa
+    const localTileCount = Object.keys(this.empire?.colonizedTiles || {}).length;
+    const cloudTileCount = Object.keys(cloudEmpire.colonizedTiles || {}).length;
+    const localHasCapital = Boolean(this.empire?.capitalTileId);
+
+    // Si local no tiene capital, o si la nube tiene al menos igual o más casillas/más población:
+    if (!localHasCapital || cloudTileCount >= localTileCount) {
+      this.empire = this.sanitizeAndNormalizeEmpire(cloudEmpire);
+      this.recalculateMetrics();
+      this.checkAndUpdateExpeditions();
+      try {
+        localStorage.setItem(EMPIRE_STORAGE_KEY, JSON.stringify(this.empire));
+      } catch (e) {}
+      this.notify();
+    } else if (localHasCapital && localTileCount > cloudTileCount && userId && isSupabaseConfigured && supabase) {
+      // Si el local está más avanzado que la nube (p.ej. jugó offline y colonizó más casillas),
+      // actualizamos la nube con el local.
+      try {
+        await supabase.from('profiles').update({
+          empire_data: this.empire,
+          updated_at: new Date().toISOString()
+        }).eq('id', userId);
+      } catch (err) {
+        console.warn('[EmpireStorageService] Error actualizando nube con progreso local avanzado:', err);
+      }
+    }
+  }
+
+  /**
+   * Resetea el imperio local al estado por defecto (al cerrar sesión)
+   */
+  public resetToDefault(): void {
+    this.empire = this.createDefaultEmpire();
+    try {
+      localStorage.removeItem(EMPIRE_STORAGE_KEY);
+    } catch (e) {}
+    this.notify();
+  }
+
   private async saveToStorage(): Promise<void> {
     if (!this.empire) return;
     try {
@@ -424,8 +492,8 @@ export class EmpireStorageService {
       console.error('[EmpireStorageService] Error guardando imperio en localStorage:', e);
     }
 
-    // Sincronización con Supabase: ÚNICAMENTE se ejecuta en el entorno real de producción
-    if (this.isProductionEnvironment() && isSupabaseConfigured && supabase) {
+    // Sincronización con Supabase: se ejecuta si Supabase está configurado y hay usuario autenticado
+    if (isSupabaseConfigured && supabase) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {

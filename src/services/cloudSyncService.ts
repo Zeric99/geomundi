@@ -7,6 +7,7 @@ import { multiplayerService } from './multiplayerService';
 import { customRoomService } from './customRoomService';
 import { DuelMode } from '../types/multiplayer';
 import { GameSummary } from '../types/game';
+import { empireStorageService } from '../features/empires/services/empireStorageService';
 
 export interface LeaderboardEntry {
   id: string;
@@ -264,6 +265,26 @@ export const cloudSyncService = {
         await this.saveDailyChallengeAttempt(userId, todayAttempt);
       }
 
+      // 5. Migrar imperio local si se fundó como invitado
+      const currentEmpire = empireStorageService.getEmpire();
+      if (currentEmpire && currentEmpire.capitalTileId) {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('empire_data')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (!prof?.empire_data || !prof.empire_data.capitalTileId) {
+          await supabase
+            .from('profiles')
+            .update({
+              empire_data: currentEmpire,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', userId);
+        }
+      }
+
       return true;
     } catch (e) {
       console.error('Error migrando datos locales a la nube:', e);
@@ -308,6 +329,17 @@ export const cloudSyncService = {
           dailyData.score || 0,
           dailyData.time_seconds || 30
         );
+      }
+
+      // 5. Hidratar imperio desde Supabase
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('empire_data')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!profileError && profileData) {
+        await empireStorageService.syncEmpireFromCloud(profileData.empire_data, userId);
       }
     } catch (e) {
       console.warn('Error hidratando datos de usuario desde Supabase:', e);
@@ -370,4 +402,5 @@ export const clearAllUserSessionData = (): void => {
   dailyChallengeService.resetDailyState();
   multiplayerService.resetLocalProfile();
   customRoomService.clearRoomCache();
+  empireStorageService.resetToDefault();
 };
