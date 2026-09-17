@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Clock, Trophy, CheckCircle2, XCircle, Flame, ArrowRight, Zap, Target, Sparkles } from 'lucide-react';
+import { Swords, Clock, Trophy, CheckCircle2, XCircle, Flame, ArrowRight, Zap, Target, Sparkles, Flag } from 'lucide-react';
 import { Country, CountryMapStatus } from '../../types/country';
 import { DuelMode, DuelQuestion, DuelState, PlayerProfile, PlayerRoundResult } from '../../types/multiplayer';
 import { WorldMap } from '../map/WorldMap';
@@ -62,14 +62,10 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
   const questionStartTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<any>(null);
 
-  // Resultados del rival (grabados de una partida real, o vacíos si es creación de reto)
+  // Resultados del rival (grabados de una partida real de otro jugador, o vacíos si es creación de reto)
   const rivalResults = useRef<PlayerRoundResult[]>(
     recordedRivalResults && recordedRivalResults.length > 0
       ? recordedRivalResults
-      : isChallengeCreation
-      ? []
-      : rivalProfile
-      ? multiplayerService.simulateRivalPerformance(questions, rivalProfile.elo)
       : []
   ).current;
 
@@ -399,129 +395,117 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 gap-3 max-w-7xl mx-auto w-full px-1 sm:px-2 overflow-hidden select-none">
-      {/* 1. Marcador Comparativo 1v1 Superior */}
-      <div className="bg-[#18181B] border border-zinc-800 p-3.5 sm:p-4 rounded-2xl shadow-card-subtle flex items-center justify-between gap-4 flex-wrap shrink-0">
-        {/* Jugador */}
-        <div className="flex items-center gap-3">
+    <div className="flex flex-col h-full max-h-screen w-full gap-2 px-1 sm:px-2 py-1.5 overflow-hidden select-none">
+      {/* BANNER ÚNICO UNIFICADO (Mockup media_1789603786563.png) */}
+      <div className="bg-[#12141c] border border-zinc-800/90 rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 shadow-2xl flex items-center justify-between gap-3 shrink-0 text-white select-none relative overflow-hidden">
+        {/* Acabado sutil con resplandor morado/cyan a la izquierda */}
+        <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-cyan-500 via-purple-500 to-indigo-500 rounded-l-2xl" />
+
+        {/* 1. Izquierda: Avatar + Nombre + ELO + Puntos */}
+        <div className="flex items-center gap-2.5 shrink-0 pl-1">
           <PlayerAvatar
             avatar={playerProfile.avatar}
             name={playerProfile.name}
-            className="w-10 h-10 rounded-xl bg-indigo-950/60 border border-indigo-500/50 text-xl"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 font-bold text-lg flex items-center justify-center shrink-0 shadow-md"
           />
-          <div>
+          <div className="flex flex-col justify-center leading-tight">
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-xs sm:text-sm text-zinc-100">{playerProfile.name}</span>
-              <span className="text-[10px] font-mono text-amber-400 font-bold bg-zinc-900 px-1.5 py-0.5 rounded">
+              <span className="font-bold text-xs sm:text-sm text-zinc-100 truncate max-w-[90px] sm:max-w-[130px]">{playerProfile.name}</span>
+              <span className="text-[10px] font-mono text-amber-400 font-bold bg-zinc-900/90 px-1.5 py-0.5 rounded border border-amber-500/30 flex items-center gap-1 shrink-0">
                 {playerProfile.rank.icon} {playerProfile.elo}
               </span>
             </div>
-            <div className="text-lg font-mono font-black text-emerald-400 leading-none mt-0.5">
-              {playerScore} <span className="text-xs text-zinc-500 font-sans">pts</span>
-            </div>
+            <span className="text-xs font-mono font-bold text-emerald-400 mt-0.5">
+              {playerScore} <span className="text-[10px] font-sans font-normal text-zinc-400">pts</span>
+            </span>
           </div>
         </div>
 
-        {/* Centro: Reloj y Pregunta */}
-        <div className="flex items-center gap-3">
-          <div className="px-3 py-1 bg-zinc-900 rounded-xl border border-zinc-800 font-mono text-xs font-bold text-zinc-300">
-            Ubicación <span className="text-indigo-400 text-sm">{currentIndex + 1}</span> / {questions.length}
+        {/* 2. Centro: Icono Modo + Título Modo en rojo + Pregunta Prompt */}
+        <div className="flex items-center gap-3 min-w-0 flex-1 px-3 border-l border-r border-zinc-800/80">
+          <div className="w-9 h-9 rounded-xl bg-purple-950/80 border border-purple-500/40 flex items-center justify-center text-purple-300 shrink-0 shadow-sm">
+            {duelMode === 'flags' ? (
+              <Flag className="w-5 h-5 text-amber-400" />
+            ) : duelMode === 'capitals' ? (
+              <Target className="w-5 h-5 text-purple-400" />
+            ) : (
+              <Target className="w-5 h-5 text-cyan-400" />
+            )}
           </div>
 
-          <div className={`px-3 py-1 rounded-xl border font-mono text-sm font-bold flex items-center gap-1.5 ${timerBadgeStyle}`}>
+          <div className="flex flex-col justify-center min-w-0 leading-tight">
+            <span className="text-[10px] font-mono font-extrabold uppercase tracking-wider text-rose-500 flex items-center gap-1">
+              {duelMode === 'flags' ? 'ADIVINA LA BANDERA' : duelMode === 'capitals' ? 'CAPITALES MUNDIALES' : duelMode === 'pinpoint' ? 'PUNTERÍA GEOGRÁFICA' : 'PAÍSES EN EL MAPA'}
+              <span className="text-[8px] text-rose-400">►</span>
+            </span>
+            <h3 className="text-xs sm:text-sm md:text-base font-bold text-white truncate mt-0.5">
+              {currentQuestion.promptText}
+            </h3>
+          </div>
+        </div>
+
+        {/* 3. Derecha: Ubicación + Reloj + Bandera/Recurso + Rival + Abandonar */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Ubicación Pill */}
+          <div className="bg-[#181a26] border border-zinc-800 px-3 py-1.5 rounded-xl font-mono text-xs font-bold text-zinc-300 hidden sm:flex items-center gap-1">
+            <span>Ubicación</span>
+            <span className="text-cyan-400 text-sm font-black">{currentIndex + 1}</span>
+            <span className="text-zinc-500">/ {questions.length}</span>
+          </div>
+
+          {/* Temporizador Pill */}
+          <div className={`px-3 py-1.5 rounded-xl border font-mono text-xs sm:text-sm font-bold flex items-center gap-1.5 shrink-0 ${timerBadgeStyle}`}>
             <Clock className="w-4 h-4" />
             <span>{timeLeft}s</span>
           </div>
-        </div>
 
-        {/* Rival o Indicador de Grabación */}
-        {isChallengeCreation || !rivalProfile ? (
-          <div className="flex items-center gap-2.5 bg-indigo-950/60 border border-indigo-500/40 px-3.5 py-2 rounded-xl text-right">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-indigo-400 font-bold block">Modo Registro</span>
-              <span className="text-xs font-bold text-zinc-200">Grabando Desafío</span>
-            </div>
-            <div className="w-9 h-9 rounded-lg bg-indigo-900/80 border border-indigo-600/60 flex items-center justify-center text-indigo-300">
-              <Sparkles className="w-5 h-5" />
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 text-right">
-            <div>
-              <div className="flex items-center justify-end gap-1.5">
-                <span className="text-[10px] font-mono text-amber-400 font-bold bg-zinc-900 px-1.5 py-0.5 rounded">
-                  {rivalProfile.rank.icon} {rivalProfile.elo}
-                </span>
-                <span className="font-bold text-xs sm:text-sm text-zinc-100">{rivalProfile.name}</span>
-              </div>
-              <div className="text-lg font-mono font-black text-amber-400 leading-none mt-0.5">
-                {rivalScore} <span className="text-xs text-zinc-500 font-sans">pts</span>
-              </div>
-            </div>
-            <PlayerAvatar
-              avatar={rivalProfile.avatar}
-              name={rivalProfile.name}
-              fallbackIcon="👤"
-              className="w-10 h-10 rounded-xl bg-rose-950/60 border border-rose-500/50 text-xl"
-            />
-          </div>
-        )}
-      </div>
-
-
-      {/* 2. Pregunta Activa + Toast del Último Resultado */}
-      <div className="flex flex-col gap-2 shrink-0">
-        <div className="bg-[#18181B] border border-zinc-800 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4 flex-wrap shrink-0 border-l-4 border-l-indigo-500">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-indigo-950/50 border border-indigo-800/60 rounded-xl text-indigo-400 shrink-0">
-              <Target className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-400 font-bold">
-                {duelMode === 'flags' ? 'Adivina la Bandera 🚩' : duelMode === 'capitals' ? 'Capitales del Mundo 🏛️' : 'Localiza en el Mapa 🗺️'}
-              </span>
-              <h3 className="text-base sm:text-lg font-serif font-bold text-zinc-100 mt-0.5">
-                {currentQuestion.promptText}
-              </h3>
-            </div>
-          </div>
-
+          {/* Bandera si es modo bandera */}
           {currentQuestion.questionType === 'flag' && (
-            <div className="w-20 h-13 rounded-lg overflow-hidden border border-zinc-700 shadow-sm shrink-0">
+            <div className="w-12 sm:w-14 h-8 sm:h-9 rounded-lg overflow-hidden border border-zinc-700 shadow-md shrink-0">
               <img src={currentQuestion.country.flagSvg} alt="Bandera" className="w-full h-full object-cover" />
             </div>
           )}
 
+          {/* Estado de Rival si no es creación */}
+          {!isChallengeCreation && rivalProfile && (
+            <div className="hidden lg:flex items-center gap-2 bg-zinc-900/90 border border-zinc-800 px-2.5 py-1 rounded-xl shrink-0">
+              <PlayerAvatar avatar={rivalProfile.avatar} name={rivalProfile.name} className="w-6 h-6 rounded-lg text-xs" />
+              <span className="text-xs font-bold text-zinc-300 truncate max-w-[80px]">{rivalProfile.name}</span>
+              <span className="text-xs font-mono font-bold text-amber-400">{rivalScore} pts</span>
+            </div>
+          )}
+
+          {/* Botón Abandonar */}
           <button
             onClick={onQuit}
-            className="text-xs text-zinc-400 hover:text-zinc-200 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition"
+            className="px-3.5 py-1.5 rounded-xl bg-zinc-800/90 hover:bg-zinc-700 text-zinc-300 hover:text-white font-bold text-xs border border-zinc-700 transition-all active:scale-95 shrink-0"
           >
             Abandonar
           </button>
         </div>
-
-        {/* Banner Toast del Tiro Anterior (Muestra distancia y puntos obtenidos mientras avanzas) */}
-        {lastResultToast && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-[#18181B] border border-cyan-500/40 px-4 py-2 rounded-xl text-xs flex items-center justify-between gap-3 shadow-lg text-zinc-200 font-mono"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-cyan-400 font-bold">📍 Tiro anterior ({lastResultToast.cityName}):</span>
-              <span className="text-zinc-300">{lastResultToast.distanceKm?.toLocaleString()} km</span>
-              <span className="text-zinc-500">•</span>
-              <span className="text-cyan-300 font-sans">{lastResultToast.badgeTitle}</span>
-            </div>
-            <div className="text-emerald-400 font-extrabold text-sm font-mono">
-              +{lastResultToast.score} pts
-            </div>
-          </motion.div>
-        )}
       </div>
 
-      {/* 3. Mapa Interactivo Principal (Globo 3D para Pinpoint, Mapa 2D para Países/Banderas) */}
-      <div className="relative flex-1 min-h-[360px] h-[calc(100vh-270px)] max-h-[calc(100vh-270px)] rounded-2xl overflow-hidden shadow-2xl border border-slate-800 bg-[#050b14]">
+      {/* Banner Toast flotante del Tiro Anterior (Puntería 3D) */}
+      {lastResultToast && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#12141c] border border-cyan-500/40 px-4 py-1.5 rounded-xl text-xs flex items-center justify-between gap-3 shadow-lg text-zinc-200 font-mono shrink-0"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-cyan-400 font-bold">📍 Tiro anterior ({lastResultToast.cityName}):</span>
+            <span className="text-zinc-300">{lastResultToast.distanceKm?.toLocaleString()} km</span>
+            <span className="text-zinc-500">•</span>
+            <span className="text-cyan-300 font-sans">{lastResultToast.badgeTitle}</span>
+          </div>
+          <div className="text-emerald-400 font-extrabold text-sm font-mono">
+            +{lastResultToast.score} pts
+          </div>
+        </motion.div>
+      )}
+
+      {/* 2. Mapa Interactivo Principal (Ocupa el 100% de la pantalla restante sin scroll) */}
+      <div className="relative flex-1 min-h-0 w-full h-full rounded-2xl overflow-hidden shadow-2xl border border-zinc-800/90 bg-[#050b14]">
         {duelMode === 'pinpoint' ? (
           <PinpointWorldMap
             clickedCoords={lastPinpointClick}

@@ -819,7 +819,10 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
                           </span>
                         </div>
                         <p className="text-xs text-zinc-400 font-mono mt-1">
-                          Tú: <strong className="text-emerald-400">{duel.playerScore} pts</strong> · Rival: <strong className="text-amber-400">{duel.rivalScore} pts</strong>
+                          Tú: <strong className="text-emerald-400">{duel.playerScore} pts</strong>
+                          {duel.winner !== null && (
+                            <span> · Rival: <strong className="text-amber-400">{duel.rivalScore} pts</strong></span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -827,21 +830,23 @@ export const MultiplayerDashboard: React.FC<MultiplayerDashboardProps> = ({
                     <div className="flex items-center gap-4 shrink-0">
                       <div className="text-right">
                         <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded border inline-block ${
-                          isWinner
+                          duel.winner === null
+                            ? 'bg-cyan-950/80 text-cyan-300 border-cyan-700/60 animate-pulse'
+                            : isWinner
                             ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
                             : isTie
                             ? 'bg-amber-950/80 text-amber-300 border-amber-700/60'
                             : 'bg-rose-950/80 text-rose-300 border-rose-700/60'
                         }`}>
-                          {isWinner ? '¡Victoria!' : isTie ? 'Empate' : 'Derrota'}
+                          {duel.winner === null ? '⏳ Publicado (Esperando Retador)' : isWinner ? '¡Victoria!' : isTie ? 'Empate' : 'Derrota'}
                         </span>
-                        {duel.eloChange !== undefined && duel.eloChange !== 0 ? (
+                        {duel.winner !== null && duel.eloChange !== undefined && duel.eloChange !== 0 ? (
                           <span className={`block text-xs font-mono font-bold mt-1 ${duel.eloChange > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                             {duel.eloChange > 0 ? `+${duel.eloChange}` : duel.eloChange} ELO
                           </span>
                         ) : (
                           <span className="block text-[11px] font-mono text-zinc-500 mt-1">
-                            0 ELO
+                            {duel.winner === null ? 'Pendiente' : '0 ELO'}
                           </span>
                         )}
                       </div>

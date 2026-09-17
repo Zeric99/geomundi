@@ -118,18 +118,23 @@ export const authService = {
     rankTier: string,
     duelMode?: DuelMode,
     modeElo?: number,
-    allElos?: Partial<Record<DuelMode, number>>
+    allElos?: Partial<Record<DuelMode, number>>,
+    batchDeltas?: { winsDelta: number; lossesDelta: number; duelsDelta: number }
   ): Promise<boolean> {
     if (!supabase) return false;
     try {
       const current = await this.getProfile(userId);
       if (!current) return false;
 
-      const newTotal = (current.total_duels || 0) + 1;
-      const newWins = (current.wins || 0) + (isWin ? 1 : 0);
-      const newLosses = (current.losses || 0) + (!isWin && !isDraw ? 1 : 0);
+      const winsInc = batchDeltas ? batchDeltas.winsDelta : (isWin ? 1 : 0);
+      const lossesInc = batchDeltas ? batchDeltas.lossesDelta : (!isWin && !isDraw ? 1 : 0);
+      const duelsInc = batchDeltas ? batchDeltas.duelsDelta : 1;
+
+      const newTotal = (current.total_duels || 0) + duelsInc;
+      const newWins = (current.wins || 0) + winsInc;
+      const newLosses = (current.losses || 0) + lossesInc;
       const newDraws = (current.draws || 0) + (isDraw ? 1 : 0);
-      const newStreak = isWin ? (current.win_streak || 0) + 1 : 0;
+      const newStreak = isWin || (batchDeltas && batchDeltas.winsDelta > 0) ? (current.win_streak || 0) + winsInc : 0;
       const bestStreak = Math.max(current.best_win_streak || 0, newStreak);
       const newXp = (current.xp || 0) + xpEarned;
       const newLevel = Math.floor(Math.sqrt(newXp / 100)) + 1;

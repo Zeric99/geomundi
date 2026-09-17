@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Globe2, Brain, Compass, Gamepad2, Volume2, Volume1, VolumeX, Trophy, Award, Coffee, Swords, User, Smartphone, Lock } from 'lucide-react';
+import { Globe2, Brain, Compass, Gamepad2, Volume2, Volume1, VolumeX, Trophy, Award, Coffee, Swords, User, Smartphone, Lock, Crown } from 'lucide-react';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { UserMenu } from '../auth/UserMenu';
 import { useAuth } from '../../contexts/AuthContext';
 
-export type ActiveTab = 'game' | 'singleplayer' | 'multiplayer' | 'explore' | 'tutor' | 'leaderboard';
+export type ActiveTab = 'game' | 'singleplayer' | 'multiplayer' | 'explore' | 'tutor' | 'leaderboard' | 'empires';
 
 interface NavbarProps {
   activeTab: ActiveTab;
@@ -52,8 +52,29 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full bg-black border-b border-zinc-800 shadow-md">
-        <div className="w-full px-3 sm:px-6 lg:px-8 xl:px-10 h-16 sm:h-20 flex items-center justify-between gap-3 lg:gap-6">
+      <header className="sticky top-0 z-40 w-full bg-black border-b border-zinc-800 shadow-md shrink-0">
+        {/* Banner Superior Destacado del Modo Imperio (solo visible cuando no estamos en imperios) */}
+        {activeTab !== 'empires' && (
+          <div 
+            onClick={() => onChangeTab('empires')}
+            className="w-full bg-gradient-to-r from-amber-600/30 via-indigo-600/40 to-purple-600/30 border-b border-indigo-500/40 px-3 py-1.5 flex items-center justify-center gap-2 cursor-pointer hover:bg-indigo-600/30 transition-all text-xs text-zinc-100 font-bold shadow-inner group"
+          >
+            <span className="flex items-center gap-1 text-amber-300">
+              <Crown className="w-4 h-4 animate-bounce text-amber-400 shrink-0" />
+              <span className="bg-amber-500/20 text-amber-300 text-[10px] px-1.5 py-0.5 rounded border border-amber-500/40 uppercase tracking-widest font-mono">NUEVO</span>
+            </span>
+            <span className="tracking-wide text-xs sm:text-sm">
+              ¡Modo Secundario: <strong className="text-amber-300 font-black">GeoStrike Imperios</strong> (Fase 1 Beta)!
+            </span>
+            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 group-hover:from-indigo-500 group-hover:to-purple-500 text-white text-[11px] px-3 py-0.5 rounded-full font-bold shadow-md transition-all ml-1 flex items-center gap-1 shrink-0">
+              <span>Entrar al Modo Imperio</span> →
+            </span>
+          </div>
+        )}
+
+        <div className={`w-full px-3 sm:px-6 lg:px-8 xl:px-10 flex items-center justify-between gap-3 lg:gap-6 ${
+          activeTab === 'empires' ? 'h-14 sm:h-16' : 'h-16 sm:h-20'
+        }`}>
           {/* Logo & Marca */}
           <div
             onClick={() => onChangeTab('singleplayer')}
@@ -140,6 +161,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
             <span>Récords</span>
             {!user && <Lock className="w-3 h-3 text-zinc-500 shrink-0 ml-0.5" />}
+          </button>
+
+          {/* Modo Imperio (Beta) */}
+          <button
+            onClick={() => onChangeTab('empires')}
+            className={`px-2.5 sm:px-3.5 lg:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+              activeTab === 'empires'
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm font-bold'
+                : 'text-indigo-400 hover:text-indigo-300 hover:bg-zinc-800/60'
+            }`}
+          >
+            <Crown className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>Imperio</span>
+            <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1 py-0.2 rounded font-mono uppercase">Beta</span>
           </button>
         </nav>
 
@@ -264,6 +299,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
+          {/* Botón Destacado Modo Imperio */}
+          <button
+            onClick={() => onChangeTab('empires')}
+            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shrink-0 ${
+              activeTab === 'empires'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-zinc-950 ring-2 ring-amber-400 font-black'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white border border-indigo-400/40'
+            }`}
+            title="Entrar al Modo Imperio"
+          >
+            <Crown className="w-4 h-4 text-amber-300 shrink-0" />
+            <span className="hidden sm:inline">Modo Imperio</span>
+            <span className="sm:hidden">Imperio</span>
+          </button>
+
           {/* Menú de Usuario y Google Auth */}
           <UserMenu onOpenLeaderboard={onOpenLeaderboard} onOpenProfile={onOpenProfile} />
         </div>
@@ -324,6 +374,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Trophy className="w-5 h-5 text-amber-400" />
             <span className="text-[10px] tracking-tight">Récords</span>
             {!user && <Lock className="w-2.5 h-2.5 text-zinc-500 absolute top-1 right-2" />}
+          </button>
+
+          <button
+            onClick={() => onChangeTab('empires')}
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all relative ${
+              activeTab === 'empires' ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Crown className="w-5 h-5 text-amber-400" />
+            <span className="text-[10px] tracking-tight">Imperio</span>
           </button>
         </nav>
       )}

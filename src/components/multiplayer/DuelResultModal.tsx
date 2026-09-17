@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Swords, CheckCircle2, XCircle, Flame, ArrowRight, Home, RotateCcw, Zap, Crown, Sparkles } from 'lucide-react';
+import { Trophy, Swords, CheckCircle2, XCircle, Flame, ArrowRight, Home, RotateCcw, Zap, Crown, Sparkles, Coins } from 'lucide-react';
 import { DuelState } from '../../types/multiplayer';
 import { MODE_ELO_CONFIGS } from '../../services/multiplayerService';
 import { PlayerAvatar } from '../common/PlayerAvatar';
@@ -60,16 +60,26 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
               const modeCfg = MODE_ELO_CONFIGS[duelState.duelMode];
               const modeElo = duelState.player.elos?.[duelState.duelMode] ?? duelState.player.elo;
               return (
-                <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-mono text-xs sm:text-sm font-bold border ${modeCfg ? modeCfg.borderClass : 'border-zinc-700'} ${modeCfg ? modeCfg.bgClass : 'bg-zinc-900'}`}>
-                  <span>{modeCfg?.icon}</span>
-                  <span className="text-zinc-300">{modeCfg?.name}:</span>
-                  <span className={duelState.eloChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                    {duelState.eloChange >= 0 ? `+${duelState.eloChange}` : duelState.eloChange} ELO
-                  </span>
-                  <span className={`${modeCfg ? modeCfg.textClass : 'text-amber-400'} ml-1`}>
-                    ({modeElo} Elo)
-                  </span>
-                </div>
+                <>
+                  <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-mono text-xs sm:text-sm font-bold border ${modeCfg ? modeCfg.borderClass : 'border-zinc-700'} ${modeCfg ? modeCfg.bgClass : 'bg-zinc-900'}`}>
+                    <span>{modeCfg?.icon}</span>
+                    <span className="text-zinc-300">{modeCfg?.name}:</span>
+                    <span className={duelState.eloChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                      {duelState.eloChange >= 0 ? `+${duelState.eloChange}` : duelState.eloChange} ELO
+                    </span>
+                    <span className={`${modeCfg ? modeCfg.textClass : 'text-amber-400'} ml-1`}>
+                      ({modeElo} Elo)
+                    </span>
+                  </div>
+
+                  {/* Botín Imperial del GDD Fase 2 */}
+                  <div className="flex items-center justify-center gap-1.5 mt-2">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-bold font-mono shadow-sm">
+                      <Coins className="w-3.5 h-3.5 text-amber-400" />
+                      <span>+{isWinner ? (duelState.player.streak >= 3 ? 125 : 75) : 25} 🪙 al Buzón Imperial</span>
+                    </div>
+                  </div>
+                </>
               );
             })()
           )}

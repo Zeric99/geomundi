@@ -38,6 +38,7 @@ const DonateModal = React.lazy(() => import('./components/common/DonateModal').t
 const DailyArchiveModal = React.lazy(() => import('./components/daily/DailyArchiveModal').then(m => ({ default: m.DailyArchiveModal })));
 const LeaderboardModal = React.lazy(() => import('./components/leaderboard/LeaderboardModal').then(m => ({ default: m.LeaderboardModal })));
 const UserProfileModal = React.lazy(() => import('./components/profile/UserProfileModal').then(m => ({ default: m.UserProfileModal })));
+const EmpireView = React.lazy(() => import('./features/empires/EmpireView').then(m => ({ default: m.EmpireView })));
 import { FALLBACK_COUNTRIES, GEEK_TERRITORIES } from './data/fallbackCountries';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { achievementService } from './services/achievementService';
@@ -49,12 +50,13 @@ import { authService } from './services/authService';
 import { cloudSyncService } from './services/cloudSyncService';
 import { storageService } from './services/storageService';
 import { customRoomService } from './services/customRoomService';
+import { empireEconomyService } from './features/empires/services/empireEconomyService';
 import { useAuth } from './contexts/AuthContext';
 import { Loader2, Lock, LogIn, Swords, Brain, Trophy } from 'lucide-react';
 import { AuthRequiredCard } from './components/common/AuthRequiredCard';
 
 export function App() {
-  const { user, profile, refreshProfile, signInWithGoogle, updateProfileElo } = useAuth();
+  const { user, profile, loading: authLoading, refreshProfile, signInWithGoogle, updateProfileElo } = useAuth();
 
 
   // Detectar si el usuario entra mediante un enlace de invitación a sala (#room=GEO-XXXX, ?room=GEO-XXXX o /room/GEO-XXXX)
@@ -81,7 +83,7 @@ export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     if (initialRoomCode) return 'multiplayer';
     const cleanPath = window.location.pathname.replace(/^\//, '').split('/')[0].toLowerCase();
-    if (cleanPath === 'multiplayer' || cleanPath === 'explore' || cleanPath === 'tutor' || cleanPath === 'leaderboard') {
+    if (cleanPath === 'multiplayer' || cleanPath === 'explore' || cleanPath === 'tutor' || cleanPath === 'leaderboard' || cleanPath === 'empires') {
       return cleanPath as ActiveTab;
     }
     return 'singleplayer';
@@ -133,7 +135,36 @@ export function App() {
   const [activeDailyDateStr, setActiveDailyDateStr] = useState<string>('');
 
   // Estado del Modo Multijugador y Ranked ELO
-  const [playerProfile, setPlayerProfile] = useState<PlayerProfile>(() => multiplayerService.getPlayerProfile());
+  const [playerProfile, setPlayerProfile] = useState<PlayerProfile>(() => {
+    try {
+      const cached = localStorage.getItem('GEOMUNDI_CACHED_PROFILE_V1');
+      if (cached) {
+        const p = JSON.parse(cached);
+        const elos = {
+          pinpoint: p.elo_pinpoint ?? 1200,
+          countries: p.elo_countries ?? 1200,
+          capitals: p.elo_capitals ?? 1200,
+          flags: p.elo_flags ?? 1200,
+        };
+        const prof: PlayerProfile = {
+          id: p.id,
+          name: p.nickname || 'Tú',
+          avatar: p.avatar_url || '🎓',
+          elo: p.elo || 1200,
+          rank: multiplayerService.getRankInfo(p.elo || 1200),
+          wins: p.wins || 0,
+          losses: p.losses || 0,
+          streak: p.win_streak || 0,
+          xp: p.xp || 0,
+          level: p.level || 1,
+          elos
+        };
+        multiplayerService.savePlayerProfile(prof);
+        return prof;
+      }
+    } catch (e) {}
+    return multiplayerService.getPlayerProfile();
+  });
   const [isMatchmakingOpen, setIsMatchmakingOpen] = useState<boolean>(false);
   const [matchmakingType, setMatchmakingType] = useState<MultiplayerType>('ranked');
   const [matchmakingMode, setMatchmakingMode] = useState<DuelMode>('countries');
@@ -171,7 +202,7 @@ export function App() {
         capitals: profile.elo_capitals ?? 1200,
         flags: profile.elo_flags ?? 1200,
       };
-      setPlayerProfile({
+      const newProfile: PlayerProfile = {
         id: profile.id,
         name: profile.nickname || user?.user_metadata?.full_name || 'Tú',
         avatar: profile.avatar_url || user?.user_metadata?.avatar_url || '🎓',
@@ -183,11 +214,13 @@ export function App() {
         xp: profile.xp || 0,
         level: profile.level || 1,
         elos
-      });
+      };
+      setPlayerProfile(newProfile);
+      multiplayerService.savePlayerProfile(newProfile);
       refreshStats();
-    } else {
-      // Estado de invitado limpio si no hay sesión activa
-      setPlayerProfile({
+    } else if (!authLoading) {
+      // Estado de invitado limpio si no hay sesión activa y ha finalizado la carga
+      const guestProfile: PlayerProfile = {
         id: 'player_local',
         name: 'Tú',
         avatar: '🎓',
@@ -199,10 +232,12 @@ export function App() {
         xp: 0,
         level: 1,
         elos: { pinpoint: 1200, countries: 1200, capitals: 1200, flags: 1200 }
-      });
+      };
+      setPlayerProfile(guestProfile);
+      multiplayerService.savePlayerProfile(guestProfile);
       refreshStats();
     }
-  }, [profile, user, refreshStats]);
+  }, [profile, user, authLoading, refreshStats]);
 
   // Iniciar pre-carga y caché de mapas en segundo plano para velocidad instantánea (0ms)
   useEffect(() => {
@@ -593,8 +628,11 @@ export function App() {
     );
 
     // Guardar en el historial local de duelos siempre que se juegue una partida
-    if (!duelState.isChallengeCreation) {
-      multiplayerService.saveDuelToHistory(duelState);
+    multiplayerService.saveDuelToHistory(duelState);
+
+    // Registrar botín para el Modo Imperios (Fase 2 GDD) si es Ranked
+    if (duelState.type === 'ranked' && isWin) {
+      empireEconomyService.recordRankedMatch(isWin, duelState.player.streak);
     }
 
     if (newAchievements.length > 0) {
@@ -629,12 +667,20 @@ export function App() {
     }
   }, [user, playerProfile, updateProfileElo, refreshProfile]);
 
-  // Ejecutar sincronización al entrar en la pestaña multijugador
+  // Ejecutar sincronización de desafíos resueltos y actualización de ELO al iniciar y periódicamente
   useEffect(() => {
-    if (activeTab === 'multiplayer' && user) {
+    if (!user || user.id === 'player_local') return;
+
+    // Sincronización inmediata al cargar/autenticarse o cambiar de pestaña
+    handleSyncPendingChallenges();
+
+    // Polling ligero cada 20 segundos para reflejar victorias/derrotas de la comunidad en tiempo real
+    const interval = setInterval(() => {
       handleSyncPendingChallenges();
-    }
-  }, [activeTab, user, handleSyncPendingChallenges]);
+    }, 20000);
+
+    return () => clearInterval(interval);
+  }, [user, activeTab, handleSyncPendingChallenges]);
 
 
 
@@ -713,12 +759,12 @@ export function App() {
 
   // El planeta 3D Wireframe se muestra EXCLUSIVAMENTE en el menú de Un Jugador para no entorpecer los mapas y textos
   // Ocultar estrictamente en Multijugador, Explorar, Tutor, Récords y durante cualquier partida
-  const isInsideGame = isPlaying || isDailyChallengeActive || activeDuelQuestions.length > 0;
+  const isInsideGame = isPlaying || isDailyChallengeActive || activeDuelQuestions.length > 0 || activeTab === 'empires';
   const showGlobeInSingleplayerMenu = (activeTab === 'singleplayer' || activeTab === 'game') && !isInsideGame;
 
   return (
     <div className={`relative flex flex-col bg-black text-slate-100 selection:bg-cyan-500 selection:text-slate-950 ${
-      isPlaying ? 'h-screen max-h-screen overflow-hidden' : 'min-h-screen'
+      isPlaying || activeTab === 'empires' ? 'h-screen max-h-screen overflow-hidden' : 'min-h-screen'
     }`}>
       {/* Partículas de Polvo Estelar en Movimiento por Toda la Pantalla */}
       {!isInsideGame && <BackgroundStardust />}
@@ -755,12 +801,16 @@ export function App() {
       />
 
       {/* Contenido Principal con Z-Index sólido */}
-      <main className={`relative z-10 flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col ${
-        isPlaying
-          ? 'px-1 sm:px-2 pt-1 pb-1 overflow-hidden'
-          : isDailyChallengeActive
-          ? 'px-2 sm:px-4 pt-3 pb-24 md:pb-8 overflow-y-auto'
-          : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-24 md:pb-8'
+      <main className={`relative z-10 flex-1 min-h-0 ${
+        activeTab === 'empires'
+          ? 'w-full h-full p-0 overflow-hidden flex flex-col'
+          : `max-w-7xl w-full mx-auto flex flex-col ${
+              isPlaying
+                ? 'px-1 sm:px-2 pt-1 pb-1 overflow-hidden'
+                : isDailyChallengeActive
+                ? 'px-2 sm:px-4 pt-3 pb-24 md:pb-8 overflow-y-auto'
+                : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-24 md:pb-8'
+            }`
       }`}>
         {/* PESTAÑA 1: UN JUGADOR (SINGLEPLAYER) */}
         {(activeTab === 'game' || activeTab === 'singleplayer') && (
@@ -1021,6 +1071,25 @@ export function App() {
             <LeaderboardView stats={stats} />
           )
         )}
+
+        {/* PESTAÑA 6: MODO IMPERIOS (BETA) */}
+        {activeTab === 'empires' && (
+          <React.Suspense fallback={
+            <div className="w-full h-full flex items-center justify-center bg-black text-indigo-400">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+          }>
+            <EmpireView 
+              onNavigateToDaily={() => {
+                setActiveTab('game');
+                handleStartDailyChallenge();
+              }}
+              onNavigateToRanked={() => {
+                setActiveTab('multiplayer');
+              }}
+            />
+          </React.Suspense>
+        )}
       </main>
 
       {/* Modal de Ampliación de Bandera en Alta Definición */}
@@ -1118,7 +1187,7 @@ export function App() {
       </React.Suspense>
 
       {/* Pie de Página */}
-      <Footer isCompact={isPlaying || activeDuelQuestions.length > 0} />
+      {activeTab !== 'empires' && <Footer isCompact={isPlaying || activeDuelQuestions.length > 0} />}
     </div>
   );
 }

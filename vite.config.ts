@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/', // Dominio oficial geostrike.app en Vercel
   server: {
+    host: true,
     port: 3000,
     open: false
   },

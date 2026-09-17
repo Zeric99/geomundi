@@ -131,17 +131,6 @@ export const RANKS: Record<RankTier, RankInfo> = {
   }
 };
 
-const BOT_NAMES = [
-  { name: 'GeoMaster_ES', avatar: '🦁' },
-  { name: 'AtlasPro99', avatar: '🦅' },
-  { name: 'VanguardGeographer', avatar: '🐺' },
-  { name: 'MapRunner', avatar: '⚡' },
-  { name: 'GlobeTrotter_99', avatar: '🦊' },
-  { name: 'CapitalKing', avatar: '👑' },
-  { name: 'FlagChaser', avatar: '🚩' },
-  { name: 'TerraExplorer', avatar: '🌍' }
-];
-
 export class MultiplayerService {
   /**
    * Obtiene la información del rango correspondiente a un ELO determinado
@@ -234,28 +223,6 @@ export class MultiplayerService {
   }
 
   /**
-   * Genera un oponente aleatorio ajustado al ELO del jugador
-   */
-  generateRival(playerElo: number): PlayerProfile {
-    const randomBot = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
-    const eloOffset = Math.floor(Math.random() * 80) - 40; // -40 a +40 ELO
-    const rivalElo = Math.max(800, playerElo + eloOffset);
-
-    return {
-      id: `bot_${Date.now()}`,
-      name: randomBot.name,
-      avatar: randomBot.avatar,
-      elo: rivalElo,
-      rank: this.getRankInfo(rivalElo),
-      wins: Math.floor(rivalElo / 20),
-      losses: Math.floor(rivalElo / 30),
-      streak: Math.floor(Math.random() * 4),
-      xp: rivalElo * 10,
-      level: Math.floor(Math.sqrt((rivalElo * 10) / 100)) + 1
-    };
-  }
-
-  /**
    * Genera N preguntas estandarizadas a 5 rondas para el duelo según la modalidad elegida
    */
   generateDuelQuestions(countries: Country[], duelMode: DuelMode, totalRounds: number = 5): DuelQuestion[] {
@@ -334,18 +301,35 @@ export class MultiplayerService {
   }
 
   /**
-   * Obtiene el historial de duelos recientes de la sesión actual
+   * Obtiene el historial de duelos recientes persistiéndolo en localStorage
    */
   getDuelHistory(): DuelState[] {
+    try {
+      const saved = localStorage.getItem(MULTIPLAYER_HISTORY_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          this.memoryDuelHistory = parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Error cargando el historial de duelos local:', e);
+    }
     return this.memoryDuelHistory;
   }
 
   /**
-   * Guarda un duelo finalizado en el historial en memoria
+   * Guarda un duelo finalizado en el historial en memoria y localStorage (conserva las 10 últimas partidas)
    */
   saveDuelToHistory(duel: DuelState): void {
-    const filtered = this.memoryDuelHistory.filter(h => h.id !== duel.id);
-    this.memoryDuelHistory = [duel, ...filtered].slice(0, 30);
+    const currentHistory = this.getDuelHistory();
+    const filtered = currentHistory.filter(h => h.id !== duel.id);
+    this.memoryDuelHistory = [duel, ...filtered].slice(0, 10);
+    try {
+      localStorage.setItem(MULTIPLAYER_HISTORY_KEY, JSON.stringify(this.memoryDuelHistory));
+    } catch (e) {
+      console.warn('Error guardando el historial de duelos local:', e);
+    }
   }
 
   /**
@@ -575,6 +559,7 @@ export class MultiplayerService {
           challenger_elo: challengerProfile.elo,
           challenger_score: challengerScore,
           challenger_time_ms: challengerTimeMs,
+          challenger_results: challengerResults,
           winner,
           elo_change: absElo,
           resolved_at: new Date().toISOString(),
@@ -727,7 +712,7 @@ export class MultiplayerService {
             level: 1
           },
           playerResults: row.round_results || [],
-          rivalResults: [],
+          rivalResults: row.challenger_results || [],
           playerScore: row.score || 0,
           rivalScore: row.challenger_score || 0,
           playerTimeTotalMs: row.total_time_ms || 0,
@@ -779,7 +764,8 @@ export class MultiplayerService {
         rankTier,
         undefined,
         undefined,
-        updatedElos
+        updatedElos,
+        { winsDelta, lossesDelta, duelsDelta: processedChallenges.length }
       );
 
       // Marcar desafíos como notificados en Supabase
@@ -866,33 +852,51 @@ export class MultiplayerService {
   async getUserDuelHistory(userId?: string): Promise<DuelState[]> {
     const localHistory = this.getDuelHistory();
 
-    if (!supabase || !userId || userId === 'player_local') return localHistory;
+    if (!supabase || !userId || userId === 'player_local') return localHistory.slice(0, 10);
 
     try {
       const { data, error } = await supabase
         .from('community_challenges')
         .select('*')
         .or(`creator_id.eq.${userId},challenger_id.eq.${userId}`)
-        .eq('status', 'completed')
         .order('created_at', { ascending: false })
-        .limit(30);
+        .limit(10);
 
       if (!error && data && data.length > 0) {
         const cloudDuels: DuelState[] = data.map((row: any) => {
           const isUserCreator = row.creator_id === userId;
-          const userWon = isUserCreator ? row.winner === 'creator' : row.winner === 'challenger';
-          const isTie = row.winner === 'tie';
+          const isCompleted = row.status === 'completed';
+
+          const userWon = isCompleted ? (isUserCreator ? row.winner === 'creator' : row.winner === 'challenger') : false;
+          const isTie = isCompleted && row.winner === 'tie';
 
           const playerScore = isUserCreator ? (row.score || 0) : (row.challenger_score || 0);
-          const rivalScore = isUserCreator ? (row.challenger_score || 0) : (row.score || 0);
+          const rivalScore = isCompleted ? (isUserCreator ? (row.challenger_score || 0) : (row.score || 0)) : 0;
           const playerTime = isUserCreator ? (row.total_time_ms || 0) : (row.challenger_time_ms || 0);
-          const rivalTime = isUserCreator ? (row.challenger_time_ms || 0) : (row.total_time_ms || 0);
+          const rivalTime = isCompleted ? (isUserCreator ? (row.challenger_time_ms || 0) : (row.total_time_ms || 0)) : 0;
 
-          const rivalName = isUserCreator ? (row.challenger_name || 'Retador') : row.creator_name;
-          const rivalAvatar = isUserCreator ? (row.challenger_avatar || '👤') : row.creator_avatar;
+          const rivalName = isUserCreator
+            ? (row.challenger_name || (isCompleted ? 'Retador' : 'Esperando Retador...'))
+            : row.creator_name;
+          const rivalAvatar = isUserCreator
+            ? (row.challenger_avatar || (isCompleted ? '👤' : '⏳'))
+            : row.creator_avatar;
           const rivalElo = isUserCreator ? (row.challenger_elo || 1200) : row.creator_elo;
 
-          const eloDelta = userWon ? (row.elo_change || 16) : (isTie ? 0 : -(row.elo_change || 16));
+          const eloDelta = isCompleted
+            ? (userWon ? (row.elo_change || 16) : (isTie ? 0 : -(row.elo_change || 16)))
+            : 0;
+
+          const playerElo = isUserCreator ? (row.creator_elo || 1200) : (row.challenger_elo || 1200);
+          const currentProfile = this.getPlayerProfile();
+
+          const winnerState: 'player' | 'rival' | 'tie' | null = !isCompleted
+            ? null
+            : userWon
+            ? 'player'
+            : isTie
+            ? 'tie'
+            : 'rival';
 
           return {
             id: row.id,
@@ -901,10 +905,10 @@ export class MultiplayerService {
             questions: row.questions || [],
             player: {
               id: userId,
-              name: isUserCreator ? row.creator_name : (row.challenger_name || 'Tú'),
-              avatar: isUserCreator ? row.creator_avatar : (row.challenger_avatar || '🎓'),
-              elo: 1200,
-              rank: this.getRankInfo(1200),
+              name: isUserCreator ? row.creator_name : (row.challenger_name || currentProfile.name || 'Tú'),
+              avatar: isUserCreator ? row.creator_avatar : (row.challenger_avatar || currentProfile.avatar || '🎓'),
+              elo: playerElo,
+              rank: this.getRankInfo(playerElo),
               wins: 0,
               losses: 0,
               streak: 0,
@@ -923,23 +927,23 @@ export class MultiplayerService {
               xp: 0,
               level: 1
             },
-            playerResults: isUserCreator ? (row.round_results || []) : [],
-            rivalResults: !isUserCreator ? (row.round_results || []) : [],
+            playerResults: isUserCreator ? (row.round_results || []) : (row.challenger_results || []),
+            rivalResults: isUserCreator ? (row.challenger_results || []) : (row.round_results || []),
             playerScore,
             rivalScore,
             playerTimeTotalMs: playerTime,
             rivalTimeTotalMs: rivalTime,
-            winner: userWon ? 'player' : (isTie ? 'tie' : 'rival'),
+            winner: winnerState,
             eloChange: eloDelta,
-            xpEarned: userWon ? 150 : 50
+            xpEarned: userWon ? 150 : (isCompleted ? 50 : 0)
           };
         });
 
-        // Combinar evitando IDs duplicados (primero la nube, luego los locales)
+        // Combinar evitando IDs duplicados (primero locales más recientes, luego la nube)
         const seenIds = new Set<string>();
         const combined: DuelState[] = [];
 
-        for (const d of [...cloudDuels, ...localHistory]) {
+        for (const d of [...localHistory, ...cloudDuels]) {
           const key = d.id || `${d.playerScore}_${d.rivalScore}_${d.duelMode}`;
           if (!seenIds.has(key)) {
             seenIds.add(key);
@@ -947,13 +951,19 @@ export class MultiplayerService {
           }
         }
 
-        return combined.slice(0, 30);
+        const top10 = combined.slice(0, 10);
+        this.memoryDuelHistory = top10;
+        try {
+          localStorage.setItem(MULTIPLAYER_HISTORY_KEY, JSON.stringify(top10));
+        } catch (e) {}
+
+        return top10;
       }
     } catch (e) {
       console.warn('Error consultando historial de duelos en Supabase:', e);
     }
 
-    return localHistory;
+    return localHistory.slice(0, 10);
   }
 
   /**
