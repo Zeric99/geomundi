@@ -363,6 +363,18 @@ export class EmpireStorageService {
             }
           });
 
+          // Sincronizar propiedades insulares y costeras actualizadas con geoGridService
+          Object.values(this.empire.colonizedTiles || {}).forEach(t => {
+            if (t && t.id) {
+              const base = geoGridService.getTile(t.id);
+              if (base) {
+                if (base.isSmallIsland) t.isSmallIsland = true;
+                if (base.islandGroupId) t.islandGroupId = base.islandGroupId;
+                if (base.isCoast) t.isCoast = true;
+              }
+            }
+          });
+
           this.recalculateMetrics();
           this.checkAndUpdateExpeditions();
           return;
@@ -1062,7 +1074,7 @@ export class EmpireStorageService {
   }
 
   /**
-   * Construye un Puerto en una Ciudad costera (tier >= 3)
+   * Construye un Puerto en una costa (Nivel 1 en islas, Nivel 2 en costas continentales)
    */
   public buildPort(tileId: string): boolean {
     const emp = this.getEmpire();
@@ -1070,7 +1082,10 @@ export class EmpireStorageService {
     const baseTile = geoGridService.getTile(tileId);
     if (!tile || !baseTile) return false;
     if (tile.role !== 'settlement') return false;
-    if ((tile.settlementTier as number) < 3) return false; // Mínimo Ciudad
+    
+    const isIsland = Boolean(baseTile.isSmallIsland || tile.isSmallIsland || tile.islandGroupId || baseTile.islandGroupId);
+    const minTier = isIsland ? 1 : 2; // En islas desde Aldea (Nivel 1), en costa continental desde Pueblo (Nivel 2)
+    if (((tile.settlementTier as number) || 1) < minTier) return false;
     if (!baseTile.isCoast) return false;
     if (tile.hasPort) return false; // Ya tiene puerto
 
@@ -1211,8 +1226,8 @@ export class EmpireStorageService {
       }
     });
 
-    // Escala progresiva y exigente de hitos poblacionales
-    const POPULATION_THRESHOLDS = [150, 1200, 3000, 7500, 15000, 30000, 60000, 100000];
+    // Escala progresiva accesible de hitos poblacionales (primera isla a partir de 25 habitantes)
+    const POPULATION_THRESHOLDS = [25, 100, 300, 1000, 3000, 10000, 25000, 50000];
     let maxAllowed = 0;
     let nextPopRequired = POPULATION_THRESHOLDS[0];
 
@@ -1593,15 +1608,20 @@ export class EmpireStorageService {
           const isNavalHub = baseTile.islandGroupId 
             ? emp.islandSpecializations?.[baseTile.islandGroupId] === 'naval_hub'
             : false;
-          const maxDocks = isNavalHub ? 3 : 1;
+          // Regla: 1 barco por ciudad normal en toda su historia. Solo asciende a 2 si es Megaciudad (Tier 4).
+          const maxLifetimeShips = (tileData.settlementTier === 4) ? 2 : 1;
+          const launched = tileData.expeditionsLaunchedCount || 0;
           const occupied = activeExps.filter(e => e.originTileId === id).length;
+          const remainingLifetime = Math.max(0, maxLifetimeShips - launched);
+          const docksAvailable = Math.min(remainingLifetime, Math.max(0, 1 - occupied));
 
           ports.push({
             tileId: id,
             tile: { ...baseTile, ...tileData },
             cityName: tileData.cityName || baseTile.countryName || 'Puerto',
-            docksAvailable: Math.max(0, maxDocks - occupied),
-            maxDocks,
+            docksAvailable,
+            maxDocks: maxLifetimeShips,
+            totalLaunched: launched,
             isNavalHub
           });
         }
@@ -1713,11 +1733,26 @@ export class EmpireStorageService {
       return { success: false, error: 'La casilla de destino ya pertenece a tu imperio' };
     }
 
-    // Verificar muelles libres
-    const ports = this.getAllPorts();
-    const currentPort = ports.find(p => p.tileId === originTileId);
-    if (!currentPort || currentPort.docksAvailable <= 0) {
-      return { success: false, error: 'Todos los muelles de este puerto están ocupados con barcos fletados' };
+    // Verificar regla estricta de cupo naval: 1 barco por ciudad, 2 si es Megaciudad (Nivel 4)
+    const maxLifetimeShips = (originColData.settlementTier === 4) ? 2 : 1;
+    const launched = originColData.expeditionsLaunchedCount || 0;
+    const activeExps = (emp.expeditions || []).filter(e => e.status === 'sailing' && e.originTileId === originTileId);
+
+    if (activeExps.length > 0) {
+      return { success: false, error: 'Ya hay un barco de este puerto navegando en alta mar' };
+    }
+
+    if (launched >= maxLifetimeShips) {
+      if ((originColData.settlementTier || 1) < 4) {
+        return { 
+          success: false, 
+          error: 'Esta ciudad ya ha fletado su barco permitido (1/1). Para desbloquear un 2º barco, debes mejorarla a 🌆 Megaciudad (Nivel 4).' 
+        };
+      }
+      return { 
+        success: false, 
+        error: 'Esta Megaciudad ya ha alcanzado su cupo náutico definitivo (2/2 barcos fletados).' 
+      };
     }
 
     const params = this.calculateExpeditionParams(originTileId, destTileId);
@@ -1740,6 +1775,9 @@ export class EmpireStorageService {
     } else {
       emp.coins -= params.coinCost;
     }
+
+    // Registrar formalmente el lanzamiento del barco consumiendo 1 cupo vitalicio del asentamiento
+    originColData.expeditionsLaunchedCount = (originColData.expeditionsLaunchedCount || 0) + 1;
 
     const now = Date.now();
     const expedition: NavalExpedition = {

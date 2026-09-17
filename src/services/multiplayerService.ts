@@ -493,6 +493,32 @@ export class MultiplayerService {
   }
 
   /**
+   * Libera un desafío reservado si el retador cancela o abandona antes de terminarlo
+   */
+  async releaseCommunityChallenge(challengeId: string): Promise<boolean> {
+    if (!supabase || !challengeId) return true;
+    try {
+      await supabase
+        .from('community_challenges')
+        .update({
+          status: 'open',
+          challenger_id: null,
+          challenger_name: null,
+          challenger_avatar: null,
+          challenger_elo: null,
+          challenger_score: null,
+          challenger_time_ms: null,
+          winner: null
+        })
+        .eq('id', challengeId)
+        .eq('status', 'in_progress');
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
    * Resuelve un desafío completado por un retador, calcula ganador y transfiere ELO a ambos jugadores
    */
   async resolveCommunityChallenge(params: {
@@ -603,40 +629,8 @@ export class MultiplayerService {
           console.log('[community_challenges] Desafío completado y registrado en Supabase con éxito');
         }
 
-        // 5. Intento de actualizar perfil del creador (por si la policy lo permite)
-        if (challenge.creatorId && challenge.creatorId !== 'player_local') {
-          const modeCol = `elo_${challenge.mode}`;
-          const duelsCol = `duels_${challenge.mode}`;
-          const winsCol = `wins_${challenge.mode}`;
-
-          const { data: creatorData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', challenge.creatorId)
-            .maybeSingle();
-
-          if (creatorData) {
-            const currentModeElo = creatorData[modeCol] ?? 1200;
-            const currentGeneralElo = creatorData.elo ?? 1200;
-            const creatorWon = winner === 'creator';
-            const newModeElo = Math.max(100, currentModeElo + (creatorWon ? absElo : -absElo));
-            const newGeneralElo = Math.max(100, currentGeneralElo + (creatorWon ? absElo : -absElo));
-
-            await supabase
-              .from('profiles')
-              .update({
-                elo: newGeneralElo,
-                [modeCol]: newModeElo,
-                total_duels: (creatorData.total_duels || 0) + 1,
-                wins: (creatorData.wins || 0) + (creatorWon ? 1 : 0),
-                losses: (creatorData.losses || 0) + (!creatorWon && winner !== 'tie' ? 1 : 0),
-                [duelsCol]: (creatorData[duelsCol] || 0) + 1,
-                [winsCol]: (creatorData[winsCol] || 0) + (creatorWon ? 1 : 0),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', challenge.creatorId);
-          }
-        }
+        // Las estadísticas del creador se sincronizan automáticamente en su perfil
+        // a través de processPendingCreatorChallenges cuando él inicia sesión o sincroniza.
       } catch (e) {
         console.warn('Error resolviendo community_challenge en Supabase:', e);
       }

@@ -990,10 +990,15 @@ export function App() {
                 challengeId={activeChallengeId}
                 onFinishDuel={handleFinishDuel}
                 onQuit={() => {
+                  if (activeChallengeId) {
+                    multiplayerService.releaseCommunityChallenge(activeChallengeId);
+                  }
                   setActiveDuelQuestions([]);
                   setActiveRivalProfile(null);
                   setActiveRecordedResults([]);
                   setIsChallengeCreation(false);
+                  setActiveChallengeId(undefined);
+                  setActiveCommunityChallenge(null);
                 }}
               />
             ) : (
