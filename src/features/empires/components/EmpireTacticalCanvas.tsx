@@ -919,10 +919,16 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
           return;
         }
 
-        // Destino completamente válido
-        setExpeditionError(null);
-        if (onSelectExpeditionDest) {
-          onSelectExpeditionDest(clickedTile.id);
+        // Destino completamente válido -> Fletar expedición marítima directamente
+        const res = empireStorageService.launchExpedition(expeditionOriginTileId, clickedTile.id);
+        if (res.success) {
+          empireSound.playShipHorn();
+          setExpeditionError(null);
+          if (onCancelExpeditionMode) {
+            onCancelExpeditionMode();
+          }
+        } else {
+          triggerExpeditionError(res.error || 'No se pudo fletar la expedición.');
         }
         return;
       }
@@ -1112,7 +1118,7 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
                 <Anchor className="w-4 h-4 text-blue-400 shrink-0" />
               )}
               <span className="text-xs sm:text-sm font-bold truncate">
-                {expeditionError || 'Haz clic en una costa libre de otro país o isla para enviar tu barco'}
+                {expeditionError || '🧭 Haz clic en una costa libre de ultramar o isla para zarpar inmediatamente'}
               </span>
             </div>
             {onCancelExpeditionMode && (

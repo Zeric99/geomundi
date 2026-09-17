@@ -443,17 +443,16 @@ export class GeoGridService {
     endY: number
   ): { x: number; y: number }[] | null {
     // Si el origen o destino es tierra, buscar su casilla de agua más cercana
-    const startWaterNodes = this.isWaterTile(startX, startY)
+    let startWaterNodes = this.isWaterTile(startX, startY)
       ? [{ x: startX, y: startY }]
       : this.getAdjacentWaterTiles(startX, startY);
 
-    const endWaterNodes = this.isWaterTile(endX, endY)
+    let endWaterNodes = this.isWaterTile(endX, endY)
       ? [{ x: endX, y: endY }]
       : this.getAdjacentWaterTiles(endX, endY);
 
-    if (startWaterNodes.length === 0 || endWaterNodes.length === 0) {
-      return null;
-    }
+    if (startWaterNodes.length === 0) startWaterNodes = [{ x: startX, y: startY }];
+    if (endWaterNodes.length === 0) endWaterNodes = [{ x: endX, y: endY }];
 
     // Elegir el par de inicio y meta con menor distancia euclídea
     let bestStart = startWaterNodes[0];
@@ -600,7 +599,7 @@ export class GeoGridService {
 
     // Si excede iteraciones en aguas abiertas o mares complejos, devolver aproximación marítima suave
     const directDist = Math.hypot(startX - endX, startY - endY);
-    if (directDist > 0 && directDist <= 120) {
+    if (directDist > 0) {
       const steps = Math.max(4, Math.floor(directDist / 3));
       const fallbackPath: { x: number; y: number }[] = [];
       for (let s = 0; s <= steps; s++) {
