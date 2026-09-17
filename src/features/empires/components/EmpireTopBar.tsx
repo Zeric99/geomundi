@@ -1,18 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { UserEmpire, GridTile } from '../types';
-import { Globe, Map as MapIcon, Edit2, Check, Coins, Users, Wheat, Hammer, Smile, RotateCcw, Trophy, Crown, Anchor, Volume2, VolumeX, Music } from 'lucide-react';
-import { empireStorageService, TUTORIAL_MISSIONS } from '../services/empireStorageService';
-import { empireEconomyService } from '../services/empireEconomyService';
+import { Globe, Map as MapIcon, Edit2, Check, Coins, Users, Wheat, Hammer, Smile, RotateCcw, Anchor, Volume2, VolumeX, Music } from 'lucide-react';
+import { empireStorageService } from '../services/empireStorageService';
 import { empireSound } from '../services/empireSoundService';
 
 interface EmpireTopBarProps {
   empire: UserEmpire;
   cameraMode: '2d' | '3d';
   onToggleCameraMode: (mode: '2d' | '3d') => void;
-  onOpenTributes?: () => void;
-  onOpenSovereignty?: () => void;
-  activeRightTab?: 'missions' | 'tile';
-  onSelectRightTab?: (tab: 'missions' | 'tile') => void;
   selectedTile?: GridTile | null;
   isRightSidebarCollapsed?: boolean;
   onToggleRightSidebar?: () => void;
@@ -22,26 +17,14 @@ export const EmpireTopBar: React.FC<EmpireTopBarProps> = ({
   empire,
   cameraMode,
   onToggleCameraMode,
-  onOpenTributes,
-  onOpenSovereignty,
-  activeRightTab = 'missions',
-  onSelectRightTab,
   selectedTile = null,
   isRightSidebarCollapsed = false,
   onToggleRightSidebar
 }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(empire.empireName);
-  const [pendingCoins, setPendingCoins] = useState<number>(empireEconomyService.getTotalPendingCoins());
   const [isMuted, setIsMuted] = useState<boolean>(empireSound.getMuted());
   const [isMusicActive, setIsMusicActive] = useState<boolean>(empireSound.isMusicActive());
-
-  useEffect(() => {
-    const unsub = empireEconomyService.subscribe(() => {
-      setPendingCoins(empireEconomyService.getTotalPendingCoins());
-    });
-    return unsub;
-  }, []);
 
   const handleSaveName = () => {
     if (nameInput.trim()) {
@@ -51,13 +34,13 @@ export const EmpireTopBar: React.FC<EmpireTopBarProps> = ({
   };
 
   return (
-    <header className="w-full bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-lg z-30 select-none">
-      {/* Nombre del Imperio y Personalización */}
-      <div className="flex items-center gap-2.5">
+    <header className="w-full bg-[#0a0e17]/95 border-b border-slate-800 px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2.5 shadow-2xl z-30 select-none">
+      {/* ─── Identidad Imperial (Izquierda) ─── */}
+      <div className="flex items-center gap-2.5 shrink-0">
         <div 
-          className="w-4 h-4 rounded-full shadow-md border border-white/20 shrink-0" 
+          className="w-4 h-4 rounded-md shadow-md border border-amber-400/70 shrink-0" 
           style={{ backgroundColor: empire.colorHex }}
-          title="Color de tu Imperio"
+          title="Estandarte de tu Imperio"
         />
         {isEditingName ? (
           <div className="flex items-center gap-1.5">
@@ -66,309 +49,234 @@ export const EmpireTopBar: React.FC<EmpireTopBarProps> = ({
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
               maxLength={26}
-              className="bg-zinc-800 text-zinc-100 text-xs sm:text-sm font-bold px-2 py-1 rounded border border-zinc-600 focus:outline-none focus:border-indigo-400"
+              className="bg-slate-900 text-white text-xs font-bold px-2 py-1 rounded border border-amber-400/80 focus:outline-none focus:border-amber-300 font-sans tracking-wide"
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
             />
             <button
               onClick={handleSaveName}
-              className="p-1 rounded bg-indigo-600 text-white hover:bg-indigo-500 transition-colors"
+              className="tactical-btn-cta p-1 text-xs text-black rounded"
+              title="Guardar nombre"
             >
               <Check className="w-3.5 h-3.5" />
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 group cursor-pointer" onClick={() => setIsEditingName(true)}>
-            <span className="text-zinc-100 font-black text-sm sm:text-base tracking-wide flex items-center gap-1.5 font-display">
+          <div 
+            className="flex items-center gap-1.5 group cursor-pointer" 
+            onClick={() => setIsEditingName(true)}
+            title="Clic para renombrar tu imperio"
+          >
+            <span className="text-white font-black text-sm tracking-wider uppercase flex items-center gap-1.5 font-sans">
               {empire.empireName}
             </span>
-            <Edit2 className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+            <Edit2 className="w-3 h-3 text-slate-500 group-hover:text-amber-400 transition-colors" />
           </div>
         )}
       </div>
 
-      {/* Marcador Económico y Balances Nacionales */}
-      <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto py-1 scrollbar-none">
-        {/* Monedas */}
-        <div 
-          className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/25 px-2.5 py-1 rounded-lg"
-          title="Tesoro Imperial (Monedas de Oro acumuladas)"
-        >
-          <Coins className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span className="text-xs sm:text-sm font-bold text-amber-300 font-mono">
-            {empire.coins.toLocaleString()}
-          </span>
-          <button
-            onClick={() => empireStorageService.addCheatCoins(100)}
-            className="text-[9px] bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 font-bold px-1.5 py-0.5 rounded ml-1 transition-colors border border-amber-500/30 cursor-pointer"
-            title="Añadir +100 monedas para pruebas de desarrollo"
+      {/* ─── Zona Central: Bahía Unificada de Recursos Nacionales (Dinero, Habitantes, Comida, Suministros, Felicidad) ─── */}
+      <div className="flex items-center gap-2.5 overflow-x-auto py-0.5 scrollbar-none">
+        <div className="flex items-center bg-[#0d131f] border border-slate-800 rounded-xl px-3 py-1 gap-3 shadow-inner shrink-0">
+          
+          {/* 1. Dinero / Oro */}
+          <div 
+            className="flex items-center gap-1.5 cursor-help"
+            title="Tesoro Imperial (Monedas de Oro acumuladas)"
           >
-            +100 🪙
-          </button>
-        </div>
-
-        {/* Botón de Tributos / Buzón Imperial */}
-        <button
-          onClick={onOpenTributes}
-          className="relative flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 border border-amber-500/40 px-2.5 py-1 rounded-lg text-amber-300 font-bold text-xs transition-all shadow-sm shrink-0"
-          title="Abrir Tesoro Nacional, Desafío Diario y Buzón de Duelos"
-        >
-          <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span className="hidden sm:inline">Tributos</span>
-          {pendingCoins > 0 ? (
-            <span className="bg-amber-500 text-zinc-950 text-[10px] font-black px-1.5 py-0.5 rounded-full animate-pulse shadow-sm leading-none">
-              +{pendingCoins}
-            </span>
-          ) : (
-            <span className="text-[10px] text-zinc-400 font-mono hidden md:inline">1.100🪙</span>
-          )}
-        </button>
-
-        {/* Botón de Soberanía Territorial / Censo */}
-        <button
-          onClick={onOpenSovereignty}
-          className="flex items-center gap-1.5 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/35 px-2.5 py-1 rounded-lg text-indigo-300 font-bold text-xs transition-all shadow-sm shrink-0"
-          title="Ver Censo Nacional y Reconocimiento de Soberanía"
-        >
-          <Crown className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-          <span className="hidden sm:inline">Naciones</span>
-          <span className="text-[10px] font-mono font-bold text-indigo-300 bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-700/50">
-            {Object.keys(empire.localCensusByCountry).length || (empire.capitalTileId ? 1 : 0)}
-          </span>
-        </button>
-
-        {/* Badge de Expediciones Marítimas Activas */}
-        {(empire.expeditions || []).some(e => e.status === 'sailing') && (
-          <div className="flex items-center gap-1.5 bg-blue-500/20 border border-blue-400/40 px-2.5 py-1 rounded-lg text-blue-300 font-bold text-xs shrink-0 animate-pulse">
-            <Anchor className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-            <span className="hidden sm:inline">Flota:</span>
-            <span className="font-mono text-[11px] text-blue-200">
-              ⛵ {(empire.expeditions || []).filter(e => e.status === 'sailing').length} en alta mar
+            <Coins className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="text-xs sm:text-sm font-black text-amber-300 font-mono tabular-nums">
+              {empire.coins.toLocaleString()}
             </span>
             <button
-              onClick={() => {
-                const active = (empire.expeditions || []).find(e => e.status === 'sailing');
-                if (active) empireStorageService.speedUpExpedition(active.id);
-              }}
-              className="text-[9px] bg-blue-600 hover:bg-blue-500 text-white font-bold px-1.5 py-0.5 rounded ml-1 transition-colors"
-              title="Acelerar travesía y desembarcar ya (Modo Test)"
+              onClick={() => empireStorageService.addCheatCoins(100)}
+              className="text-[10px] font-mono px-1.5 py-0.5 text-amber-400 hover:text-amber-200 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded font-bold ml-0.5 transition-colors"
+              title="Añadir +100 monedas para pruebas de desarrollo"
             >
-              ⏩ Arribar ya
+              +100
             </button>
           </div>
-        )}
 
-        {/* Población Total */}
-        <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-lg" title="Población Imperial Total">
-          <Users className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-          <span className="text-xs sm:text-sm font-bold text-zinc-200 font-mono">
-            {empire.totalPopulation.toLocaleString()}
-          </span>
-        </div>
+          <div className="w-px h-4 bg-slate-800" />
 
-        {/* Comida */}
-        {(() => {
-          const cropsTiles = Object.values(empire.colonizedTiles).filter(t => t.role === 'crops');
-          let foodProd = 0;
-          cropsTiles.forEach(t => {
-            const tier = t.resourceTier || 1;
-            if (tier === 3) foodProd += 75;
-            else if (tier === 2) foodProd += 35;
-            else foodProd += 15;
-          });
-          const foodCons = Math.floor(empire.totalPopulation * 0.5);
-          return (
-            <div 
-              className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-lg cursor-help" 
-              title={`Suministro Agrícola: +${empire.nationalFood} 🌾 (Producción: +${foodProd} de ${cropsTiles.length} huertos · Consumo: -${foodCons} por ${empire.totalPopulation} hab.)`}
-            >
-              <Wheat className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-              <span className="text-xs sm:text-sm font-bold font-mono text-emerald-300">
-                +{empire.nationalFood}
-              </span>
-            </div>
-          );
-        })()}
+          {/* 2. Habitantes / Población */}
+          <div 
+            className="flex items-center gap-1.5 cursor-help" 
+            title="Población Imperial Total"
+          >
+            <Users className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span className="text-xs font-bold text-cyan-200 font-mono tabular-nums">
+              {empire.totalPopulation.toLocaleString()}
+            </span>
+            <span className="text-[9.5px] text-cyan-400/80 font-mono uppercase font-bold">hab</span>
+          </div>
 
-        {/* Materiales */}
-        {(() => {
-          const quarryTiles = Object.values(empire.colonizedTiles).filter(t => t.role === 'resources');
-          return (
-            <div 
-              className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-lg cursor-help" 
-              title={`Materiales de Construcción: ${empire.nationalMaterials} 🧱 (Obtenidos de ${quarryTiles.length} canteras. Se gastan al fundar o mejorar asentamientos y erigir monumentos)`}
-            >
-              <Hammer className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span className="text-xs sm:text-sm font-bold text-zinc-200 font-mono">
-                {empire.nationalMaterials}
-              </span>
-            </div>
-          );
-        })()}
+          <div className="w-px h-4 bg-slate-800" />
 
-        {/* Felicidad */}
-        <div 
-          className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-lg cursor-help" 
-          title={`Felicidad Nacional: ${empire.happinessPct}% (Multiplicador de oro pasivo y tributos: x${(0.5 + empire.happinessPct / 100).toFixed(2)}. Sube erigiendo monumentos y evitando hambrunas)`}
-        >
-          <Smile className={`w-3.5 h-3.5 shrink-0 ${empire.happinessPct >= 70 ? 'text-emerald-400' : 'text-amber-400'}`} />
-          <span className="text-xs sm:text-sm font-bold text-zinc-200 font-mono">
-            {empire.happinessPct}%
-          </span>
+          {/* 3. Comida / Alimentos */}
+          {(() => {
+            const cropsTiles = Object.values(empire.colonizedTiles).filter(t => t.role === 'crops');
+            let foodProd = 0;
+            cropsTiles.forEach(t => {
+              const tier = t.resourceTier || 1;
+              let base = tier === 3 ? 75 : tier === 2 ? 35 : 15;
+              if (t.id) {
+                const cluster = empireStorageService.getResourceClusterInfo(t.id);
+                if (cluster.bonusPct > 0) {
+                  base = Math.round(base * (1 + cluster.bonusPct / 100));
+                }
+              }
+              foodProd += base;
+            });
+            const foodCons = Math.floor(empire.totalPopulation * 0.5);
+            return (
+              <div 
+                className="flex items-center gap-1.5 cursor-help" 
+                title={`Suministro Agrícola: +${empire.nationalFood} 🌾 (Producción: +${foodProd} de ${cropsTiles.length} huertos · Consumo: -${foodCons} por ${empire.totalPopulation} hab.)`}
+              >
+                <Wheat className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="text-xs font-bold font-mono text-emerald-300 tabular-nums">
+                  +{empire.nationalFood}
+                </span>
+              </div>
+            );
+          })()}
+
+          <div className="w-px h-4 bg-slate-800" />
+
+          {/* 4. Suministros / Materiales */}
+          {(() => {
+            const quarryTiles = Object.values(empire.colonizedTiles).filter(t => t.role === 'resources');
+            const forestBonus = empire.appliedForestBonus || 0;
+            return (
+              <div 
+                className="flex items-center gap-1.5 cursor-help" 
+                title={`Suministros de Construcción: ${empire.nationalMaterials} 🧱 (Obtenidos de ${quarryTiles.length} canteras/bosques${forestBonus > 0 ? ` [incluye +${forestBonus} por Grandes Bosques]` : ''})`}
+              >
+                <Hammer className="w-4 h-4 text-orange-400 shrink-0" />
+                <span className="text-xs font-bold text-orange-300 font-mono tabular-nums">
+                  {empire.nationalMaterials}
+                </span>
+              </div>
+            );
+          })()}
+
+          <div className="w-px h-4 bg-slate-800" />
+
+          {/* 5. Felicidad */}
+          <div 
+            className="flex items-center gap-1.5 cursor-help" 
+            title={`Felicidad Nacional: ${empire.happinessPct}% (Multiplicador de oro pasivo y tributos: x${(0.5 + empire.happinessPct / 100).toFixed(2)})`}
+          >
+            <Smile className="w-4 h-4 text-yellow-400 shrink-0" />
+            <span className="text-xs font-bold text-yellow-300 font-mono tabular-nums">
+              {empire.happinessPct}%
+            </span>
+          </div>
+
+          {/* Flota Activa si existe */}
+          {(empire.expeditions || []).some(e => e.status === 'sailing') && (
+            <>
+              <div className="w-px h-4 bg-slate-800" />
+              <div className="flex items-center gap-1.5 text-sky-300 font-bold text-xs">
+                <Anchor className="w-3.5 h-3.5 text-sky-400 shrink-0 animate-pulse" />
+                <span className="font-mono text-[11px] text-sky-200">
+                  ⛵ {(empire.expeditions || []).filter(e => e.status === 'sailing').length} en mar
+                </span>
+                <button
+                  onClick={() => {
+                    const active = (empire.expeditions || []).find(e => e.status === 'sailing');
+                    if (active) empireStorageService.speedUpExpedition(active.id);
+                  }}
+                  className="tactical-btn text-[10px] px-1.5 py-0.5 text-sky-300 border-sky-600/60"
+                  title="Acelerar travesía y desembarcar ya (Modo Test)"
+                >
+                  Arribar
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* ─── Zona Derecha: Controles (desplazados a la izquierda) + Títulos del Panel Lateral ─── */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* Controles de Vista: Táctico 2D vs Globo 3D */}
-        <div className="flex items-center bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
-          <button
-            onClick={() => onToggleCameraMode('2d')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
-              cameraMode === '2d'
-                ? 'bg-zinc-100 text-zinc-950 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Modo Táctico 2D (Jugar y Comprar)"
-          >
-            <MapIcon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Táctico 2D</span>
-          </button>
+      {/* ─── Zona Derecha: Bahía de Operaciones de Teatro & Sistema ─── */}
+      <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center bg-[#0d131f] border border-slate-800 rounded-xl px-2 py-1 gap-2 shadow-inner">
+          {/* Selector 2D / 3D */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => onToggleCameraMode('2d')}
+              className={`px-2 py-1 text-[11px] rounded font-bold uppercase transition-all flex items-center gap-1 ${
+                cameraMode === '2d'
+                  ? 'bg-slate-700 text-white border border-slate-600 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Modo Táctico 2D (Jugar y Comprar)"
+            >
+              <MapIcon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">2D</span>
+            </button>
 
-          <button
-            onClick={() => onToggleCameraMode('3d')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
-              cameraMode === '3d'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Modo Globo 3D (Vitrina)"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Globo 3D</span>
-          </button>
-        </div>
+            <button
+              onClick={() => onToggleCameraMode('3d')}
+              className={`px-2 py-1 text-[11px] rounded font-bold uppercase transition-all flex items-center gap-1 ${
+                cameraMode === '3d'
+                  ? 'bg-slate-700 text-white border border-slate-600 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              title="Modo Globo 3D (Vitrina)"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">3D</span>
+            </button>
+          </div>
 
-        {/* Controles de Audio: SFX y Música Zen */}
-        <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
+          <div className="w-px h-4 bg-slate-800" />
+
+          {/* Controles de Audio */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                const muted = empireSound.toggleMute();
+                setIsMuted(muted);
+                if (muted) setIsMusicActive(false);
+              }}
+              className="p-1 text-slate-400 hover:text-white rounded transition-colors"
+              title={isMuted ? 'Activar Efectos de Sonido' : 'Silenciar Efectos de Sonido'}
+            >
+              {!isMuted ? <Volume2 className="w-3.5 h-3.5 text-slate-300" /> : <VolumeX className="w-3.5 h-3.5 text-slate-500" />}
+            </button>
+
+            <button
+              onClick={() => {
+                const active = empireSound.toggleAmbientMusic();
+                setIsMusicActive(active);
+              }}
+              className={`px-2 py-1 text-[11px] font-bold rounded flex items-center gap-1 transition-all ${
+                isMusicActive ? 'text-amber-300 bg-amber-500/20 border border-amber-400/50' : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title={isMusicActive ? 'Detener Música Zen' : 'Reproducir Música Zen Procedimental'}
+            >
+              <Music className={`w-3.5 h-3.5 ${isMusicActive ? 'text-amber-400 animate-pulse' : ''}`} />
+              <span className="hidden md:inline">Música</span>
+            </button>
+          </div>
+
+          <div className="w-px h-4 bg-slate-800" />
+
+          {/* Botón de Reinicio (Test) */}
           <button
             onClick={() => {
-              const muted = empireSound.toggleMute();
-              setIsMuted(muted);
-              if (muted) setIsMusicActive(false);
+              if (window.confirm('¿Reiniciar tu imperio para empezar de nuevo?')) {
+                empireStorageService.resetEmpire();
+              }
             }}
-            className={`p-1.5 rounded-md text-xs font-bold transition-all ${
-              !isMuted
-                ? 'text-amber-400 hover:text-amber-300 hover:bg-zinc-800'
-                : 'text-zinc-500 hover:text-zinc-400 bg-zinc-800/40'
-            }`}
-            title={isMuted ? 'Activar Efectos de Sonido' : 'Silenciar Efectos de Sonido'}
+            className="p-1 text-slate-500 hover:text-red-400 rounded transition-colors"
+            title="Reiniciar Imperio (Test)"
           >
-            {!isMuted ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-          </button>
-
-          <button
-            onClick={() => {
-              const active = empireSound.toggleAmbientMusic();
-              setIsMusicActive(active);
-            }}
-            className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold transition-all ${
-              isMusicActive
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-            }`}
-            title={isMusicActive ? 'Detener Música Zen' : 'Reproducir Música Zen Procedimental'}
-          >
-            <Music className={`w-3.5 h-3.5 ${isMusicActive ? 'animate-bounce text-amber-400' : ''}`} />
-            <span className="hidden md:inline text-[11px]">{isMusicActive ? 'Música' : 'Música'}</span>
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
-
-        {/* Reiniciar (para pruebas) */}
-        <button
-          onClick={() => {
-            if (window.confirm('¿Reiniciar tu imperio para empezar de nuevo?')) {
-              empireStorageService.resetEmpire();
-            }
-          }}
-          className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 border border-zinc-800 transition-colors"
-          title="Reiniciar Imperio (Test)"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-        </button>
-
-        {/* ─── TÍTULOS / PESTAÑAS DE LA COLUMNA LATERAL (Encima de la columna de misiones/casillas) ─── */}
-        {(() => {
-          const selectedTileData = selectedTile ? empire.colonizedTiles[selectedTile.id] : null;
-          const isSettlement = selectedTileData?.role === 'settlement';
-          const tileHeaderIcon = !selectedTile
-            ? '📍'
-            : selectedTileData?.role === 'crops'
-            ? '🌾'
-            : selectedTileData?.role === 'resources'
-            ? '🌲'
-            : isSettlement
-            ? (selectedTileData?.settlementTier && selectedTileData.settlementTier >= 3 ? '🏙️' : '⛺')
-            : selectedTileData?.hasPort || selectedTileData?.role === 'port'
-            ? '⚓'
-            : selectedTileData
-            ? '🟩'
-            : '🗺️';
-
-          const tileHeaderLabel = !selectedTile
-            ? 'Casilla'
-            : isSettlement && selectedTileData?.cityName
-            ? selectedTileData.cityName
-            : selectedTileData?.role === 'crops'
-            ? `Huerto N${selectedTileData?.resourceTier || 1}`
-            : selectedTileData?.role === 'resources'
-            ? `Cantera N${selectedTileData?.resourceTier || 1}`
-            : selectedTile.countryName || 'Casilla';
-
-          const hasClaimableMissions = TUTORIAL_MISSIONS.some(
-            m => empireStorageService.isMissionCompleted(m.id) && !empireStorageService.isMissionClaimed(m.id)
-          );
-
-          return (
-            <div className="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 pl-1.5 pr-1.5 shadow-inner">
-              {/* Título/Pestaña: Misiones */}
-              <button
-                onClick={() => onSelectRightTab?.('missions')}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                  activeRightTab === 'missions'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                }`}
-                title="Ver Misiones Guiadas y Tutorial"
-              >
-                <span>📜</span>
-                <span className="hidden sm:inline">Misiones</span>
-                {hasClaimableMissions && (
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                )}
-              </button>
-
-              {/* Título/Pestaña: Casilla */}
-              <button
-                onClick={() => onSelectRightTab?.('tile')}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                  activeRightTab === 'tile'
-                    ? 'bg-indigo-500/25 text-indigo-300 border border-indigo-500/40 shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                }`}
-                title={selectedTile ? 'Ver Detalle de la Casilla' : 'Selecciona una casilla en el mapa'}
-              >
-                <span>{tileHeaderIcon}</span>
-                <span className="max-w-[110px] truncate">
-                  {tileHeaderLabel}
-                </span>
-                {selectedTile && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                )}
-              </button>
-            </div>
-          );
-        })()}
       </div>
     </header>
   );

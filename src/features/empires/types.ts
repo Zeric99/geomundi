@@ -363,7 +363,137 @@ export interface UserEmpire {
 
   // Expediciones marítimas activas y archivadas
   expeditions?: NavalExpedition[];
+
+  // Decretos y leyes imperiales promulgadas: IDs de decretos activos
+  activeEdicts?: string[];
+
+  // Bonificación acumulada aplicada de Grandes Masas Forestales contiguas (>= 6 casillas)
+  appliedForestBonus?: number;
 }
+
+export interface ImperialEdict {
+  id: string;
+  title: string;
+  icon: string;
+  category: 'agriculture' | 'industry' | 'maritime' | 'civic';
+  categoryLabel: string;
+  description: string;
+  effectLabel: string;
+  minPopulation: number;
+  coinCost: number;
+  materialCost?: number;
+  perk: {
+    foodProductionMultiplier?: number;
+    materialDiscountPct?: number;
+    navalSpeedMultiplier?: number;
+    tributeCoinBonusPerPort?: number;
+    upgradeCoinDiscountPct?: number;
+    happinessBonus?: number;
+  };
+}
+
+export const IMPERIAL_EDICTS_CATALOG: ImperialEdict[] = [
+  // Rama Agrícola
+  {
+    id: 'edict_agrarian_reform',
+    title: 'Reforma Agraria Imperial',
+    icon: '🌾',
+    category: 'agriculture',
+    categoryLabel: 'Agricultura',
+    description: 'Moderniza las técnicas de regadío y labranza en todo el imperio.',
+    effectLabel: '+15% Comida en todos los huertos',
+    minPopulation: 30,
+    coinCost: 40,
+    perk: { foodProductionMultiplier: 1.15 }
+  },
+  {
+    id: 'edict_granary_reserves',
+    title: 'Silos y Graneros Reales',
+    icon: '🚜',
+    category: 'agriculture',
+    categoryLabel: 'Agricultura',
+    description: 'Establece reservas estratégicas de grano para asegurar sustento.',
+    effectLabel: '+5% Felicidad y seguridad alimentaria',
+    minPopulation: 120,
+    coinCost: 100,
+    perk: { happinessBonus: 5 }
+  },
+  // Rama Industrial
+  {
+    id: 'edict_mason_guilds',
+    title: 'Gremio de Canteros Maestros',
+    icon: '⛏️',
+    category: 'industry',
+    categoryLabel: 'Industria',
+    description: 'Estandariza los cortes de roca y madera reduciendo el desperdicio de obra.',
+    effectLabel: '-15% Materiales al fundar o mejorar ciudades',
+    minPopulation: 50,
+    coinCost: 50,
+    perk: { materialDiscountPct: 15 }
+  },
+  {
+    id: 'edict_industrial_machinery',
+    title: 'Maquinaria de Extracción',
+    icon: '⚙️',
+    category: 'industry',
+    categoryLabel: 'Industria',
+    description: 'Introduce poleas pesadas y grúas de cantera reduciendo costes.',
+    effectLabel: '-10% Monedas al mejorar infraestructuras',
+    minPopulation: 250,
+    coinCost: 150,
+    perk: { upgradeCoinDiscountPct: 10 }
+  },
+  // Rama Marítima
+  {
+    id: 'edict_naval_cartography',
+    title: 'Cartografía de Ultramar',
+    icon: '🧭',
+    category: 'maritime',
+    categoryLabel: 'Navegación',
+    description: 'Traza cartas estelares y corrientes marinas para acelerar las travesías.',
+    effectLabel: 'Barcos navegan un 20% más rápido',
+    minPopulation: 75,
+    coinCost: 60,
+    perk: { navalSpeedMultiplier: 1.2 }
+  },
+  {
+    id: 'edict_merchant_fleet',
+    title: 'Liga Comercial Portuaria',
+    icon: '⚓',
+    category: 'maritime',
+    categoryLabel: 'Navegación',
+    description: 'Fomenta el intercambio comercial en todos los muelles activos.',
+    effectLabel: '+2 Monedas por puerto en cada ciclo de tributos',
+    minPopulation: 200,
+    coinCost: 120,
+    perk: { tributeCoinBonusPerPort: 2 }
+  },
+  // Rama Cívica
+  {
+    id: 'edict_urban_charter',
+    title: 'Fueros Municipales',
+    icon: '📜',
+    category: 'civic',
+    categoryLabel: 'Cívica',
+    description: 'Autonomía administrativa que abarata el desarrollo de asentamientos.',
+    effectLabel: '-15% Monedas para mejorar aldeas y pueblos',
+    minPopulation: 100,
+    coinCost: 80,
+    perk: { upgradeCoinDiscountPct: 15 }
+  },
+  {
+    id: 'edict_grand_celebration',
+    title: 'Edicto de Festividades Imperiales',
+    icon: '🎉',
+    category: 'civic',
+    categoryLabel: 'Cívica',
+    description: 'Jornadas de júbilo y festejos públicos que elevan la moral del pueblo.',
+    effectLabel: '+10% Felicidad permanente en el imperio',
+    minPopulation: 300,
+    coinCost: 180,
+    perk: { happinessBonus: 10 }
+  }
+];
 
 export interface TutorialMission {
   id: string;
@@ -424,20 +554,20 @@ export function getTileVisualColor(tileData?: Partial<GridTile> | null): string 
     return '#166534';                 // Nivel 1: Verde bosque profundo
   }
 
-  // 3. Ciudades, pueblos, megaciudades y puertos: Escala de grises por nivel urbano
+  // 3. Ciudades, pueblos, megaciudades y asentamientos: Tonos marrones terrosos progresivos
   if (role === 'settlement' || (tileData.settlementTier && tileData.settlementTier > 0)) {
     const tier = tileData.settlementTier || 1;
     if (tileData.hasPort) {
-      return '#475569'; // Puerto marítimo: Gris pizarra naval
+      return '#5c2c16'; // Puerto marítimo urbano: Marrón caoba naval
     }
-    if (tier === 4) return '#1e293b'; // Megaciudad: Gris carbón grafito metropolitano
-    if (tier === 3) return '#475569'; // Ciudad: Gris piedra oscuro
-    if (tier === 2) return '#64748b'; // Pueblo: Gris medio
-    return '#94a3b8';                 // Aldea: Gris claro
+    if (tier === 4) return '#341808'; // Megaciudad: Marrón espresso / ébano profundo
+    if (tier === 3) return '#4a2511'; // Ciudad: Marrón chocolate / nogal
+    if (tier === 2) return '#63391b'; // Pueblo: Marrón tierra tostada
+    return '#7c4a27';                 // Aldea: Marrón madera / cuero cálido
   }
 
   if (role === 'port') {
-    return '#475569'; // Puerto: Gris pizarra naval
+    return '#5c2c16'; // Puerto independiente: Marrón caoba naval
   }
 
   if (role === 'energy') {

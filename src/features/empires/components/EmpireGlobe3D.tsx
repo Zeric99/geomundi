@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { UserEmpire } from '../types';
+import { UserEmpire, getTileVisualColor } from '../types';
 import { geoGridService } from '../services/geoGridService';
 
 interface EmpireGlobe3DProps {
@@ -211,13 +211,7 @@ export const EmpireGlobe3D: React.FC<EmpireGlobe3DProps> = ({ empire }) => {
 
     // Limpiar elementos dinámicos previos
     while (colonizedGroup.children.length > 0) {
-      const child = colonizedGroup.children[0] as THREE.Mesh;
-      if (child.geometry) child.geometry.dispose();
-      if (child.material) {
-        if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
-        else child.material.dispose();
-      }
-      colonizedGroup.remove(child);
+      colonizedGroup.remove(colonizedGroup.children[0]);
     }
 
     while (expeditionsGroup.children.length > 0) {
@@ -230,44 +224,54 @@ export const EmpireGlobe3D: React.FC<EmpireGlobe3DProps> = ({ empire }) => {
       expeditionsGroup.remove(child);
     }
 
-    // Material único y homogéneo del color del imperio para TODO el territorio
-    const empireColor = new THREE.Color(empire.colorHex || '#3B82F6');
-    const unifiedEmpireMaterial = new THREE.MeshPhongMaterial({
-      color: empireColor,
-      specular: 0x444444,
-      shininess: 30
-    });
-
-    // Geometría Cuadrada (BoxGeometry: ancho x alto x profundidad)
-    // Dimensiones calibradas para representar exactamente una casilla cuadrangular
+    // Geometría PLANA 2D de casilla (PlaneGeometry, sin volumen ni altura 3D)
+    // Se dibuja directamente pintada y pegada a la superficie del globo
     const boxSize = 2.0;
-    const boxHeight = 0.7;
-    const squareTileGeo = new THREE.BoxGeometry(boxSize, boxHeight, boxSize);
-    const squareEdgesGeo = new THREE.EdgesGeometry(squareTileGeo);
+    const planeGeo = new THREE.PlaneGeometry(boxSize, boxSize);
+    const planeEdgesGeo = new THREE.EdgesGeometry(planeGeo);
+    const capitalOuterGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(boxSize * 1.15, boxSize * 1.15));
 
-    // Aristas cuadradas sutilmente iluminadas para delimitar cada cuadrado del mosaico
-    const edgeColor = empireColor.clone().offsetHSL(0, 0, 0.22);
+    const empireColor = new THREE.Color(empire.colorHex || '#3B82F6');
+
+    // Borde de la casilla en el color imperial
     const edgeMaterial = new THREE.LineBasicMaterial({
-      color: edgeColor,
+      color: empireColor,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.85
     });
 
-    // Geometría y material de la Capital Imperial (cuadrado dorado elevado)
-    const capitalCrownGeo = new THREE.BoxGeometry(boxSize * 1.08, 0.35, boxSize * 1.08);
-    const capitalCrownMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-    const capitalEdgesGeo = new THREE.EdgesGeometry(capitalCrownGeo);
-    const capitalEdgesMat = new THREE.LineBasicMaterial({ color: 0xfffbeb });
+    // Borde dorado exclusivo de la Capital Imperial
+    const capitalEdgeMat = new THREE.LineBasicMaterial({
+      color: 0xfacc15,
+      linewidth: 2
+    });
+
+    // Cache de materiales por color de casilla para máximo rendimiento y sin parpadeo (polygonOffset)
+    const materialCache = new Map<string, THREE.MeshLambertMaterial>();
+    const getTileMaterial = (hex: string) => {
+      if (!materialCache.has(hex)) {
+        materialCache.set(hex, new THREE.MeshLambertMaterial({
+          color: new THREE.Color(hex),
+          side: THREE.DoubleSide,
+          polygonOffset: true,
+          polygonOffsetFactor: -1,
+          polygonOffsetUnits: -1
+        }));
+      }
+      return materialCache.get(hex)!;
+    };
 
     const colonizedTileIds = Object.keys(empire.colonizedTiles);
 
     colonizedTileIds.forEach(id => {
       const tile = geoGridService.getTile(id);
       if (!tile) return;
+      const colData = empire.colonizedTiles[id];
 
       const phi = (90 - tile.lat) * (Math.PI / 180);
       const theta = (tile.lon + 180) * (Math.PI / 180);
-      const r = globeRadius * 1.012;
+      // Radio exacto sobre la superficie del planeta (justo sobre el océano y la tierra)
+      const r = globeRadius * 1.0045;
 
       const x = -(r * Math.sin(phi) * Math.cos(theta));
       const z = (r * Math.sin(phi) * Math.sin(theta));
@@ -275,7 +279,7 @@ export const EmpireGlobe3D: React.FC<EmpireGlobe3DProps> = ({ empire }) => {
 
       const normal = new THREE.Vector3(x, y, z).normalize();
 
-      // Orientación Norte-Sur y Este-Oeste para que las caras del cuadrado sigan la cuadrícula del mapa
+      // Orientación tangencial siguiendo los paralelos y meridianos de la cuadrícula
       const worldNorth = new THREE.Vector3(0, 1, 0);
       let north = worldNorth.clone().sub(normal.clone().multiplyScalar(worldNorth.dot(normal)));
       if (north.lengthSq() < 0.0001) {
@@ -285,36 +289,32 @@ export const EmpireGlobe3D: React.FC<EmpireGlobe3DProps> = ({ empire }) => {
       }
       const east = new THREE.Vector3().crossVectors(north, normal).normalize();
 
+      // En PlaneGeometry, la normal apunta hacia +Z.
+      // Columna 0 = east (X), Columna 1 = north (Y), Columna 2 = normal (Z)
       const rotMatrix = new THREE.Matrix4();
-      rotMatrix.makeBasis(east, normal, north);
+      rotMatrix.makeBasis(east, north, normal);
 
-      // Casilla Cuadrada
-      const squareMesh = new THREE.Mesh(squareTileGeo, unifiedEmpireMaterial);
-      squareMesh.position.set(x, y, z);
-      squareMesh.setRotationFromMatrix(rotMatrix);
+      // Color visual temático (trigo amarillo huertos, verde canteras, marrón ciudades/aldeas)
+      const tileVisualHex = getTileVisualColor(colData);
+      const tileMesh = new THREE.Mesh(planeGeo, getTileMaterial(tileVisualHex));
+      tileMesh.position.set(x, y, z);
+      tileMesh.setRotationFromMatrix(rotMatrix);
 
-      // Contorno de aristas cuadradas
-      const wireframe = new THREE.LineSegments(squareEdgesGeo, edgeMaterial);
-      squareMesh.add(wireframe);
+      // Borde exterior plano de la casilla
+      const isCapital = id === empire.capitalTileId;
+      const wireframe = new THREE.LineSegments(
+        planeEdgesGeo,
+        isCapital ? capitalEdgeMat : edgeMaterial
+      );
+      tileMesh.add(wireframe);
 
-      colonizedGroup.add(squareMesh);
-
-      // Si es la Capital Imperial, añadir un remate cuadrado dorado en la parte superior
-      if (id === empire.capitalTileId) {
-        const rCap = globeRadius * 1.018;
-        const cx = -(rCap * Math.sin(phi) * Math.cos(theta));
-        const cz = (rCap * Math.sin(phi) * Math.sin(theta));
-        const cy = (rCap * Math.cos(phi));
-
-        const crownMesh = new THREE.Mesh(capitalCrownGeo, capitalCrownMat);
-        crownMesh.position.set(cx, cy, cz);
-        crownMesh.setRotationFromMatrix(rotMatrix);
-
-        const crownEdges = new THREE.LineSegments(capitalEdgesGeo, capitalEdgesMat);
-        crownMesh.add(crownEdges);
-
-        colonizedGroup.add(crownMesh);
+      // Resalte exclusivo de la Capital: doble marco dorado plano sobre la superficie
+      if (isCapital) {
+        const capWire = new THREE.LineSegments(capitalOuterGeo, capitalEdgeMat);
+        tileMesh.add(capWire);
       }
+
+      colonizedGroup.add(tileMesh);
     });
 
     // Rutas de Expediciones Marítimas Activas

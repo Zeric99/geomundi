@@ -1,6 +1,7 @@
-import { UserEmpire, GridTile, TileRole, SettlementTier, IslandSpecialization, NavalExpedition, CivicProject, CIVIC_PROJECTS_CATALOG, getCountryWonder, TutorialMission } from '../types';
+import { UserEmpire, GridTile, TileRole, SettlementTier, IslandSpecialization, NavalExpedition, CivicProject, CIVIC_PROJECTS_CATALOG, getCountryWonder, TutorialMission, ImperialEdict, IMPERIAL_EDICTS_CATALOG } from '../types';
 import { geoGridService } from './geoGridService';
 import { empireSound } from './empireSoundService';
+import { countriesService } from '../../../services/countriesService';
 import { supabase, isSupabaseConfigured } from '../../../lib/supabase';
 
 const EMPIRE_STORAGE_KEY = 'geostrike_user_empire_v1';
@@ -118,6 +119,76 @@ export const TUTORIAL_MISSIONS: TutorialMission[] = [
       '¡Coronará tu imperio en la historia universal!'
     ],
     reward: { coins: 300, materials: 100, food: 100 }
+  },
+  {
+    id: 'mission_9_crop_tier3',
+    stepNumber: 9,
+    title: 'El Granero del Mundo',
+    category: 'economy',
+    icon: '🌾',
+    description: 'Evoluciona un Huerto a Nivel 3 (Complejo Hidropónico) en el centro de un 3x3.',
+    howTo: [
+      'Rodea completamente un Huerto de 8 campos contiguos (3x3 total).',
+      'Haz clic en el huerto central y mejóralo a Nivel 3.',
+      'Generará +75 🌾 de comida garantizada para sostener grandes poblaciones.'
+    ],
+    reward: { coins: 150, food: 60 }
+  },
+  {
+    id: 'mission_10_quarry_tier3',
+    stepNumber: 10,
+    title: 'Bastión Minero e Industrial',
+    category: 'production',
+    icon: '🌲',
+    description: 'Evoluciona una Cantera a Nivel 3 (Complejo Industrial Minero) en un 3x3.',
+    howTo: [
+      'Rodea una Cantera de 8 bosques/canteras contiguos a su alrededor.',
+      'Sube la casilla central a Nivel 3.',
+      '¡Obtendrás una inyección masiva de +75 🧱 materiales de construcción!'
+    ],
+    reward: { coins: 180, materials: 80 }
+  },
+  {
+    id: 'mission_11_megacity',
+    stepNumber: 11,
+    title: 'La Primera Megaciudad',
+    category: 'expansion',
+    icon: '🌆',
+    description: 'Funda tu primera Megaciudad (Nivel 4) rodeada de 5 asentamientos.',
+    howTo: [
+      'Evoluciona una Ciudad a Nivel 4 cumpliendo los requisitos del Buscaminas urbano.',
+      'Necesitas 5 asentamientos vecinos (radio 2), huertos, canteras y superávit de comida.',
+      'Una Megaciudad desbloquea rascacielos y la Maravilla Nacional única de ese país.'
+    ],
+    reward: { coins: 250, materials: 100, food: 50 }
+  },
+  {
+    id: 'mission_12_intercontinental',
+    stepNumber: 12,
+    title: 'Imperio Transcontinental',
+    category: 'naval',
+    icon: '🌐',
+    description: 'Establece colonias en al menos 2 continentes distintos del planeta.',
+    howTo: [
+      'Construye un puerto comercial en la costa de tu territorio.',
+      'Fleta una expedición marítima que atraque en otro continente.',
+      'Coloniza la primera casilla tras desembarcar para asentar tu dominio.'
+    ],
+    reward: { coins: 200, freeExpeditions: 1 }
+  },
+  {
+    id: 'mission_13_sovereignty',
+    stepNumber: 13,
+    title: 'Soberanía Imperial Absoluta',
+    category: 'foundation',
+    icon: '👑',
+    description: 'Anexiona de forma oficial y soberana el primer país de tu imperio.',
+    howTo: [
+      'Coloniza la mayoría o totalidad de casillas de un país real.',
+      'Abre la ventana de "Naciones" en la barra superior.',
+      'Pulsa "Reclamar Soberanía" para anexar el país y coronarte soberano.'
+    ],
+    reward: { coins: 300, materials: 150 }
   }
 ];
 
@@ -341,32 +412,140 @@ export class EmpireStorageService {
 
   /**
    * Recalcula dinámicamente el balance de comida (producción - consumo) y la felicidad imperial
+  /**
+   * Obtiene la información de agrupación ortogonal (lado con lado, sin diagonales)
+   * para una casilla de huerto ('crops') o cantera/bosque ('resources').
+   * A partir de 6 casillas juntas ortogonalmente se considera Gran Bosque / Gran Complejo Agrícola.
+   * Bono: 6 -> 1%, 7 -> 2%, 8 -> 3% ... hasta un tope máximo de +15% (evita romper el juego).
+   */
+  public getResourceClusterInfo(tileId: string): ResourceClusterInfo {
+    const emp = this.getEmpire();
+    const targetTile = emp.colonizedTiles[tileId];
+    if (!targetTile || (targetTile.role !== 'crops' && targetTile.role !== 'resources')) {
+      return { clusterSize: 1, bonusPct: 0, isLargeCluster: false, memberTileIds: [tileId] };
+    }
+
+    const targetRole = targetTile.role;
+    const visited = new Set<string>();
+    const queue: string[] = [tileId];
+    visited.add(tileId);
+    const memberTileIds: string[] = [];
+
+    // 4 vecinos ortogonales estrictos (lado con lado, nunca diagonales)
+    const orthogonalOffsets = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ];
+
+    while (queue.length > 0) {
+      const currId = queue.shift()!;
+      memberTileIds.push(currId);
+      const currTile = emp.colonizedTiles[currId];
+      if (!currTile || currTile.x === undefined || currTile.y === undefined) continue;
+
+      const currX = currTile.x;
+      const currY = currTile.y;
+
+      for (const [dx, dy] of orthogonalOffsets) {
+        const neighborId = `${currX + dx},${currY + dy}`;
+        if (!visited.has(neighborId)) {
+          const neighborTile = emp.colonizedTiles[neighborId];
+          if (neighborTile && neighborTile.role === targetRole) {
+            visited.add(neighborId);
+            queue.push(neighborId);
+          }
+        }
+      }
+    }
+
+    const clusterSize = memberTileIds.length;
+    // A partir de 6 casillas juntas: 6 -> +1%, 7 -> +2%, 8 -> +3% ... tope máx: +15%
+    const MAX_CLUSTER_BONUS = 15;
+    const bonusPct = clusterSize >= 6 ? Math.min(MAX_CLUSTER_BONUS, clusterSize - 5) : 0;
+    const isLargeCluster = clusterSize >= 6;
+
+    return {
+      clusterSize,
+      bonusPct,
+      isLargeCluster,
+      memberTileIds
+    };
+  }
+
+  /**
+   * Recalcula los balances globales de comida, felicidad y estado económico
    */
   public recalculateMetrics(): void {
     if (!this.empire) return;
     const emp = this.empire;
 
     // 1. Comida: Huertos producen según su nivel (Tier 1: +15, Tier 2: +35, Tier 3: +75)
-    // La población consume (Math.floor(población * 0.5))
+    // + Multiplicador leve de Gran Complejo Agrícola si hay >= 6 huertos contiguos ortogonalmente (+1% por casilla a partir de 6, máx +15%)
     let foodProduced = 0;
     Object.values(emp.colonizedTiles).forEach(t => {
       if (t.role === 'crops') {
         const tier = t.resourceTier || 1;
-        if (tier === 3) foodProduced += 75;
-        else if (tier === 2) foodProduced += 35;
-        else foodProduced += 15;
+        let base = tier === 3 ? 75 : tier === 2 ? 35 : 15;
+        if (t.id) {
+          const cluster = this.getResourceClusterInfo(t.id);
+          if (cluster.bonusPct > 0) {
+            base = Math.round(base * (1 + cluster.bonusPct / 100));
+          }
+        }
+        foodProduced += base;
       }
     });
 
+    // Bonificación de Decreto: Reforma Agraria (+15% a la producción de comida)
+    if (emp.activeEdicts?.includes('edict_agrarian_reform')) {
+      foodProduced = Math.round(foodProduced * 1.15);
+    }
+
     const foodConsumed = Math.floor(emp.totalPopulation * 0.5);
     const rawFoodBalance = foodProduced - foodConsumed;
-    // La comida nunca queda en números negativos
     emp.nationalFood = Math.max(0, rawFoodBalance);
-    // Los materiales nunca quedan en números negativos
+
+    // 1b. Materiales: Bonificación leve por Grandes Masas Forestales contiguas (>= 6 canteras/madera ortogonales)
+    let totalForestBonus = 0;
+    const visitedForest = new Set<string>();
+
+    Object.values(emp.colonizedTiles).forEach(t => {
+      if (t.role === 'resources' && t.id && !visitedForest.has(t.id)) {
+        const cluster = this.getResourceClusterInfo(t.id);
+        cluster.memberTileIds.forEach(id => visitedForest.add(id));
+        if (cluster.bonusPct > 0) {
+          let clusterBase = 0;
+          cluster.memberTileIds.forEach(id => {
+            const qTile = emp.colonizedTiles[id];
+            const qTier = qTile?.resourceTier || 1;
+            clusterBase += qTier === 3 ? 130 : qTier === 2 ? 55 : 20;
+          });
+          totalForestBonus += Math.round(clusterBase * (cluster.bonusPct / 100));
+        }
+      }
+    });
+
+    const previousForestBonus = emp.appliedForestBonus || 0;
+    const deltaForestBonus = totalForestBonus - previousForestBonus;
+    if (deltaForestBonus !== 0) {
+      emp.nationalMaterials = Math.max(0, emp.nationalMaterials + deltaForestBonus);
+      emp.appliedForestBonus = totalForestBonus;
+    }
+
     emp.nationalMaterials = Math.max(0, emp.nationalMaterials);
 
     // 2. Felicidad: Base 70%
     let happiness = 70;
+
+    // Bonificación de Decretos Cívicos y Alimentarios
+    if (emp.activeEdicts?.includes('edict_granary_reserves')) {
+      happiness += 5;
+    }
+    if (emp.activeEdicts?.includes('edict_grand_celebration')) {
+      happiness += 10;
+    }
 
     // Proyectos cívicos construidos en las ciudades
     Object.values(emp.colonizedTiles).forEach(t => {
@@ -909,16 +1088,23 @@ export class EmpireStorageService {
       const name = tile.countryName || 'Territorio Libre';
 
       if (!map[code]) {
+        const totalCountryTiles = geoGridService.getCountryTotalTiles(code) || 1;
+        const isAnnexed = (emp.annexedCountries || []).includes(code);
+
         map[code] = {
           countryCode: code,
           countryName: name,
           tileCount: 0,
+          totalCountryTiles,
+          controlPercentage: 0,
           population: 0,
           highestTier: 0,
           settlementsCount: 0,
           hasPort: false,
+          isAnnexed,
+          canClaimSovereignty: false,
           sovereigntyRank: 1,
-          rankLabel: '🥉 Reclamado'
+          rankLabel: '🥉 Colono'
         };
       }
 
@@ -935,21 +1121,56 @@ export class EmpireStorageService {
     });
 
     Object.keys(map).forEach(code => {
-      map[code].population = emp.localCensusByCountry[code] || (map[code].settlementsCount * 15);
+      const info = map[code];
+      info.population = emp.localCensusByCountry[code] || (info.settlementsCount * 15);
+      info.controlPercentage = Math.min(100, Math.round((info.tileCount / info.totalCountryTiles) * 100));
+      info.isAnnexed = (emp.annexedCountries || []).includes(code);
 
-      if (map[code].tileCount >= 15 && map[code].highestTier >= 3) {
-        map[code].sovereigntyRank = 3;
-        map[code].rankLabel = '🥇 Soberanía Dorada';
-      } else if (map[code].tileCount >= 5 && map[code].highestTier >= 2) {
-        map[code].sovereigntyRank = 2;
-        map[code].rankLabel = '🥈 Desarrollado';
+      // Requisito estricto de Soberanía Dorada: >=90% de casillas Y al menos una Megaciudad (Nivel 4)
+      const meetsSovereigntyReqs = info.controlPercentage >= 90 && info.highestTier >= 4;
+      info.canClaimSovereignty = !info.isAnnexed && meetsSovereigntyReqs;
+
+      if (info.isAnnexed) {
+        info.sovereigntyRank = 3;
+        info.rankLabel = '🥇 Soberanía Dorada';
+      } else if (info.tileCount >= 5 && info.highestTier >= 2) {
+        info.sovereigntyRank = 2;
+        info.rankLabel = '🥈 Desarrollado';
       } else {
-        map[code].sovereigntyRank = 1;
-        map[code].rankLabel = '🥉 Reclamado';
+        info.sovereigntyRank = 1;
+        info.rankLabel = '🥉 Colono';
       }
     });
 
     return Object.values(map).sort((a, b) => b.tileCount - a.tileCount);
+  }
+
+  /**
+   * Reclama formalmente la soberanía y territorio propio de un país (requiere >= 90% casillas y Megaciudad nivel 4)
+   */
+  public claimCountrySovereignty(countryCode: string): { success: boolean; error?: string } {
+    const stats = this.getSovereigntyStats().find(s => s.countryCode === countryCode);
+    if (!stats) return { success: false, error: 'No tienes presencia colonial en este país.' };
+    if (stats.isAnnexed) return { success: false, error: 'Este territorio ya es oficialmente tuyo en plena soberanía.' };
+    
+    if (stats.controlPercentage < 90) {
+      return { success: false, error: `Se requiere controlar al menos el 90% del país (actual: ${stats.controlPercentage}%).` };
+    }
+    if (stats.highestTier < 4) {
+      return { success: false, error: 'Se requiere poseer al menos una 🌆 Megaciudad (Nivel 4) en este territorio.' };
+    }
+
+    const emp = this.getEmpire();
+    if (!emp.annexedCountries) emp.annexedCountries = [];
+    if (!emp.annexedCountries.includes(countryCode)) {
+      emp.annexedCountries.push(countryCode);
+    }
+
+    empireSound.playMegacityFanfare();
+    this.recalculateMetrics();
+    this.debouncedSave(true);
+    this.notify();
+    return { success: true };
   }
 
   /**
@@ -1648,6 +1869,24 @@ export class EmpireStorageService {
       case 'mission_8_wonder':
         return Boolean(this.empire.annexedCountries && this.empire.annexedCountries.length > 0) ||
                tiles.some(t => t.nationalWonderBuilt || t.settlementTier === 4);
+      case 'mission_9_crop_tier3':
+        return tiles.some(t => t.role === 'crops' && (t.resourceTier || 1) >= 3);
+      case 'mission_10_quarry_tier3':
+        return tiles.some(t => t.role === 'resources' && (t.resourceTier || 1) >= 3);
+      case 'mission_11_megacity':
+        return tiles.some(t => (t.role === 'settlement' || (t.settlementTier && t.settlementTier >= 4)) && (t.settlementTier || 1) >= 4);
+      case 'mission_12_intercontinental': {
+        const continents = new Set<string>();
+        tiles.forEach(t => {
+          if (t.countryCode) {
+            const country = countriesService.getCountryByCode(t.countryCode);
+            if (country?.continent) continents.add(country.continent);
+          }
+        });
+        return continents.size >= 2;
+      }
+      case 'mission_13_sovereignty':
+        return Boolean(this.empire.annexedCountries && this.empire.annexedCountries.length > 0);
       default:
         return false;
     }
@@ -1688,16 +1927,101 @@ export class EmpireStorageService {
     this.notify();
     return true;
   }
+
+  /**
+   * Obtiene la lista de todos los decretos y leyes imperiales activos
+   */
+  public getActiveEdicts(): ImperialEdict[] {
+    const activeIds = this.empire?.activeEdicts || [];
+    return IMPERIAL_EDICTS_CATALOG.filter(e => activeIds.includes(e.id));
+  }
+
+  /**
+   * Comprueba si un decreto específico está promulgado y activo
+   */
+  public isEdictActive(edictId: string): boolean {
+    return Boolean(this.empire?.activeEdicts?.includes(edictId));
+  }
+
+  /**
+   * Comprueba si se cumplen las condiciones para promulgar un decreto
+   */
+  public canUnlockEdict(edictId: string): { canUnlock: boolean; error?: string } {
+    if (!this.empire) return { canUnlock: false, error: 'Imperio no inicializado.' };
+    const edict = IMPERIAL_EDICTS_CATALOG.find(e => e.id === edictId);
+    if (!edict) return { canUnlock: false, error: 'Decreto no encontrado en el catálogo imperial.' };
+
+    if (this.isEdictActive(edictId)) {
+      return { canUnlock: false, error: 'Este decreto ya está promulgado y activo.' };
+    }
+
+    if (this.empire.totalPopulation < edict.minPopulation) {
+      return { canUnlock: false, error: `Requiere al menos ${edict.minPopulation} habitantes (tienes ${this.empire.totalPopulation}).` };
+    }
+
+    if (this.empire.coins < edict.coinCost) {
+      return { canUnlock: false, error: `Monedas insuficientes. Requiere ${edict.coinCost} 🪙 (tienes ${this.empire.coins} 🪙).` };
+    }
+
+    if (edict.materialCost && this.empire.nationalMaterials < edict.materialCost) {
+      return { canUnlock: false, error: `Materiales insuficientes. Requiere ${edict.materialCost} 🧱.` };
+    }
+
+    return { canUnlock: true };
+  }
+
+  /**
+   * Promulga un decreto imperial si se cumplen los requisitos
+   */
+  public unlockEdict(edictId: string): { success: boolean; error?: string } {
+    const check = this.canUnlockEdict(edictId);
+    if (!check.canUnlock) {
+      return { success: false, error: check.error };
+    }
+
+    const emp = this.getEmpire();
+    const edict = IMPERIAL_EDICTS_CATALOG.find(e => e.id === edictId)!;
+
+    emp.coins -= edict.coinCost;
+    if (edict.materialCost) {
+      emp.nationalMaterials -= edict.materialCost;
+    }
+
+    if (!emp.activeEdicts) emp.activeEdicts = [];
+    emp.activeEdicts.push(edictId);
+
+    // Otorgar bonificación si aplica
+    if (edict.id === 'edict_naval_cartography') {
+      emp.freeExpeditions = (emp.freeExpeditions || 0) + 1;
+    }
+
+    empireSound.playUpgrade();
+    this.recalculateMetrics();
+    this.debouncedSave(true);
+    this.notify();
+    return { success: true };
+  }
+}
+
+export interface ResourceClusterInfo {
+  clusterSize: number;
+  bonusPct: number;
+  isLargeCluster: boolean;
+  memberTileIds: string[];
 }
 
 export interface CountrySovereigntyInfo {
   countryCode: string;
   countryName: string;
   tileCount: number;
+  totalCountryTiles: number;
+  controlPercentage: number;
   population: number;
   highestTier: number;
   settlementsCount: number;
   hasPort: boolean;
+  isAnnexed: boolean;
+  canClaimSovereignty: boolean;
   sovereigntyRank: 1 | 2 | 3;
   rankLabel: string;
 }

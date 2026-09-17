@@ -12,10 +12,7 @@ import {
   Lock, 
   Unlock, 
   CheckCircle2, 
-  ArrowRight,
-  Flame,
-  Zap,
-  HelpCircle
+  ArrowRight
 } from 'lucide-react';
 
 interface TributeMailboxModalProps {
@@ -82,83 +79,86 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
   const totalCollectedToday = 
     (econState.dailyChallengeClaimed ? 650 : 0) +
     (econState.taxChestClaimed ? 150 : 0) +
-    (econState.unclaimedWarLoot); // aprox recaudación diaria
+    (econState.unclaimedWarLoot);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none">
-      <div className="bg-zinc-950 border border-zinc-800 rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col scrollbar-thin scrollbar-thumb-zinc-800">
+      <div className="bg-[#0b0f17] border border-amber-500/40 rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col scrollbar-thin scrollbar-thumb-slate-700">
         
-        {/* Cabecera */}
-        <div className="p-5 sm:p-6 bg-gradient-to-b from-amber-500/10 via-zinc-900/40 to-transparent border-b border-zinc-800 flex items-center justify-between relative">
+        {/* Cabecera Imperial Dorada */}
+        <div className="p-4 sm:p-5 bg-gradient-to-r from-[#141b29] via-[#1a1c14] to-[#141b29] border-b border-slate-800 flex items-center justify-between relative shadow-md">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-              <Trophy className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/60 text-amber-300 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.25)]">
+              <Trophy className="w-5 h-5 text-amber-400" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-                Tributos y Tesoro Nacional
-                <span className="text-[11px] font-mono font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
-                  1.100 🪙/día
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-wider font-sans">
+                  Tesoro Nacional
+                </h2>
+                <span className="text-xs font-mono text-amber-300 font-bold bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-400/40">
+                  1.100 🪙 / día
                 </span>
-              </h2>
-              <p className="text-xs text-zinc-400">
-                Financia la expansión de tu Imperio jugando el Desafío Diario y Duelos 1v1
+              </div>
+              <p className="text-[11px] text-slate-300 mt-0.5 font-sans">
+                Financia la expansión de tu imperio jugando el Desafío Diario y Duelos 1v1
               </p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-1.5 text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-800 transition-colors"
+            className="tactical-btn p-1.5 text-slate-400 hover:text-white rounded-lg"
+            title="Cerrar Tesoro Nacional"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Notificación de feedback */}
         {claimFeedback && (
-          <div className="mx-5 mt-4 p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-2 animate-in slide-in-from-top-2">
-            <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="mx-4 sm:mx-5 mt-3 p-3 rounded-xl bg-amber-500/15 border border-amber-400/60 text-amber-200 text-xs font-bold flex items-center gap-2 animate-in slide-in-from-top-2 shadow-lg">
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
             <span>{claimFeedback}</span>
           </div>
         )}
 
         {/* Contenido Principal */}
-        <div className="p-5 sm:p-6 space-y-4">
+        <div className="p-4 sm:p-5 space-y-3.5">
 
           {/* BENEFICIOS DE ESPECIALIZACIONES INSULARES */}
           {(bankCount > 0 || resortCount > 0 || navalHubCount > 0) && (
-            <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-3.5 space-y-2">
+            <div className="tactical-card p-3 space-y-2 border-slate-700/80 bg-[#0e1524]">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5 uppercase tracking-wider font-sans">
                   <span>🏝️</span>
                   <span>Especializaciones Insulares Activas</span>
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
                 {bankCount > 0 && (
-                  <div className="bg-zinc-900/80 p-2 rounded-xl border border-zinc-800 flex items-center gap-2">
-                    <span className="text-base">🏦</span>
+                  <div className="p-2.5 rounded-lg bg-amber-950/30 border border-amber-500/40 flex items-center gap-2">
+                    <span className="text-xl">🏦</span>
                     <div>
-                      <span className="font-bold text-white block">{bankCount} Banco{bankCount > 1 ? 's' : ''} Offshore</span>
-                      <span className="text-amber-400 font-mono text-[10px]">+{bankCount * 15}% oro en duelos y baúl</span>
+                      <span className="font-bold text-amber-200 block">{bankCount} Banco{bankCount > 1 ? 's' : ''} Offshore</span>
+                      <span className="text-amber-400/80 font-mono text-[10px]">+{bankCount * 15}% oro en duelos</span>
                     </div>
                   </div>
                 )}
                 {resortCount > 0 && (
-                  <div className="bg-zinc-900/80 p-2 rounded-xl border border-zinc-800 flex items-center gap-2">
-                    <span className="text-base">🏖️</span>
+                  <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/40 flex items-center gap-2">
+                    <span className="text-xl">🏖️</span>
                     <div>
-                      <span className="font-bold text-white block">{resortCount} Resort{resortCount > 1 ? 's' : ''}</span>
-                      <span className="text-emerald-400 font-mono text-[10px]">+{resortCount * 40}🪙/día · +{resortCount * 10}% Felicidad</span>
+                      <span className="font-bold text-emerald-200 block">{resortCount} Resort{resortCount > 1 ? 's' : ''}</span>
+                      <span className="text-emerald-400/80 font-mono text-[10px]">+{resortCount * 40}🪙/día</span>
                     </div>
                   </div>
                 )}
                 {navalHubCount > 0 && (
-                  <div className="bg-zinc-900/80 p-2 rounded-xl border border-zinc-800 flex items-center gap-2">
-                    <span className="text-base">⚓</span>
+                  <div className="p-2.5 rounded-lg bg-sky-950/30 border border-sky-500/40 flex items-center gap-2">
+                    <span className="text-xl">⚓</span>
                     <div>
-                      <span className="font-bold text-white block">{navalHubCount} Hub{navalHubCount > 1 ? 's' : ''} Naval{navalHubCount > 1 ? 'es' : ''}</span>
-                      <span className="text-blue-300 font-mono text-[10px]">Escala y expediciones gratis</span>
+                      <span className="font-bold text-sky-200 block">{navalHubCount} Hub{navalHubCount > 1 ? 's' : ''} Naval{navalHubCount > 1 ? 'es' : ''}</span>
+                      <span className="text-sky-400/80 font-mono text-[10px]">Escala y barcos gratis</span>
                     </div>
                   </div>
                 )}
@@ -167,37 +167,39 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
           )}
 
           {/* TARJETA 1: DESAFÍO DIARIO (650 🪙) */}
-          <div className="bg-zinc-900/70 border border-zinc-800 rounded-2xl p-4 transition-all hover:border-zinc-700 space-y-3">
+          <div className="p-4 rounded-xl border border-amber-500/40 bg-[#131b29] space-y-3 shadow-lg">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-                  <Calendar className="w-5 h-5" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/50 text-amber-300 flex items-center justify-center text-xl shrink-0 shadow-sm">
+                  <Calendar className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    Desafío Diario
-                    <span className="text-xs font-mono font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
-                      650 🪙
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-black text-white uppercase tracking-wide font-sans">
+                      Desafío Diario
+                    </h3>
+                    <span className="text-xs font-mono text-amber-300 font-bold bg-amber-500/20 px-2 py-0.2 rounded border border-amber-400/40">
+                      +650 🪙
                     </span>
-                  </h3>
-                  <p className="text-xs text-zinc-400">
-                    El gran presupuesto nacional otorgado por tu racha geográfica
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Presupuesto nacional garantizado por tu racha geográfica diaria
                   </p>
                 </div>
               </div>
 
               {econState.dailyChallengeClaimed ? (
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shrink-0">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Reclamado
+                <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-700/50 flex items-center gap-1.5 shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  Cobrado
                 </span>
               ) : isDailyDone ? (
                 <button
                   onClick={handleClaimDaily}
-                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center gap-1.5 transition-all shrink-0 animate-pulse"
+                  className="tactical-btn-cta px-3.5 py-2 text-xs flex items-center gap-1.5 shrink-0 text-black animate-pulse rounded-lg"
                 >
-                  <Coins className="w-3.5 h-3.5" />
-                  Reclamar 650 🪙
+                  <Coins className="w-4 h-4" />
+                  <span>Reclamar 650 🪙</span>
                 </button>
               ) : (
                 <button
@@ -205,35 +207,39 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
                     onClose();
                     if (onNavigateToDaily) onNavigateToDaily();
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs border border-zinc-700 flex items-center gap-1.5 transition-all shrink-0"
+                  className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/60 shrink-0 shadow-sm"
                 >
                   <span>Jugar Ahora</span>
-                  <ArrowRight className="w-3 h-3 text-zinc-400" />
+                  <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
                 </button>
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-zinc-800/80 text-[11px] text-zinc-500">
-              <span>Estado hoy: {isDailyDone ? '✅ Completado con éxito' : '⏳ Pendiente de jugar'}</span>
-              <span>1 vez al día</span>
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] font-mono">
+              <span className={isDailyDone ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
+                Estado: {isDailyDone ? 'Completado ✓' : 'Pendiente de jugar hoy'}
+              </span>
+              <span className="text-amber-400/80">1 vez cada 24 horas</span>
             </div>
           </div>
 
           {/* TARJETA 2: BUZÓN DE BOTÍN DE GUERRA (RANKEDS 1v1) */}
-          <div className="bg-zinc-900/70 border border-zinc-800 rounded-2xl p-4 transition-all hover:border-zinc-700 space-y-3">
+          <div className="p-4 rounded-xl border border-purple-500/40 bg-[#161324] space-y-3 shadow-lg">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
-                  <Swords className="w-5 h-5" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/50 text-purple-300 flex items-center justify-center text-xl shrink-0 shadow-sm">
+                  <Swords className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    Buzón de Guerra (Rankeds 1v1)
-                    <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-400/10 px-2 py-0.5 rounded-md border border-cyan-400/20">
-                      300 🪙/día
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-black text-white uppercase tracking-wide font-sans">
+                      Buzón de Guerra (1v1)
+                    </h3>
+                    <span className="text-xs font-mono text-purple-300 font-bold bg-purple-500/20 px-2 py-0.2 rounded border border-purple-400/40">
+                      300 🪙 / día
                     </span>
-                  </h3>
-                  <p className="text-xs text-zinc-400">
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
                     Gana +75 🪙 por victoria (+125 con racha) en tus primeros 5 duelos
                   </p>
                 </div>
@@ -242,10 +248,10 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
               {econState.unclaimedWarLoot > 0 ? (
                 <button
                   onClick={handleClaimWarLoot}
-                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-xs shadow-lg shadow-amber-600/30 flex items-center gap-1.5 transition-all shrink-0 animate-pulse"
+                  className="tactical-btn-cta px-3.5 py-2 text-xs flex items-center gap-1.5 shrink-0 text-black animate-pulse rounded-lg"
                 >
-                  <Coins className="w-3.5 h-3.5" />
-                  Reclamar {econState.unclaimedWarLoot} 🪙
+                  <Coins className="w-4 h-4" />
+                  <span>Reclamar {econState.unclaimedWarLoot} 🪙</span>
                 </button>
               ) : (
                 <button
@@ -253,120 +259,116 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
                     onClose();
                     if (onNavigateToRanked) onNavigateToRanked();
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs border border-zinc-700 flex items-center gap-1.5 transition-all shrink-0"
+                  className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/60 shrink-0 shadow-sm"
                 >
                   <span>Ir a Duelos</span>
-                  <ArrowRight className="w-3 h-3 text-zinc-400" />
+                  <ArrowRight className="w-3.5 h-3.5 text-purple-400" />
                 </button>
               )}
             </div>
 
             {/* Progreso del cupo de 5 duelos óptimos */}
             <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400">Cupo óptimo diario:</span>
-                <span className="font-mono font-bold text-white">
+              <div className="flex items-center justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Cupo óptimo diario:</span>
+                <span className="font-bold text-purple-300">
                   {Math.min(5, econState.rankedPlayedToday)} / 5 duelos
                 </span>
               </div>
-              <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 transition-all duration-500 rounded-full"
+                  className="h-full bg-gradient-to-r from-purple-500 to-amber-400 transition-all duration-300"
                   style={{ width: `${Math.min(100, (econState.rankedPlayedToday / 5) * 100)}%` }}
                 />
               </div>
             </div>
 
             {/* Resumen de botín acumulado y botón de simulación */}
-            <div className="flex items-center justify-between pt-1 border-t border-zinc-800/80 text-[11px] text-zinc-400">
-              <div className="flex items-center gap-1 text-amber-400 font-bold">
-                <Coins className="w-3.5 h-3.5" />
-                <span>En el buzón: {econState.unclaimedWarLoot} 🪙</span>
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] font-mono">
+              <div className="flex items-center gap-1.5 text-amber-300 font-bold">
+                <Coins className="w-3.5 h-3.5 text-amber-400" />
+                <span>En buzón: {econState.unclaimedWarLoot} 🪙</span>
               </div>
               <button
                 onClick={handleSimulateWin}
-                className="text-[10px] text-zinc-500 hover:text-zinc-300 underline transition-colors"
+                className="text-[11px] text-amber-400 hover:text-amber-200 underline transition-colors"
                 title="Simula un duelo ganado para probar la economía"
               >
-                + Simular Duelo (+75🪙)
+                + Simular Victoria (+75🪙)
               </button>
             </div>
           </div>
 
           {/* TARJETA 3: BAÚL DE IMPUESTOS (150 🪙) */}
-          <div className="bg-zinc-900/70 border border-zinc-800 rounded-2xl p-4 transition-all hover:border-zinc-700 space-y-3">
+          <div className="p-4 rounded-xl border border-emerald-500/40 bg-[#121c1a] space-y-3 shadow-lg">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className={`p-2 rounded-xl border ${
-                  econState.taxChestClaimed
-                    ? 'bg-zinc-800 border-zinc-700 text-zinc-500'
-                    : econState.rankedPlayedToday >= 5
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
-                    : 'bg-zinc-800/60 border-zinc-700/60 text-zinc-500'
-                }`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 flex items-center justify-center text-xl shrink-0 shadow-sm">
                   {econState.taxChestClaimed ? (
                     <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                   ) : econState.rankedPlayedToday >= 5 ? (
-                    <Unlock className="w-5 h-5 text-amber-400 animate-bounce" />
+                    <Unlock className="w-5 h-5 text-emerald-300" />
                   ) : (
-                    <Lock className="w-5 h-5" />
+                    <Lock className="w-5 h-5 text-slate-500" />
                   )}
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    Baúl de Impuestos Imperial
-                    <span className="text-xs font-mono font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
-                      {taxChestAmount} 🪙
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-black text-white uppercase tracking-wide font-sans">
+                      Baúl de Impuestos
+                    </h3>
+                    <span className="text-xs font-mono text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.2 rounded border border-emerald-400/40">
+                      +{taxChestAmount} 🪙
                     </span>
-                  </h3>
-                  <p className="text-xs text-zinc-400">
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
                     Se desbloquea al completar tus 5 partidas Rankeds del día
-                    {bankCount > 0 && ` · +${bankCount * 15}% por ${bankCount} Banco(s) Offshore`}
+                    {bankCount > 0 && ` · +${bankCount * 15}% por Bancos Insulares`}
                   </p>
                 </div>
               </div>
 
               {econState.taxChestClaimed ? (
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shrink-0">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Cobrado
+                <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-700/50 flex items-center gap-1.5 shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  Recaudado
                 </span>
               ) : econState.rankedPlayedToday >= 5 ? (
                 <button
                   onClick={handleClaimTaxChest}
-                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-xs shadow-lg shadow-amber-600/30 flex items-center gap-1.5 transition-all shrink-0 animate-pulse"
+                  className="tactical-btn-cta px-3.5 py-2 text-xs flex items-center gap-1.5 shrink-0 text-black animate-pulse rounded-lg"
                 >
-                  <Unlock className="w-3.5 h-3.5" />
-                  Abrir Baúl ({taxChestAmount} 🪙)
+                  <Unlock className="w-4 h-4" />
+                  <span>Abrir Baúl ({taxChestAmount} 🪙)</span>
                 </button>
               ) : (
-                <span className="text-xs font-mono text-zinc-500 bg-zinc-800/80 px-2.5 py-1 rounded-lg border border-zinc-700/60 flex items-center gap-1 shrink-0">
-                  <Lock className="w-3 h-3" />
+                <span className="text-xs font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 flex items-center gap-1.5 shrink-0">
+                  <Lock className="w-3.5 h-3.5" />
                   {5 - econState.rankedPlayedToday} restantes
                 </span>
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t border-zinc-800/80 text-[11px] text-zinc-500">
-              <span>
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] font-mono">
+              <span className={econState.rankedPlayedToday >= 5 ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
                 {econState.rankedPlayedToday >= 5 
-                  ? '🔓 Candado abierto: ¡listo para recaudar!'
-                  : `🔒 Juega ${5 - econState.rankedPlayedToday} duelo(s) más para abrir el candado`}
+                  ? '¡Listo para recaudar!'
+                  : `Juega ${5 - econState.rankedPlayedToday} duelo(s) más para abrir`}
               </span>
-              <span>{taxChestAmount} 🪙 {bankCount > 0 ? `(+${bankCount * 15}% Bancos)` : 'fijas'}</span>
+              <span className="text-emerald-400 font-bold">{taxChestAmount} 🪙 {bankCount > 0 ? `(+${bankCount * 15}% Bancos)` : 'fijas'}</span>
             </div>
           </div>
 
         </div>
 
         {/* Pie: Resumen total */}
-        <div className="p-4 bg-zinc-900/50 border-t border-zinc-800 flex items-center justify-between text-xs">
-          <span className="text-zinc-400">
-            Recaudación estimada del día: <strong className="text-amber-400 font-mono">{totalCollectedToday} / 1.100 🪙</strong>
+        <div className="p-4 bg-[#0d131f] border-t border-slate-800 flex items-center justify-between text-xs">
+          <span className="text-slate-300 font-mono text-xs">
+            Recaudación hoy: <strong className="text-amber-300 font-mono text-sm">{totalCollectedToday} / 1.100 🪙</strong>
           </span>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs transition-colors"
+            className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors border border-slate-700"
           >
             Cerrar
           </button>

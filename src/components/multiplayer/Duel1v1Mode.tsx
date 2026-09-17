@@ -395,7 +395,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full max-h-screen w-full gap-2 px-1 sm:px-2 py-1.5 overflow-hidden select-none">
+    <div className="flex flex-col h-full max-h-full w-full gap-1.5 px-0.5 sm:px-1.5 py-1 overflow-hidden select-none">
       {/* BANNER ÚNICO UNIFICADO (Mockup media_1789603786563.png) */}
       <div className="bg-[#12141c] border border-zinc-800/90 rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 shadow-2xl flex items-center justify-between gap-3 shrink-0 text-white select-none relative overflow-hidden">
         {/* Acabado sutil con resplandor morado/cyan a la izquierda */}

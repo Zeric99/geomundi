@@ -56,3 +56,64 @@
 .rsm-geography:focus {
   outline: none;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SISTEMA DE DISEÑO TÁCTICO DE ESTRATEGIA (MODO IMPERIOS / GEOSTRIKE)
+   Estética de videojuego 4X: Fondo pizarra profundo, acentos dorados y cobrizos,
+   botones con respuesta táctil y tarjetas limpias y visuales.
+   ══════════════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* Botón táctico universal (Pizarra táctica con relieve sobrio) */
+  .tactical-btn {
+    @apply relative inline-flex items-center justify-center gap-1.5 font-sans font-bold tracking-wider uppercase text-xs transition-all duration-100 select-none cursor-pointer rounded-md bg-[#161f30] hover:bg-[#1e2a40] text-slate-200 hover:text-white border border-slate-700/70 border-t-slate-600/60 border-b-black/80 shadow-sm active:translate-y-[1px] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none;
+  }
+
+  /* Botón de estado activo (Resalte de selección imperial en ámbar sobrio) */
+  .tactical-btn-active {
+    @apply relative inline-flex items-center justify-center gap-1.5 font-sans font-black tracking-wider uppercase text-xs transition-all duration-100 select-none cursor-pointer rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/60 shadow-[0_0_12px_rgba(245,158,11,0.2)] active:translate-y-[1px];
+  }
+
+  /* Botón de ejecución principal (CTA de juego: Anexar, Reclamar, Erigir) */
+  .tactical-btn-cta {
+    @apply relative inline-flex items-center justify-center gap-2 font-sans font-black tracking-wider uppercase text-xs transition-all duration-100 select-none cursor-pointer rounded-md bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-zinc-950 border border-amber-300/80 shadow-[0_3px_12px_rgba(245,158,11,0.25)] active:translate-y-[1px] disabled:opacity-35 disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-700 disabled:cursor-not-allowed disabled:pointer-events-none;
+  }
+
+  /* Botón sutil de utilidad / cabina */
+  .tactical-btn-subtle {
+    @apply relative inline-flex items-center justify-center gap-1.5 font-sans font-semibold text-xs transition-all duration-100 select-none cursor-pointer rounded-md bg-transparent hover:bg-slate-800/60 text-slate-400 hover:text-slate-200 border border-transparent hover:border-slate-700/60 active:translate-y-[1px];
+  }
+
+  /* Bahía de Instrumentación / Consola unificada */
+  .tactical-bay {
+    @apply flex items-center bg-[#0d131f]/90 border border-slate-800/90 rounded-md px-2.5 py-1 gap-2.5 shadow-inner;
+  }
+
+  /* Tarjeta de juego táctica con profundidad */
+  .tactical-card {
+    @apply bg-[#121824]/95 border border-slate-800/80 rounded-md p-3 transition-all duration-150;
+  }
+
+  /* Compatibilidad previa */
+  .game-btn {
+    @apply tactical-btn;
+  }
+  .game-btn-gold {
+    @apply tactical-btn-cta;
+  }
+  .game-btn-slate {
+    @apply tactical-btn;
+  }
+  .game-btn-indigo {
+    @apply tactical-btn;
+  }
+  .game-btn-emerald {
+    @apply tactical-btn-cta;
+  }
+  .game-bay {
+    @apply tactical-bay;
+  }
+  .game-chassis {
+    @apply bg-[#0c111a] border border-slate-800/90 shadow-2xl backdrop-blur-md;
+  }
+}
+

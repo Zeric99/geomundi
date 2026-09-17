@@ -764,7 +764,7 @@ export function App() {
 
   return (
     <div className={`relative flex flex-col bg-black text-slate-100 selection:bg-cyan-500 selection:text-slate-950 ${
-      isPlaying || activeTab === 'empires' ? 'h-screen max-h-screen overflow-hidden' : 'min-h-screen'
+      isPlaying || activeTab === 'empires' || activeDuelQuestions.length > 0 ? 'h-screen max-h-screen overflow-hidden' : 'min-h-screen'
     }`}>
       {/* Partículas de Polvo Estelar en Movimiento por Toda la Pantalla */}
       {!isInsideGame && <BackgroundStardust />}
@@ -800,17 +800,15 @@ export function App() {
         isInsideGame={isInsideGame}
       />
 
-      {/* Contenido Principal con Z-Index sólido */}
+      {/* Contenido Principal con Z-Index sólido y ajuste 100% sin scroll en duelos/juego */}
       <main className={`relative z-10 flex-1 min-h-0 ${
         activeTab === 'empires'
           ? 'w-full h-full p-0 overflow-hidden flex flex-col'
-          : `max-w-7xl w-full mx-auto flex flex-col ${
-              isPlaying
-                ? 'px-1 sm:px-2 pt-1 pb-1 overflow-hidden'
-                : isDailyChallengeActive
-                ? 'px-2 sm:px-4 pt-3 pb-24 md:pb-8 overflow-y-auto'
-                : 'px-4 sm:px-6 pt-6 sm:pt-8 pb-24 md:pb-8'
-            }`
+          : activeDuelQuestions.length > 0 || isPlaying
+          ? 'w-full h-full max-w-7xl mx-auto px-1 sm:px-2 py-1 overflow-hidden flex flex-col min-h-0'
+          : isDailyChallengeActive
+          ? 'max-w-7xl w-full mx-auto flex flex-col px-2 sm:px-4 pt-3 pb-24 md:pb-8 overflow-y-auto'
+          : 'max-w-7xl w-full mx-auto flex flex-col px-4 sm:px-6 pt-6 sm:pt-8 pb-24 md:pb-8'
       }`}>
         {/* PESTAÑA 1: UN JUGADOR (SINGLEPLAYER) */}
         {(activeTab === 'game' || activeTab === 'singleplayer') && (
@@ -1186,8 +1184,8 @@ export function App() {
         )}
       </React.Suspense>
 
-      {/* Pie de Página */}
-      {activeTab !== 'empires' && <Footer isCompact={isPlaying || activeDuelQuestions.length > 0} />}
+      {/* Pie de Página: Oculto en cualquier partida activa para garantizar 100% de pantalla sin scroll */}
+      {!isInsideGame && <Footer />}
     </div>
   );
 }

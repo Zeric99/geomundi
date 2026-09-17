@@ -53,8 +53,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <>
       <header className="sticky top-0 z-40 w-full bg-black border-b border-zinc-800 shadow-md shrink-0">
-        {/* Banner Superior Destacado del Modo Imperio (solo visible cuando no estamos en imperios) */}
-        {activeTab !== 'empires' && (
+        {/* Banner Superior Destacado del Modo Imperio (solo visible cuando no estamos en imperios y no estamos jugando) */}
+        {!isInsideGame && activeTab !== 'empires' && (
           <div 
             onClick={() => onChangeTab('empires')}
             className="w-full bg-gradient-to-r from-amber-600/30 via-indigo-600/40 to-purple-600/30 border-b border-indigo-500/40 px-3 py-1.5 flex items-center justify-center gap-2 cursor-pointer hover:bg-indigo-600/30 transition-all text-xs text-zinc-100 font-bold shadow-inner group"
@@ -73,7 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
 
         <div className={`w-full px-3 sm:px-6 lg:px-8 xl:px-10 flex items-center justify-between gap-3 lg:gap-6 ${
-          activeTab === 'empires' ? 'h-14 sm:h-16' : 'h-16 sm:h-20'
+          isInsideGame || activeTab === 'empires' ? 'h-13 sm:h-14' : 'h-16 sm:h-20'
         }`}>
           {/* Logo & Marca */}
           <div

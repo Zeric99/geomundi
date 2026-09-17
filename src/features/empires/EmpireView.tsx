@@ -10,6 +10,7 @@ import { TributeMailboxModal } from './components/TributeMailboxModal';
 import { SovereigntyModal } from './components/SovereigntyModal';
 import { LaunchExpeditionModal } from './components/LaunchExpeditionModal';
 import { EmpireRightSidebar } from './components/EmpireRightSidebar';
+import { EmpireBottomHUD } from './components/EmpireBottomHUD';
 import { Loader2 } from 'lucide-react';
 
 interface EmpireViewProps {
@@ -28,8 +29,8 @@ export const EmpireView: React.FC<EmpireViewProps> = ({
   const [isTributeModalOpen, setIsTributeModalOpen] = useState(false);
   const [isSovereigntyModalOpen, setIsSovereigntyModalOpen] = useState(false);
   const [isGridReady, setIsGridReady] = useState(false);
-  const [activeRightTab, setActiveRightTab] = useState<'missions' | 'tile'>('missions');
-  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
+  const [activeRightTab, setActiveRightTab] = useState<'missions' | 'edicts' | 'tile'>('missions');
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
 
   // Estados de Fletado y Navegación Marítima (Fase 4)
   const [launchingPortId, setLaunchingPortId] = useState<string | null>(null);
@@ -56,8 +57,39 @@ export const EmpireView: React.FC<EmpireViewProps> = ({
   }, []);
 
   const handleSelectTile = (tile: GridTile | null) => {
-    setSelectedTile(tile);
     if (tile && empire.capitalTileId) {
+      setSelectedTile(tile);
+      setActiveRightTab('tile');
+      setIsRightSidebarCollapsed(false);
+    } else {
+      // Clic en el océano o fondo del mapa: deseleccionar casilla y cerrar panel lateral
+      setSelectedTile(null);
+      setIsRightSidebarCollapsed(true);
+    }
+  };
+
+  const handleToggleMissions = () => {
+    if (!isRightSidebarCollapsed && activeRightTab === 'missions') {
+      setIsRightSidebarCollapsed(true);
+    } else {
+      setActiveRightTab('missions');
+      setIsRightSidebarCollapsed(false);
+    }
+  };
+
+  const handleToggleEdicts = () => {
+    if (!isRightSidebarCollapsed && activeRightTab === 'edicts') {
+      setIsRightSidebarCollapsed(true);
+    } else {
+      setActiveRightTab('edicts');
+      setIsRightSidebarCollapsed(false);
+    }
+  };
+
+  const handleToggleTile = () => {
+    if (!isRightSidebarCollapsed && activeRightTab === 'tile') {
+      setIsRightSidebarCollapsed(true);
+    } else {
       setActiveRightTab('tile');
       setIsRightSidebarCollapsed(false);
     }
@@ -82,13 +114,6 @@ export const EmpireView: React.FC<EmpireViewProps> = ({
         empire={empire}
         cameraMode={cameraMode}
         onToggleCameraMode={setCameraMode}
-        onOpenTributes={() => setIsTributeModalOpen(true)}
-        onOpenSovereignty={() => setIsSovereigntyModalOpen(true)}
-        activeRightTab={activeRightTab}
-        onSelectRightTab={(tab) => {
-          setActiveRightTab(tab);
-          setIsRightSidebarCollapsed(false);
-        }}
         selectedTile={selectedTile}
         isRightSidebarCollapsed={isRightSidebarCollapsed}
         onToggleRightSidebar={() => setIsRightSidebarCollapsed(prev => !prev)}
@@ -119,6 +144,23 @@ export const EmpireView: React.FC<EmpireViewProps> = ({
           ) : (
             <EmpireGlobe3D empire={empire} />
           )}
+
+          {/* HUD Inferior Centrado Flotante: Consola Imperial con Misiones, Decretos, Tesoro y Naciones */}
+          <EmpireBottomHUD
+            empire={empire}
+            activeRightTab={activeRightTab}
+            isRightSidebarCollapsed={isRightSidebarCollapsed}
+            selectedTile={selectedTile}
+            onToggleMissions={handleToggleMissions}
+            onToggleEdicts={handleToggleEdicts}
+            onOpenTributes={() => setIsTributeModalOpen(true)}
+            onOpenSovereignty={() => setIsSovereigntyModalOpen(true)}
+            onToggleTile={handleToggleTile}
+            onDeselectTile={() => {
+              setSelectedTile(null);
+              setIsRightSidebarCollapsed(true);
+            }}
+          />
         </div>
 
         {/* Panel Lateral Derecho: Misiones Guiadas y Gestión Fija de Casillas (Fuera del Canvas) */}
@@ -129,7 +171,7 @@ export const EmpireView: React.FC<EmpireViewProps> = ({
           selectedTile={selectedTile}
           onCloseTile={() => {
             setSelectedTile(null);
-            setActiveRightTab('missions');
+            setIsRightSidebarCollapsed(true);
           }}
           onStartNavalExpedition={(originTileId) => {
             setSelectedTile(null);

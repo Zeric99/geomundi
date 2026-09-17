@@ -2,7 +2,8 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { UserEmpire, GridTile, getCountryWonder, getTileVisualColor } from '../types';
 import { geoGridService, GRID_COLS, GRID_ROWS } from '../services/geoGridService';
 import { empireStorageService } from '../services/empireStorageService';
-import { Compass, Anchor } from 'lucide-react';
+import { empireSound } from '../services/empireSoundService';
+import { Compass, Anchor, Coins } from 'lucide-react';
 
 interface EmpireTacticalCanvasProps {
   empire: UserEmpire;
@@ -336,8 +337,8 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
     }
 
     // 3. Casillas adyacentes comprables (Azul sutil de expansión táctica)
+    const buyableAdjacentIds = new Set<string>();
     if (empire.capitalTileId) {
-      const buyableAdjacentIds = new Set<string>();
       Object.keys(empire.colonizedTiles).forEach(ownedId => {
         const adjs = geoGridService.getAdjacentLandTiles(ownedId);
         adjs.forEach(adj => {
@@ -372,7 +373,7 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
       if (sx + tileSize < 0 || sx > width || sy + tileSize < 0 || sy > height) return;
 
       // Relleno temático de la casilla según zonificación:
-      // Granjas = Amarillo trigo, Bosques/Canteras = Verde, Ciudades = Escala de grises por nivel
+      // Granjas = Amarillo trigo, Bosques/Canteras = Verde, Ciudades = Tonos marrones terrosos por nivel
       const tileColor = getTileVisualColor(colData);
       ctx.fillStyle = tileColor;
       ctx.fillRect(sx, sy, tileSize, tileSize);
@@ -457,6 +458,84 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
         }
       }
     });
+
+    // 4b. Fronteras internacionales gruesas sobre casillas colonizadas y de expansión táctica
+    const borderEdges = new Set<string>();
+    const tilesToCheck = new Set<string>(Object.keys(empire.colonizedTiles));
+    if (empire.capitalTileId) {
+      buyableAdjacentIds.forEach(id => tilesToCheck.add(id));
+    }
+
+    tilesToCheck.forEach(tileId => {
+      const tile = geoGridService.getTile(tileId);
+      if (!tile || !tile.countryCode) return;
+
+      // Vecino Norte
+      if (tile.y > 0) {
+        const topTile = geoGridService.getTileByXY(tile.x, tile.y - 1);
+        if (topTile && topTile.countryCode && topTile.countryCode !== tile.countryCode) {
+          borderEdges.add(`H:${tile.x},${tile.y}`);
+        }
+      }
+      // Vecino Sur
+      if (tile.y + 1 < GRID_ROWS) {
+        const bottomTile = geoGridService.getTileByXY(tile.x, tile.y + 1);
+        if (bottomTile && bottomTile.countryCode && bottomTile.countryCode !== tile.countryCode) {
+          borderEdges.add(`H:${tile.x},${tile.y + 1}`);
+        }
+      }
+      // Vecino Oeste
+      if (tile.x > 0) {
+        const leftTile = geoGridService.getTileByXY(tile.x - 1, tile.y);
+        if (leftTile && leftTile.countryCode && leftTile.countryCode !== tile.countryCode) {
+          borderEdges.add(`V:${tile.x},${tile.y}`);
+        }
+      }
+      // Vecino Este
+      if (tile.x + 1 < GRID_COLS) {
+        const rightTile = geoGridService.getTileByXY(tile.x + 1, tile.y);
+        if (rightTile && rightTile.countryCode && rightTile.countryCode !== tile.countryCode) {
+          borderEdges.add(`V:${tile.x + 1},${tile.y}`);
+        }
+      }
+    });
+
+    if (borderEdges.size > 0) {
+      ctx.save();
+      ctx.strokeStyle = '#000000';
+      const borderThickness = Math.max(2.5, Math.min(4, Math.round(tileSize * 0.18)));
+      ctx.lineWidth = borderThickness;
+      ctx.lineCap = 'square';
+      ctx.beginPath();
+
+      borderEdges.forEach(edgeKey => {
+        const type = edgeKey[0];
+        const commaIdx = edgeKey.indexOf(',');
+        const gx = parseInt(edgeKey.substring(2, commaIdx), 10);
+        const gy = parseInt(edgeKey.substring(commaIdx + 1), 10);
+
+        if (type === 'H') {
+          const sx1 = camX + gx * tileSize;
+          const sx2 = sx1 + tileSize;
+          const sy = camY + gy * tileSize;
+          if (sy >= -borderThickness && sy <= height + borderThickness && sx2 >= 0 && sx1 <= width) {
+            ctx.moveTo(sx1, sy);
+            ctx.lineTo(sx2, sy);
+          }
+        } else {
+          const sx = camX + gx * tileSize;
+          const sy1 = camY + gy * tileSize;
+          const sy2 = sy1 + tileSize;
+          if (sx >= -borderThickness && sx <= width + borderThickness && sy2 >= 0 && sy1 <= height) {
+            ctx.moveTo(sx, sy1);
+            ctx.lineTo(sx, sy2);
+          }
+        }
+      });
+
+      ctx.stroke();
+      ctx.restore();
+    }
 
     // 5. Casilla actualmente seleccionada (resaltado dorado brillante)
     if (selectedTile) {
@@ -866,6 +945,68 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
     }));
   };
 
+  // Menú Rápido Flotante de Construcción Inmediata sobre la casilla pulsada
+  const isAdjacentToOwned = Boolean(
+    selectedTile &&
+    geoGridService.getAdjacentLandTiles(selectedTile.id).some(adj => empire.colonizedTiles[adj.id])
+  );
+
+  const canQuickBuild = Boolean(
+    empire.capitalTileId &&
+    selectedTile &&
+    !expeditionOriginTileId &&
+    !empire.colonizedTiles[selectedTile.id] &&
+    isAdjacentToOwned
+  );
+
+  // Lógica de Islas pequeñas (solo 1 asentamiento por grupo de isla)
+  const islandTiles = selectedTile?.islandGroupId ? geoGridService.getTilesByIslandGroup(selectedTile.islandGroupId) : [];
+  const islandSettlement = islandTiles.find(t => {
+    const col = empire.colonizedTiles[t.id];
+    return col && (col.role === 'settlement' || (col.settlementTier && col.settlementTier > 0));
+  });
+  const isSecondaryIslandTile = Boolean(selectedTile?.isSmallIsland && islandSettlement && islandSettlement.id !== selectedTile?.id);
+
+  const nextTileCost = canQuickBuild ? empireStorageService.getNextTileCost() : 0;
+  const hasCoins = empire.coins >= nextTileCost;
+  const hasMaterialsForVillage = empire.nationalMaterials >= 15;
+  const hasFoodForVillage = empire.nationalFood >= 7;
+
+  const canBuildSettlement = !isSecondaryIslandTile && hasCoins && hasMaterialsForVillage && hasFoodForVillage;
+  const canBuildCrops = hasCoins;
+  const canBuildResources = hasCoins;
+
+  const handleQuickBuild = (role: 'settlement' | 'crops' | 'resources') => {
+    if (!selectedTile) return;
+    if (empireStorageService.buyTile(selectedTile.id, role)) {
+      empireSound.playBuild();
+      try {
+        localStorage.setItem('geostrike_last_annex_role', role);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  // Coordenadas en pantalla de la casilla seleccionada para el menú flotante
+  const currentTileSize = TILE_BASE_SIZE * camera.zoom;
+  const screenTileX = selectedTile ? camera.x + (selectedTile.x + 0.5) * currentTileSize : 0;
+  const screenTileY = selectedTile ? camera.y + selectedTile.y * currentTileSize : 0;
+  const canvasW = canvasRef.current?.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 800);
+  const canvasH = canvasRef.current?.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 600);
+
+  const isQuickMenuVisible = canQuickBuild && (
+    screenTileX >= -100 &&
+    screenTileX <= canvasW + 100 &&
+    screenTileY >= -100 &&
+    screenTileY <= canvasH + 100
+  );
+
+  const isNearTopEdge = screenTileY < 65;
+  const clampedX = Math.max(90, Math.min(canvasW - 90, screenTileX));
+  const quickMenuTop = isNearTopEdge ? screenTileY + currentTileSize + 10 : screenTileY - 10;
+  const quickMenuTransform = isNearTopEdge ? 'translate(-50%, 0)' : 'translate(-50%, -100%)';
+
   return (
     <div className="relative w-full h-full overflow-hidden select-none bg-zinc-950">
       <canvas
@@ -984,6 +1125,110 @@ export const EmpireTacticalCanvas: React.FC<EmpireTacticalCanvasProps> = ({
           <span className="text-xs sm:text-sm font-bold">
             Haz clic en cualquier país del mundo para fundar tu Capital
           </span>
+        </div>
+      )}
+
+      {/* Menú Rápido Flotante de Construcción Inmediata */}
+      {isQuickMenuVisible && selectedTile && (
+        <div
+          style={{
+            left: `${clampedX}px`,
+            top: `${quickMenuTop}px`,
+            transform: quickMenuTransform,
+          }}
+          onMouseDown={e => e.stopPropagation()}
+          onMouseMove={e => e.stopPropagation()}
+          onMouseUp={e => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
+          onWheel={e => e.stopPropagation()}
+          className="absolute z-30 flex items-center gap-1.5 px-2 py-1.5 bg-zinc-950/95 border border-zinc-700/90 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.85)] backdrop-blur-md select-none animate-in fade-in zoom-in-95 duration-150"
+        >
+          {/* Flecha indicadora apuntando hacia la casilla */}
+          <div
+            className={`absolute left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-zinc-950 rotate-45 pointer-events-none ${
+              isNearTopEdge
+                ? '-top-1.5 border-l border-t border-zinc-700/90'
+                : '-bottom-1.5 border-r border-b border-zinc-700/90'
+            }`}
+          />
+
+          {/* Coste en monedas */}
+          <div
+            className="flex items-center gap-1 px-2 py-1 bg-zinc-900/90 border border-zinc-800 rounded-xl text-[11px] font-mono font-bold text-amber-300 shadow-inner shrink-0"
+            title={`Coste de anexión: ${nextTileCost} monedas`}
+          >
+            <Coins className="w-3.5 h-3.5 text-amber-400" />
+            <span>{nextTileCost}</span>
+          </div>
+
+          {/* Separador */}
+          <div className="w-px h-5 bg-zinc-800 shrink-0" />
+
+          {/* Botones de Construcción Rápida: Poblado ⛺, Huerto 🌾, Cantera 🌲 */}
+          <div className="flex items-center gap-1">
+            {/* 1. Poblado ⛺ */}
+            {!isSecondaryIslandTile && (
+              <button
+                type="button"
+                onClick={() => handleQuickBuild('settlement')}
+                disabled={!canBuildSettlement}
+                className={`w-8 h-8 rounded-xl flex items-center justify-center text-base transition-all ${
+                  canBuildSettlement
+                    ? 'bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/50 hover:border-amber-400 text-amber-200 shadow-sm hover:scale-110 active:scale-95 cursor-pointer'
+                    : 'bg-zinc-900/40 border border-zinc-800/60 opacity-35 cursor-not-allowed text-zinc-500'
+                }`}
+                title={
+                  canBuildSettlement
+                    ? `Fundar Poblado ⛺ (+15 Hab, -15🧱, coste: ${nextTileCost}🪙)`
+                    : !hasCoins
+                    ? `Faltan monedas (${empire.coins}/${nextTileCost}🪙)`
+                    : !hasMaterialsForVillage
+                    ? `Faltan materiales (${empire.nationalMaterials}/15🧱)`
+                    : `Comida insuficiente (+${empire.nationalFood}/7🌾)`
+                }
+              >
+                <span>⛺</span>
+              </button>
+            )}
+
+            {/* 2. Huerto Agrícola 🌾 */}
+            <button
+              type="button"
+              onClick={() => handleQuickBuild('crops')}
+              disabled={!canBuildCrops}
+              className={`w-8 h-8 rounded-xl flex items-center justify-center text-base transition-all ${
+                canBuildCrops
+                  ? 'bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-500/50 hover:border-emerald-400 text-emerald-200 shadow-sm hover:scale-110 active:scale-95 cursor-pointer'
+                  : 'bg-zinc-900/40 border border-zinc-800/60 opacity-35 cursor-not-allowed text-zinc-500'
+              }`}
+              title={
+                canBuildCrops
+                  ? `Construir Huerto Agrícola 🌾 (+15🌾/turno, coste: ${nextTileCost}🪙)`
+                  : `Faltan monedas (${empire.coins}/${nextTileCost}🪙)`
+              }
+            >
+              <span>🌾</span>
+            </button>
+
+            {/* 3. Cantera / Bosque 🌲 */}
+            <button
+              type="button"
+              onClick={() => handleQuickBuild('resources')}
+              disabled={!canBuildResources}
+              className={`w-8 h-8 rounded-xl flex items-center justify-center text-base transition-all ${
+                canBuildResources
+                  ? 'bg-orange-500/15 hover:bg-orange-500/30 border border-orange-500/50 hover:border-orange-400 text-orange-200 shadow-sm hover:scale-110 active:scale-95 cursor-pointer'
+                  : 'bg-zinc-900/40 border border-zinc-800/60 opacity-35 cursor-not-allowed text-zinc-500'
+              }`}
+              title={
+                canBuildResources
+                  ? `Construir Cantera / Bosque 🌲 (+20🧱 fijos, coste: ${nextTileCost}🪙)`
+                  : `Faltan monedas (${empire.coins}/${nextTileCost}🪙)`
+              }
+            >
+              <span>🌲</span>
+            </button>
+          </div>
         </div>
       )}
     </div>

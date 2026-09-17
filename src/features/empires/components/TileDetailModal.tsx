@@ -3,7 +3,22 @@ import { GridTile, UserEmpire, TileRole, IslandSpecialization, CIVIC_PROJECTS_CA
 import { empireStorageService } from '../services/empireStorageService';
 import { geoGridService } from '../services/geoGridService';
 import { empireSound } from '../services/empireSoundService';
-import { X, MapPin, Coins, Wheat, Edit2, Check, Hammer, Landmark } from 'lucide-react';
+import { 
+  X, 
+  MapPin, 
+  Coins, 
+  Wheat, 
+  Edit2, 
+  Check, 
+  Hammer, 
+  Landmark, 
+  ChevronDown, 
+  ChevronUp, 
+  Sparkles, 
+  Anchor, 
+  Compass, 
+  ArrowUpRight 
+} from 'lucide-react';
 
 interface TileDetailModalProps {
   tile: GridTile;
@@ -16,7 +31,7 @@ const ROLE_LABELS: Record<TileRole, { icon: string; name: string; desc: string }
   empty:      { icon: '🟩', name: 'Terreno Libre',    desc: 'Sin desarrollar' },
   settlement: { icon: '⛺', name: 'Asentamiento',     desc: 'Núcleo de población' },
   crops:      { icon: '🌾', name: 'Campos Agrícolas', desc: '+15 Comida / turno' },
-  resources:  { icon: '🌲', name: 'Bosque / Cantera', desc: '+10 Materiales / turno' },
+  resources:  { icon: '🌲', name: 'Bosque / Cantera', desc: '+20 Materiales / turno' },
   energy:     { icon: '⚡', name: 'Central Energética', desc: '+10 Energía / turno' },
   port:       { icon: '⚓', name: 'Puerto',            desc: 'Expediciones navales' },
   hotel:      { icon: '🏖️', name: 'Resort Turístico', desc: '+Felicidad' },
@@ -24,6 +39,15 @@ const ROLE_LABELS: Record<TileRole, { icon: string; name: string; desc: string }
 };
 
 const SETTLEMENT_TIERS = ['—', '⛺ Aldea', '🏡 Pueblo', '🏙️ Ciudad', '🌆 Megaciudad'];
+
+// Memoria persistente del último tipo de casilla anexada para agilizar compras en cadena
+let lastAnnexRole: TileRole = (() => {
+  try {
+    return (localStorage.getItem('geostrike_last_annex_role') as TileRole) || 'settlement';
+  } catch {
+    return 'settlement';
+  }
+})();
 
 export const TileDetailModal: React.FC<TileDetailModalProps> = ({ 
   tile, 
@@ -53,12 +77,45 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
   const [newCityName, setNewCityName] = useState(
     `${tile.countryName || 'Poblado'} ${Object.values(empire.colonizedTiles).filter(t => t.role === 'settlement').length + 1}`
   );
-  const [selectedRole, setSelectedRole] = useState<TileRole>(isSecondaryIslandTile ? 'crops' : 'settlement');
+
+  React.useEffect(() => {
+    setNewCityName(
+      `${tile.countryName || 'Poblado'} ${Object.values(empire.colonizedTiles).filter(t => t.role === 'settlement').length + 1}`
+    );
+    setCityNameInput(ownedData?.cityName || '');
+  }, [tile.id, tile.countryName, ownedData?.cityName]);
+
+  const [selectedRole, setSelectedRole] = useState<TileRole>(() => {
+    if (isSecondaryIslandTile) {
+      return lastAnnexRole === 'resources' ? 'resources' : 'crops';
+    }
+    return lastAnnexRole || 'settlement';
+  });
+
+  // Divulgación progresiva: paneles colapsables para no saturar de buenas a primeras
+  const [showUpgradeDetails, setShowUpgradeDetails] = useState(false);
+  const [showMonuments, setShowMonuments] = useState(false);
+  const [showInfluence, setShowInfluence] = useState(false);
+  const [showResourceUpgradeReqs, setShowResourceUpgradeReqs] = useState(false);
+  const [showClusterInfo, setShowClusterInfo] = useState(false);
+  const [showSecondaryActions, setShowSecondaryActions] = useState(false);
+  const [showIslandSpec, setShowIslandSpec] = useState(false);
+
   const [islandError, setIslandError] = useState<string | null>(null);
   const [civicError, setCivicError] = useState<string | null>(null);
   const [wonderError, setWonderError] = useState<string | null>(null);
   const [resourceError, setResourceError] = useState<string | null>(null);
   const [annexError, setAnnexError] = useState<string | null>(null);
+
+  const handleSelectRole = (role: TileRole) => {
+    setSelectedRole(role);
+    lastAnnexRole = role;
+    try {
+      localStorage.setItem('geostrike_last_annex_role', role);
+    } catch {
+      // ignore
+    }
+  };
 
   const hasCoins = empire.coins >= cost;
   const hasMaterialsForVillage = selectedRole !== 'settlement' || (empire.nationalMaterials >= 15);
@@ -66,6 +123,12 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
   const canAfford = hasCoins && hasMaterialsForVillage && hasFoodForVillage;
 
   const handleBuy = () => {
+    lastAnnexRole = selectedRole;
+    try {
+      localStorage.setItem('geostrike_last_annex_role', selectedRole);
+    } catch {
+      // ignore
+    }
     if (empireStorageService.buyTile(tile.id, selectedRole, selectedRole === 'settlement' ? newCityName : undefined)) {
       empireSound.playBuild();
       onClose();
@@ -97,16 +160,28 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
   const activeExps = (empire.expeditions || []).filter(e => e.status === 'sailing' && e.originTileId === tile.id);
   const docksAvailable = Math.max(0, maxDocks - activeExps.length);
 
-  // Costes y requisitos de mejora por nivel actual
-  const UPGRADE_COSTS: Record<number, number> = { 1: 30, 2: 80, 3: 200 };
-  const upgradeCost = UPGRADE_COSTS[tier] ?? null;
   const upgradeCheck = isSettlement && tier < 4
     ? empireStorageService.checkUpgradeRequirements(tile.id)
     : null;
   const canUpgrade = Boolean(upgradeCheck?.canUpgrade);
+
+  const missingUpgradeReason = React.useMemo(() => {
+    if (!upgradeCheck || canUpgrade) return '';
+    if (!upgradeCheck.hasEnoughCoins) return `Faltan monedas (${empire.coins}/${upgradeCheck.coinCost}🪙)`;
+    if (!upgradeCheck.hasEnoughMaterials) return `Faltan materiales (${empire.nationalMaterials}/${upgradeCheck.materialCost}🧱)`;
+    if (!upgradeCheck.hasEnoughFoodSurplus) return `Falta comida (+${empire.nationalFood}/+${upgradeCheck.requiredFoodSurplus}🌾)`;
+    if (!upgradeCheck.hasEnoughCrops) return `Faltan huertos (${upgradeCheck.currentCrops}/${upgradeCheck.requiredCrops}🌾)`;
+    if (!upgradeCheck.hasEnoughResources) return `Faltan canteras (${upgradeCheck.currentResources}/${upgradeCheck.requiredResources}🌲)`;
+    if (!upgradeCheck.hasEnoughSettlements) return `Faltan pueblos vecinos (${upgradeCheck.currentSettlements}/${upgradeCheck.requiredSettlements}⛺)`;
+    if (!upgradeCheck.hasEnoughSurroundingCities) return `Faltan ciudades satélite (${upgradeCheck.currentSurroundingCities}/${upgradeCheck.requiredSurroundingCities}🏙️)`;
+    if (!upgradeCheck.hasMegacityDistanceCheck) return 'Megaciudad muy cerca (< 5 casillas)';
+    if (!upgradeCheck.hasSingleMegacityPerCountry) return 'Ya hay 1 Megaciudad en este país';
+    return 'Faltan requisitos';
+  }, [upgradeCheck, canUpgrade, empire.coins, empire.nationalMaterials, empire.nationalFood]);
+
   const canBuildPort = isSettlement && tier >= 3 && tile.isCoast && !hasPort && empire.coins >= 50;
 
-  // Calcular recursos dentro del radio de influencia (Mecánica Buscaminas Fase 3)
+  // Calcular recursos dentro del radio de influencia (Mecánica Buscaminas)
   const nearbyResources = React.useMemo(() => {
     if (!isSettlement) return { crops: 0, resources: 0, radius: 1 };
     const radius = tier === 1 ? 1 : tier === 2 ? 2 : 3;
@@ -145,18 +220,18 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-zinc-950/95 overflow-hidden select-none">
-      {/* Cabecera de la Casilla */}
-      <div className="p-3.5 bg-gradient-to-r from-indigo-950/40 via-zinc-900/70 to-zinc-950 border-b border-zinc-800 flex items-center justify-between shrink-0">
+    <div className="w-full h-full flex flex-col bg-[#0b0f17] text-slate-100 overflow-hidden select-none">
+      {/* Cabecera Táctica de la Casilla */}
+      <div className="px-3.5 py-3 bg-[#0d131f] border-b border-slate-800 flex items-center justify-between shrink-0 shadow-md">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="p-1.5 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-[#141d2e] border border-slate-700/80 text-amber-400 flex items-center justify-center shrink-0 shadow-sm">
             <MapPin className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-xs sm:text-sm font-black text-white truncate">
-              {isSettlement && ownedData?.cityName ? ownedData.cityName : (tile.countryName || 'Territorio')}
+            <h3 className="text-xs sm:text-sm font-black text-white tracking-wide uppercase font-sans truncate">
+              {isSettlement && ownedData?.cityName ? ownedData.cityName : (tile.countryName || 'Territorio Libre')}
             </h3>
-            <span className="text-[10.5px] text-zinc-400 font-mono block truncate">
+            <span className="text-[11px] text-slate-400 font-mono block truncate">
               {tile.lat.toFixed(1)}°, {tile.lon.toFixed(1)}°
               {tile.isCoast ? ' · 🌊 Costa' : ''}
               {tile.isSmallIsland ? ' · 🏝️ Isla' : ''}
@@ -165,7 +240,7 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
         </div>
         <button 
           onClick={onClose} 
-          className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors shrink-0"
+          className="tactical-btn p-1.5 text-slate-400 hover:text-white rounded-lg"
           title="Cerrar detalle de casilla"
         >
           <X className="w-4 h-4" />
@@ -173,13 +248,16 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
       </div>
 
       {/* Contenido con scroll vertical propio */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-3.5 space-y-3.5 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3.5 space-y-3.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
         {isOwned ? (
           <div className="space-y-3">
-            <div className="flex items-center justify-between bg-zinc-800/80 p-2.5 rounded-xl border border-zinc-700/50">
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl">{roleInfo.icon}</span>
-                <div>
+            {/* ─── TARJETA PRINCIPAL (HÉROE) DE LA CASILLA POSEÍDA ─── */}
+            <div className="tactical-card p-3 flex items-center justify-between border-slate-700/70 shadow-lg">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-2xl p-2 rounded-lg bg-[#141d2e] border border-slate-700/60 shrink-0">
+                  {roleInfo.icon}
+                </span>
+                <div className="min-w-0">
                   {isSettlement ? (
                     isEditingCity ? (
                       <div className="flex items-center gap-1.5">
@@ -188,117 +266,207 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
                           value={cityNameInput}
                           onChange={e => setCityNameInput(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') handleSaveCityName(); }}
-                          className="bg-zinc-700 text-xs px-2 py-0.5 rounded text-white font-bold w-32 focus:outline-none"
+                          className="bg-slate-900 border border-slate-700 text-xs px-2 py-1 rounded text-white font-bold w-36 focus:outline-none focus:border-amber-400"
                           autoFocus
                         />
-                        <button onClick={handleSaveCityName} className="p-0.5 text-emerald-400">
-                          <Check className="w-4 h-4" />
+                        <button onClick={handleSaveCityName} className="p-1.5 tactical-btn-cta text-black rounded">
+                          <Check className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5 group cursor-pointer" onClick={() => setIsEditingCity(true)}>
-                        <span className="text-xs font-bold text-white">{ownedData?.cityName || 'Sin nombre'}</span>
-                        <Edit2 className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300" />
+                        <span className="text-xs font-bold text-white tracking-wide truncate">{ownedData?.cityName || 'Sin nombre'}</span>
+                        <Edit2 className="w-3 h-3 text-slate-400 group-hover:text-amber-400 transition-colors shrink-0" />
                       </div>
                     )
                   ) : (
-                    <span className="text-xs font-bold text-white">{roleInfo.name}</span>
+                    <span className="text-xs font-bold text-white tracking-wide block truncate">{roleInfo.name}</span>
                   )}
-                  <span className="text-[10px] text-zinc-400 block">{roleInfo.desc}</span>
+                  
+                  {/* Resumen en 1 sola línea */}
+                  <span className="text-[10.5px] text-slate-300 block font-mono mt-0.5">
+                    {isSettlement 
+                      ? `${SETTLEMENT_TIERS[tier]} · ${(tier || 1) * 15} Habitantes`
+                      : currentRole === 'crops'
+                      ? `Nivel ${ownedData?.resourceTier || 1} · +${ownedData?.resourceTier === 3 ? 75 : ownedData?.resourceTier === 2 ? 35 : 15} 🌾 / turno`
+                      : currentRole === 'resources'
+                      ? `Nivel ${ownedData?.resourceTier || 1} · +${ownedData?.resourceTier === 3 ? 75 : ownedData?.resourceTier === 2 ? 35 : 20} 🧱 fijos`
+                      : roleInfo.desc}
+                  </span>
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-1">
+
+              <div className="flex flex-col items-end gap-1 shrink-0">
                 {isCapital && (
-                  <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                  <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded border border-amber-500/30">
                     ⭐ Capital
                   </span>
                 )}
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                  Colonizada
+                <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
+                  ✓ Bajo Control
                 </span>
               </div>
             </div>
 
-            {/* ─── Panel de Asentamiento ─── */}
+            {/* ════════════════════════════════════════════════════════════
+                SECCIÓN DE ASENTAMIENTO (Aldea / Pueblo / Ciudad / Megaciudad)
+                ════════════════════════════════════════════════════════════ */}
             {isSettlement && (
-              <div className="bg-zinc-800/50 rounded-xl border border-zinc-700/40 p-3 space-y-3">
-                {/* Nivel actual */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">Nivel</span>
-                  <span className="text-sm font-bold text-indigo-300">{SETTLEMENT_TIERS[tier] || SETTLEMENT_TIERS[1]}</span>
-                </div>
-
-                {/* Barra de progresión visual */}
-                <div className="flex items-center gap-1">
-                  {[1,2,3,4].map(t => (
-                    <div
-                      key={t}
-                      className={`flex-1 h-1.5 rounded-full transition-all ${
-                        t <= tier ? 'bg-indigo-500' : 'bg-zinc-700'
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                {/* Balance Espacial en su Radio (Mecánica Buscaminas Fase 3) */}
-                <div className="bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-700/50 space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                      <span>🎯 Radio de Influencia:</span>
-                      <span className="text-indigo-400 font-mono">Radio {nearbyResources.radius}</span>
-                    </span>
+              <div className="space-y-3">
+                {/* Progresión de nivel visual */}
+                <div className="tactical-card p-3 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400 font-medium">Nivel Urbano</span>
+                    <span className="font-bold text-amber-400 font-mono">{SETTLEMENT_TIERS[tier] || SETTLEMENT_TIERS[1]}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-zinc-800/80 p-1.5 rounded-lg border border-zinc-700/50 flex items-center gap-1.5">
-                      <span>🌾</span>
-                      <div>
-                        <span className="font-bold text-emerald-400 font-mono">{nearbyResources.crops}</span>
-                        <span className="text-[10px] text-zinc-400 block">+{nearbyResources.crops * 15} comida</span>
-                      </div>
-                    </div>
-                    <div className="bg-zinc-800/80 p-1.5 rounded-lg border border-zinc-700/50 flex items-center gap-1.5">
-                      <span>🌲</span>
-                      <div>
-                        <span className="font-bold text-amber-400 font-mono">{nearbyResources.resources}</span>
-                        <span className="text-[10px] text-zinc-400 block">+{nearbyResources.resources * 10} piedra</span>
-                      </div>
-                    </div>
+
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[1, 2, 3, 4].map(t => (
+                      <div
+                        key={t}
+                        className={`h-1.5 rounded-full transition-all ${
+                          t <= tier ? 'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-800'
+                        }`}
+                      />
+                    ))}
                   </div>
+
+                  {/* ACCIÓN PRINCIPAL: Botón Directo de Mejora */}
+                  {tier < 4 && upgradeCheck && (
+                    <div className="pt-1 space-y-2">
+                      <button
+                        onClick={handleUpgrade}
+                        disabled={!canUpgrade}
+                        className={`w-full py-2.5 px-3 text-xs tracking-wider uppercase font-black transition-all rounded-lg flex items-center justify-center gap-2 ${
+                          canUpgrade
+                            ? 'tactical-btn-cta text-black'
+                            : 'tactical-btn text-slate-400 opacity-60 cursor-not-allowed'
+                        }`}
+                      >
+                        <ArrowUpRight className="w-4 h-4 shrink-0" />
+                        <span>
+                          {canUpgrade
+                            ? `Mejorar a ${SETTLEMENT_TIERS[tier + 1]} — ${upgradeCheck.coinCost}🪙 ${upgradeCheck.materialCost}🧱`
+                            : `Mejorar a ${SETTLEMENT_TIERS[tier + 1]} (${missingUpgradeReason})`}
+                        </span>
+                      </button>
+
+                      {/* Desplegable para ver requisitos detallados si el usuario los busca */}
+                      <button
+                        onClick={() => setShowUpgradeDetails(prev => !prev)}
+                        className="w-full py-1.5 px-2.5 rounded-md bg-[#0d131f] hover:bg-[#151e2f] border border-slate-800 text-[11px] font-mono text-slate-300 hover:text-white flex items-center justify-between transition-colors"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span className={canUpgrade ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
+                            {canUpgrade ? '✓ Requisitos Listos' : '⚠️ Ver requisitos pendientes'}
+                          </span>
+                        </span>
+                        {showUpgradeDetails ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+                      </button>
+
+                      {/* Checklist de requisitos detallados (solo visible si se despliega) */}
+                      {showUpgradeDetails && (
+                        <div className="p-3 bg-[#0a0e17] border border-slate-800 rounded-lg space-y-2 text-xs">
+                          <div className="flex items-center justify-between text-slate-300">
+                            <span className="flex items-center gap-1.5">
+                              <Coins className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Tesoro Imperial:</span>
+                            </span>
+                            <span className={`font-mono font-bold ${upgradeCheck.hasEnoughCoins ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {empire.coins} / {upgradeCheck.coinCost} 🪙 {upgradeCheck.hasEnoughCoins ? '✓' : '✗'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-slate-300">
+                            <span className="flex items-center gap-1.5">
+                              <Hammer className="w-3.5 h-3.5 text-orange-400" />
+                              <span>Materiales:</span>
+                            </span>
+                            <span className={`font-mono font-bold ${upgradeCheck.hasEnoughMaterials ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {empire.nationalMaterials} / {upgradeCheck.materialCost} 🧱 {upgradeCheck.hasEnoughMaterials ? '✓' : '✗'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-slate-300">
+                            <span className="flex items-center gap-1.5">
+                              <Wheat className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Superávit de Comida:</span>
+                            </span>
+                            <span className={`font-mono font-bold ${upgradeCheck.hasEnoughFoodSurplus ? 'text-emerald-400' : 'text-red-400'}`}>
+                              +{empire.nationalFood} / +{upgradeCheck.requiredFoodSurplus} 🌾 {upgradeCheck.hasEnoughFoodSurplus ? '✓' : '✗'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-slate-300">
+                            <span>🌾 Huertos en radio {upgradeCheck.radius}:</span>
+                            <span className={`font-mono font-bold ${upgradeCheck.hasEnoughCrops ? 'text-emerald-400' : 'text-amber-400'}`}>
+                              {upgradeCheck.currentCrops} / {upgradeCheck.requiredCrops} {upgradeCheck.hasEnoughCrops ? '✓' : '✗'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-slate-300">
+                            <span>🌲 Canteras en radio {upgradeCheck.radius}:</span>
+                            <span className={`font-mono font-bold ${upgradeCheck.hasEnoughResources ? 'text-emerald-400' : 'text-amber-400'}`}>
+                              {upgradeCheck.currentResources} / {upgradeCheck.requiredResources} {upgradeCheck.hasEnoughResources ? '✓' : '✗'}
+                            </span>
+                          </div>
+
+                          {/* Requisito de Asentamientos Vecinos */}
+                          {upgradeCheck.requiredSettlements > 0 && (
+                            <div className="flex items-center justify-between text-slate-300">
+                              <span>🏘️ Asentamientos en radio {upgradeCheck.radius}:</span>
+                              <span className={`font-mono font-bold ${upgradeCheck.hasEnoughSettlements ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                {upgradeCheck.currentSettlements} / {upgradeCheck.requiredSettlements} {upgradeCheck.hasEnoughSettlements ? '✓' : '✗'}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Requisitos de Megaciudad si aplica */}
+                          {upgradeCheck.nextTier === 4 && (
+                            <div className="pt-2 border-t border-slate-800 space-y-1.5 text-[11px]">
+                              <div className="flex items-center justify-between">
+                                <span>🏙️ Ciudades satélite (Tier 3):</span>
+                                <span className={`font-mono font-bold ${upgradeCheck.hasEnoughSurroundingCities ? 'text-emerald-400' : 'text-red-400'}`}>
+                                  {upgradeCheck.currentSurroundingCities} / {upgradeCheck.requiredSurroundingCities}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span>📐 Separación Megaciudades (≥5):</span>
+                                <span className={`font-mono font-bold ${upgradeCheck.hasMegacityDistanceCheck ? 'text-emerald-400' : 'text-red-400'}`}>
+                                  {upgradeCheck.hasMegacityDistanceCheck ? 'Correcta ✓' : 'Muy cerca ✗'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span>👑 Megaciudad única en {tile.countryName}:</span>
+                                <span className={`font-mono font-bold ${upgradeCheck.hasSingleMegacityPerCountry ? 'text-emerald-400' : 'text-red-400'}`}>
+                                  {upgradeCheck.hasSingleMegacityPerCountry ? 'Disponible ✓' : 'Ya existe una ✗'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {/* Puerto construido */}
-                {hasPort && (
-                  <div className="bg-blue-950/40 border border-blue-500/30 rounded-xl p-3 space-y-2.5">
+                {/* PUERTO MARÍTIMO (Si ya está construido o si puede construirse) */}
+                {hasPort ? (
+                  <div className="tactical-card p-3 space-y-2.5 border-sky-800/40 bg-[#0d1626]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">⚓</span>
+                        <span className="text-xl">⚓</span>
                         <div>
-                          <p className="text-xs font-bold text-blue-300">Puerto Marítimo Activo</p>
-                          <p className="text-[10px] text-zinc-400">
-                            {isNavalHub ? 'Hub Naval (3 muelles simultáneos)' : 'Muelle comercial y de ultramar'}
+                          <p className="text-xs font-bold text-sky-200">Puerto Marítimo Activo</p>
+                          <p className="text-[10px] text-sky-400/80">
+                            {isNavalHub ? 'Hub Naval (Expediciones ultrarrápidas)' : 'Muelle comercial y de ultramar'}
                           </p>
                         </div>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 font-bold">
-                        {docksAvailable} / {maxDocks} libres
+                      <span className="text-[10px] font-mono font-bold text-sky-300 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/50">
+                        {docksAvailable} / {maxDocks} libre
                       </span>
                     </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-blue-200 bg-blue-900/30 px-2.5 py-1.5 rounded-lg border border-blue-500/20">
-                      <span>Rango Náutico:</span>
-                      <span className="font-bold font-mono text-blue-300">
-                        {isFinite(empireStorageService.getMaxNavalRange(tile.id))
-                          ? `${empireStorageService.getMaxNavalRange(tile.id)} casillas`
-                          : 'Ilimitado 🌐'}
-                      </span>
-                    </div>
-
-                    {(empire.freeExpeditions || 0) > 0 && (
-                      <div className="text-[10px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 px-2 py-1 rounded-lg font-bold flex items-center gap-1.5">
-                        <span>🎁</span>
-                        <span>¡Expedición gratis disponible ({empire.freeExpeditions}) por Hub Naval!</span>
-                      </div>
-                    )}
 
                     <button
                       onClick={() => {
@@ -308,292 +476,175 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
                         }
                       }}
                       disabled={docksAvailable <= 0}
-                      className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md ${
+                      className={`w-full py-2.5 px-3 text-xs tracking-wider uppercase font-black transition-all rounded-lg flex items-center justify-center gap-2 ${
                         docksAvailable > 0
-                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-600/20 cursor-pointer'
-                          : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
+                          ? 'tactical-btn-cta text-black'
+                          : 'tactical-btn text-slate-400 opacity-60 cursor-not-allowed'
                       }`}
                     >
-                      <span>⛵</span>
+                      <Compass className="w-4 h-4 shrink-0" />
                       <span>
                         {docksAvailable > 0 
-                          ? ((empire.freeExpeditions || 0) > 0 ? 'Fletar Expedición (¡GRATIS!)' : 'Fletar Expedición Marítima') 
+                          ? ((empire.freeExpeditions || 0) > 0 ? 'Fletar Barco (Bonificado)' : 'Fletar Barco a Nuevas Tierras') 
                           : 'Muelle Ocupado (Barco Navegando)'}
                       </span>
                     </button>
                   </div>
-                )}
-
-                {/* Puerto disponible para construir */}
-                {!hasPort && tile.isCoast && tier >= 3 && (
+                ) : tile.isCoast && tier >= 3 ? (
                   <button
                     onClick={handleBuildPort}
                     disabled={!canBuildPort}
-                    className={`w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                    className={`w-full py-2.5 px-3 text-xs tracking-wider uppercase font-black transition-all rounded-lg flex items-center justify-center gap-2 ${
                       canBuildPort
-                        ? 'bg-blue-600/80 hover:bg-blue-500/80 text-white border border-blue-500/50'
-                        : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
+                        ? 'tactical-btn-cta text-black'
+                        : 'tactical-btn text-slate-400 opacity-60 cursor-not-allowed'
                     }`}
                   >
-                    <span>⚓</span>
-                    <span>Construir Puerto — 50 monedas</span>
+                    <Anchor className="w-4 h-4" />
+                    <span>Construir Puerto Marítimo — 50 🪙</span>
                   </button>
-                )}
-
-                {/* Indicador de cuántos pasos faltan para el puerto */}
-                {!hasPort && tile.isCoast && tier < 3 && (
-                  <div className="flex items-center gap-2 bg-zinc-900/50 border border-zinc-700/50 rounded-lg px-3 py-2">
+                ) : tile.isCoast && tier < 3 ? (
+                  <div className="px-3 py-2 bg-[#0c121e] border border-slate-800/80 rounded-lg flex items-center gap-2.5 text-slate-400">
                     <span className="text-base opacity-40">⚓</span>
-                    <div>
-                      <p className="text-xs font-bold text-zinc-500">Puerto bloqueado</p>
-                      <p className="text-[10px] text-zinc-600">
-                        Mejora a 🏙️ Ciudad ({3 - tier} nivel{3 - tier > 1 ? 'es' : ''} más) para desbloquear el Puerto
-                      </p>
-                    </div>
+                    <span className="text-[11px]">
+                      Puerto disponible al ascender a <strong className="text-slate-300">🏙️ Ciudad (Nivel 3)</strong>.
+                    </span>
                   </div>
-                )}
+                ) : null}
 
-                {/* Monumentos y Proyectos Cívicos */}
-                <div className="bg-zinc-900/80 p-3 rounded-xl border border-purple-500/30 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300">
-                      <Landmark className="w-3.5 h-3.5 text-purple-400" />
+                {/* ─── ACORDEÓN: MONUMENTOS URBANOS (Colapsado por defecto) ─── */}
+                <div className="tactical-card p-0 overflow-hidden border-slate-800">
+                  <button
+                    onClick={() => setShowMonuments(prev => !prev)}
+                    className="w-full p-3 flex items-center justify-between text-xs font-bold text-slate-200 hover:bg-slate-800/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Landmark className="w-4 h-4 text-amber-400" />
                       <span>Monumentos Urbanos</span>
                     </div>
-                    <span className="text-[10px] font-mono font-bold bg-purple-500/15 text-purple-300 px-2 py-0.5 rounded border border-purple-500/25">
-                      {(ownedData?.civicProjects || []).length} / {tier} slots
-                    </span>
-                  </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/25">
+                        {(ownedData?.civicProjects || []).length} / {tier} ranuras
+                      </span>
+                      {showMonuments ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    </div>
+                  </button>
 
-                  {civicError && (
-                    <div className="p-1.5 bg-amber-500/15 border border-amber-500/30 rounded-lg text-[10px] text-amber-300">
-                      ⚠️ {civicError}
+                  {showMonuments && (
+                    <div className="p-3 pt-0 border-t border-slate-800/80 space-y-2">
+                      {civicError && (
+                        <div className="p-2 bg-red-950/40 border border-red-800/50 rounded text-[11px] text-red-300 mt-2">
+                          ⚠️ {civicError}
+                        </div>
+                      )}
+                      <div className="space-y-1.5 mt-2">
+                        {CIVIC_PROJECTS_CATALOG.map(proj => {
+                          const builtProjects = ownedData?.civicProjects || [];
+                          const isBuilt = builtProjects.includes(proj.id);
+                          const meetsTier = tier >= proj.minTier;
+                          const hasSlot = builtProjects.length < tier;
+                          const canAffordProj = empire.coins >= proj.coinCost && empire.nationalMaterials >= proj.materialCost;
+                          const canBuild = !isBuilt && meetsTier && hasSlot && canAffordProj;
+
+                          return (
+                            <div
+                              key={proj.id}
+                              className={`p-2.5 rounded-lg border text-xs flex items-center justify-between gap-2.5 transition-all ${
+                                isBuilt
+                                  ? 'bg-[#131d2e] border-slate-700 text-slate-200'
+                                  : meetsTier && hasSlot
+                                  ? 'bg-[#0f1522] border-slate-800 hover:border-slate-700 text-slate-300'
+                                  : 'bg-[#0a0e17] border-slate-900 text-slate-500 opacity-60'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span className="text-xl shrink-0">{proj.icon}</span>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-white leading-tight truncate">{proj.name}</p>
+                                  <p className="text-[10px] text-slate-400 font-mono">
+                                    +{proj.happinessBonus}% Felicidad · {proj.coinCost}🪙 {proj.materialCost}🧱
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="shrink-0">
+                                {isBuilt ? (
+                                  <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/50">
+                                    ✓ Erigido
+                                  </span>
+                                ) : !meetsTier ? (
+                                  <span className="text-[10px] text-slate-500 font-mono">Niv {proj.minTier}+</span>
+                                ) : !hasSlot ? (
+                                  <span className="text-[10px] text-slate-500 font-mono">Lleno</span>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      const res = empireStorageService.buildCivicProject(tile.id, proj.id);
+                                      if (!res.success) setCivicError(res.error || 'Error al construir');
+                                      else setCivicError(null);
+                                    }}
+                                    disabled={!canBuild}
+                                    className={`text-[10.5px] font-black px-2.5 py-1 rounded transition-all ${
+                                      canBuild
+                                        ? 'tactical-btn-cta text-black'
+                                        : 'tactical-btn text-slate-400 opacity-60 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    Erigir
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
-
-                  <div className="space-y-1.5">
-                    {CIVIC_PROJECTS_CATALOG.map(proj => {
-                      const builtProjects = ownedData?.civicProjects || [];
-                      const isBuilt = builtProjects.includes(proj.id);
-                      const meetsTier = tier >= proj.minTier;
-                      const hasSlot = builtProjects.length < tier;
-                      const canAffordProj = empire.coins >= proj.coinCost && empire.nationalMaterials >= proj.materialCost;
-                      const canBuild = !isBuilt && meetsTier && hasSlot && canAffordProj;
-
-                      return (
-                        <div
-                          key={proj.id}
-                          className={`p-2 rounded-lg border text-xs flex items-center justify-between gap-2 transition-all ${
-                            isBuilt
-                              ? 'bg-purple-950/30 border-purple-500/40 text-purple-200'
-                              : meetsTier && hasSlot
-                              ? 'bg-zinc-800/80 border-zinc-700/60 text-zinc-300'
-                              : 'bg-zinc-900/40 border-zinc-800/60 text-zinc-500 opacity-60'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-base shrink-0">{proj.icon}</span>
-                            <div className="min-w-0">
-                              <p className="text-[11px] font-bold truncate leading-tight">{proj.name}</p>
-                              <p className="text-[9px] text-zinc-400">
-                                +{proj.happinessBonus}% Felicidad · {proj.coinCost}🪙 {proj.materialCost}🧱
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="shrink-0">
-                            {isBuilt ? (
-                              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                                ✓ Activo
-                              </span>
-                            ) : !meetsTier ? (
-                              <span className="text-[9px] text-zinc-500 font-mono">
-                                Nivel {proj.minTier}+
-                              </span>
-                            ) : !hasSlot ? (
-                              <span className="text-[9px] text-zinc-500">
-                                Sin slots
-                              </span>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  const res = empireStorageService.buildCivicProject(tile.id, proj.id);
-                                  if (!res.success) {
-                                    setCivicError(res.error || 'Error al construir monumento');
-                                  } else {
-                                    setCivicError(null);
-                                  }
-                                }}
-                                disabled={!canBuild}
-                                className={`text-[10px] font-bold px-2.5 py-1 rounded transition-all ${
-                                  canBuild
-                                    ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-sm cursor-pointer'
-                                    : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
-                                }`}
-                              >
-                                Erigir
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
                 </div>
 
-                {/* Requisitos para subir de nivel (Mecánica Buscaminas Fase 3 y Megaciudad) */}
-                {tier < 4 && upgradeCheck && (
-                  <div className="bg-zinc-900/80 p-2.5 rounded-xl border border-zinc-700/60 space-y-2">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-zinc-300">
-                      <span>Requisitos para {SETTLEMENT_TIERS[tier + 1]}:</span>
-                      <span className="text-[10px] text-amber-400 font-mono bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                        Radio {upgradeCheck.radius}
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5 text-xs">
-                      {/* Monedas */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-zinc-400 flex items-center gap-1 text-[11px]">
-                          <Coins className="w-3 h-3 text-amber-400" />
-                          Tesoro Imperial:
-                        </span>
-                        <span className={`font-mono font-bold text-[11px] ${upgradeCheck.hasEnoughCoins ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {empire.coins} / {upgradeCheck.coinCost} 🪙 {upgradeCheck.hasEnoughCoins ? '✓' : '✗'}
-                        </span>
-                      </div>
-
-                      {/* Materiales */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-zinc-400 flex items-center gap-1 text-[11px]">
-                          <Hammer className="w-3 h-3 text-amber-500" />
-                          Materiales de Construcción:
-                        </span>
-                        <span className={`font-mono font-bold text-[11px] ${upgradeCheck.hasEnoughMaterials ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {empire.nationalMaterials} / {upgradeCheck.materialCost} 🧱 {upgradeCheck.hasEnoughMaterials ? '✓' : '✗'}
-                        </span>
-                      </div>
-
-                      {/* Comida */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-zinc-400 flex items-center gap-1 text-[11px]">
-                          <Wheat className="w-3 h-3 text-emerald-400" />
-                          Superávit de Comida requerido:
-                        </span>
-                        <span className={`font-mono font-bold text-[11px] ${upgradeCheck.hasEnoughFoodSurplus ? 'text-emerald-400' : 'text-red-400'}`}>
-                          +{empire.nationalFood} / +{upgradeCheck.requiredFoodSurplus} 🌾 {upgradeCheck.hasEnoughFoodSurplus ? '✓' : '✗'}
-                        </span>
-                      </div>
-
-                      {/* Huertos */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-zinc-400 flex items-center gap-1 text-[11px]">
-                          <span>🌾</span>
-                          Huertos en radio {upgradeCheck.radius}:
-                        </span>
-                        <span className={`font-mono font-bold text-[11px] ${upgradeCheck.hasEnoughCrops ? 'text-emerald-400' : 'text-amber-400'}`}>
-                          {upgradeCheck.currentCrops} / {upgradeCheck.requiredCrops} {upgradeCheck.hasEnoughCrops ? '✓' : '✗'}
-                        </span>
-                      </div>
-
-                      {/* Canteras */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-zinc-400 flex items-center gap-1 text-[11px]">
-                          <span>🌲</span>
-                          Canteras en radio {upgradeCheck.radius}:
-                        </span>
-                        <span className={`font-mono font-bold text-[11px] ${upgradeCheck.hasEnoughResources ? 'text-emerald-400' : 'text-amber-400'}`}>
-                          {upgradeCheck.currentResources} / {upgradeCheck.requiredResources} {upgradeCheck.hasEnoughResources ? '✓' : '✗'}
-                        </span>
-                      </div>
-
-                      {/* Asentamientos vecinos si aplica */}
-                      {upgradeCheck.requiredSettlements > 0 && upgradeCheck.nextTier < 4 && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-zinc-400 flex items-center gap-1 text-[11px]">
-                            <span>🏘️</span>
-                            Pueblos en radio {upgradeCheck.radius}:
-                          </span>
-                          <span className={`font-mono font-bold text-[11px] ${upgradeCheck.hasEnoughSettlements ? 'text-emerald-400' : 'text-amber-400'}`}>
-                            {upgradeCheck.currentSettlements} / {upgradeCheck.requiredSettlements} {upgradeCheck.hasEnoughSettlements ? '✓' : '✗'}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Requisitos exclusivos de Megaciudad (Tier 4) */}
-                      {upgradeCheck.nextTier === 4 && (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <span className="text-zinc-400 flex items-center gap-1 text-[11px]">
-                              <span>🏙️</span>
-                              Ciudades satélite (Tier ≥ 3):
-                            </span>
-                            <span className={`font-mono font-bold text-[11px] ${upgradeCheck.hasEnoughSurroundingCities ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {upgradeCheck.currentSurroundingCities} / {upgradeCheck.requiredSurroundingCities} {upgradeCheck.hasEnoughSurroundingCities ? '✓' : '✗'}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <span className="text-zinc-400 flex items-center gap-1 text-[11px]">
-                              <span>📐</span>
-                              Separación Megaciudades (≥5):
-                            </span>
-                            <span className={`font-mono font-bold text-[11px] ${upgradeCheck.hasMegacityDistanceCheck ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {upgradeCheck.hasMegacityDistanceCheck ? 'Despejado ✓' : 'Muy cerca ✗'}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <span className="text-zinc-400 flex items-center gap-1 text-[11px]">
-                              <span>👑</span>
-                              Megaciudad única en {tile.countryName || 'país'}:
-                            </span>
-                            <span className={`font-mono font-bold text-[11px] ${upgradeCheck.hasSingleMegacityPerCountry ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {upgradeCheck.hasSingleMegacityPerCountry ? 'Disponible (0/1) ✓' : 'Ya existe una (1/1) ✗'}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Botón de mejora */}
-                {tier < 4 && upgradeCheck && (
+                {/* ─── ACORDEÓN: RADIO DE INFLUENCIA (Colapsado por defecto) ─── */}
+                <div className="tactical-card p-0 overflow-hidden border-slate-800">
                   <button
-                    onClick={handleUpgrade}
-                    disabled={!canUpgrade}
-                    className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
-                      canUpgrade
-                        ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white shadow-lg shadow-indigo-600/30'
-                        : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
-                    }`}
+                    onClick={() => setShowInfluence(prev => !prev)}
+                    className="w-full p-3 flex items-center justify-between text-xs font-bold text-slate-200 hover:bg-slate-800/40 transition-colors"
                   >
-                    <span>⬆️</span>
-                    <span>
-                      {canUpgrade
-                        ? `Mejorar a ${SETTLEMENT_TIERS[tier + 1]} — ${upgradeCheck.coinCost} 🪙 + ${upgradeCheck.materialCost} 🧱`
-                        : `Faltan requisitos para ${SETTLEMENT_TIERS[tier + 1]}`}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span>🎯</span>
+                      <span>Radio de Influencia (Radio {nearbyResources.radius})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-slate-400">
+                        +{nearbyResources.crops * 15}🌾 · +{nearbyResources.resources * 10}🧱
+                      </span>
+                      {showInfluence ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    </div>
                   </button>
-                )}
 
-                {/* Sección de Megaciudad y Maravilla Nacional */}
-                {tier >= 4 && (
-                  <div className="bg-gradient-to-b from-amber-500/10 via-zinc-900/90 to-zinc-900/90 rounded-2xl border border-amber-500/30 p-3.5 space-y-3 shadow-lg shadow-amber-500/5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">🏆</span>
-                        <div>
-                          <p className="text-xs font-bold text-amber-300">Maravilla Nacional</p>
-                          <p className="text-[10px] text-zinc-400">Patrimonio exclusivo de {tile.countryName || 'este país'}</p>
+                  {showInfluence && (
+                    <div className="p-3 pt-0 border-t border-slate-800/80 mt-1">
+                      <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                        <div className="bg-[#0c121e] p-2.5 rounded-lg border border-slate-800 flex items-center gap-2.5">
+                          <span className="text-xl">🌾</span>
+                          <div>
+                            <span className="font-bold text-white font-mono text-xs">{nearbyResources.crops} huertos</span>
+                            <span className="text-[10px] text-emerald-400 block font-mono">+{nearbyResources.crops * 15} comida/t</span>
+                          </div>
+                        </div>
+                        <div className="bg-[#0c121e] p-2.5 rounded-lg border border-slate-800 flex items-center gap-2.5">
+                          <span className="text-xl">🌲</span>
+                          <div>
+                            <span className="font-bold text-white font-mono text-xs">{nearbyResources.resources} canteras</span>
+                            <span className="text-[10px] text-amber-400 block font-mono">+{nearbyResources.resources * 10} materiales/t</span>
+                          </div>
                         </div>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold font-mono">
-                        {ownedData?.nationalWonderBuilt ? 'Erigida ✓' : 'Disponible'}
-                      </span>
                     </div>
+                  )}
+                </div>
 
+                {/* ─── MARAVILLA NACIONAL (Para Megaciudades Tier 4) ─── */}
+                {tier >= 4 && (
+                  <div className="tactical-card p-3 space-y-2.5 border-amber-500/40 bg-[#161a12]">
                     {(() => {
                       const wonder = getCountryWonder(tile.countryCode, tile.countryName);
                       const isBuilt = Boolean(ownedData?.nationalWonderBuilt);
@@ -604,58 +655,31 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
 
                       return (
                         <div className="space-y-2.5">
-                          <div className="bg-zinc-800/80 p-2.5 rounded-xl border border-zinc-700/60 flex items-center gap-3">
-                            <span className="text-2xl shrink-0 p-1.5 bg-amber-500/10 rounded-lg border border-amber-500/20">
-                              {wonder.icon}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <h4 className="text-xs font-bold text-white leading-tight">{wonder.name}</h4>
-                              <p className="text-[9px] text-zinc-400 leading-snug mt-0.5">{wonder.description}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[10px] font-bold text-emerald-400 font-mono">
-                                  +{wonder.happinessBonus}% Felicidad Imperial
-                                </span>
-                                <span className="text-[10px] text-zinc-500 font-mono">
-                                  · {wonder.coinCost}🪙 {wonder.materialCost}🧱
-                                </span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl">{wonder.icon}</span>
+                              <div>
+                                <h4 className="text-xs font-black text-amber-300 uppercase">{wonder.name}</h4>
+                                <p className="text-[10px] text-slate-300">Maravilla Nacional de {tile.countryName}</p>
                               </div>
                             </div>
+                            <span className="text-[10px] font-mono font-bold text-amber-400">
+                              +{wonder.happinessBonus}% Felicidad
+                            </span>
                           </div>
 
-                          {/* Requisito de Anexión Soberana al 90%+ */}
                           {!isCountryAnnexed ? (
-                            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2">
-                              <div className="flex items-center justify-between text-xs font-bold text-amber-300">
-                                <span className="flex items-center gap-1.5">
-                                  <span>👑</span>
-                                  <span>Reclamación de Soberanía Requerida</span>
-                                </span>
-                                <span className="font-mono text-[11px]">
-                                  {annexStatus.percentage}% / 90%
-                                </span>
+                            <div className="p-2.5 bg-[#0d131f] rounded-lg border border-slate-800 space-y-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-slate-300">Soberanía Nacional:</span>
+                                <span className="font-mono text-amber-400 font-bold">{annexStatus.percentage}% / 90%</span>
                               </div>
-                              <p className="text-[10px] text-zinc-300 leading-relaxed">
-                                Para erigir la Gran Maravilla de {tile.countryName || 'este país'}, primero debes anexionar formalmente el territorio nacional conquistando al menos el 90% de sus casillas geográficas.
-                              </p>
-
-                              {/* Barra de progreso */}
-                              <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden border border-zinc-700">
+                              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                                 <div 
-                                  className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-300"
+                                  className="h-full bg-amber-400 transition-all duration-300"
                                   style={{ width: `${Math.min(100, (annexStatus.percentage / 90) * 100)}%` }}
                                 />
                               </div>
-                              <div className="flex justify-between text-[9px] text-zinc-400 font-mono">
-                                <span>Control: {annexStatus.ownedCount} / {annexStatus.totalCount} casillas</span>
-                                <span>{annexStatus.canAnnex ? '¡Territorio Listo!' : `Faltan ${Math.max(0, Math.ceil(annexStatus.totalCount * 0.9) - annexStatus.ownedCount)} casillas`}</span>
-                              </div>
-
-                              {annexError && (
-                                <div className="p-1.5 bg-red-500/15 border border-red-500/30 rounded text-[10px] text-red-300">
-                                  ⚠️ {annexError}
-                                </div>
-                              )}
-
                               {annexStatus.canAnnex && (
                                 <button
                                   onClick={() => {
@@ -663,60 +687,34 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
                                     if (!res.success) setAnnexError(res.error || 'Error al anexionar');
                                     else setAnnexError(null);
                                   }}
-                                  className="w-full mt-1 py-2 px-3 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 cursor-pointer transition-all"
+                                  className="tactical-btn-cta w-full py-2 text-xs text-black"
                                 >
-                                  <span>👑</span>
-                                  <span>Proclamar Anexión Soberana y Sello Oficial</span>
+                                  👑 Proclamar Soberanía de {tile.countryName}
                                 </button>
                               )}
                             </div>
                           ) : (
-                            <div className="space-y-2">
-                              <div className="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-between text-emerald-400 text-xs font-bold">
-                                <span className="flex items-center gap-1.5">
-                                  <span>👑</span>
-                                  <span>País Anexionado Soberanamente</span>
-                                </span>
-                                <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30 font-mono">
-                                  Sello Oficial ✓
-                                </span>
-                              </div>
-
-                              {wonderError && (
-                                <div className="p-2 bg-amber-500/15 border border-amber-500/30 rounded-lg text-[10px] text-amber-300">
-                                  ⚠️ {wonderError}
-                                </div>
-                              )}
-
+                            <div>
                               {isBuilt ? (
-                                <div className="w-full py-2 px-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold text-xs flex items-center justify-center gap-2">
-                                  <span>✨</span>
-                                  <span>{wonder.name} Erigida (+{wonder.happinessBonus}% Felicidad Activa)</span>
+                                <div className="py-2 text-center text-xs font-bold text-amber-300 bg-amber-500/10 rounded border border-amber-500/30 font-mono">
+                                  ✓ Maravilla Nacional Erigida (+{wonder.happinessBonus}% Felicidad Activa)
                                 </div>
                               ) : (
                                 <button
                                   onClick={() => {
                                     const res = empireStorageService.buildNationalWonder(tile.id);
-                                    if (!res.success) {
-                                      setWonderError(res.error || 'Error al erigir maravilla');
-                                    } else {
+                                    if (!res.success) setWonderError(res.error || 'Error al erigir');
+                                    else {
                                       setWonderError(null);
                                       empireSound.playMegacityFanfare();
                                     }
                                   }}
                                   disabled={!canAffordWonder}
-                                  className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md ${
-                                    canAffordWonder
-                                      ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white shadow-amber-600/30 cursor-pointer'
-                                      : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
+                                  className={`w-full py-2.5 text-xs uppercase font-black rounded-lg ${
+                                    canAffordWonder ? 'tactical-btn-cta text-black' : 'tactical-btn text-slate-400 opacity-60'
                                   }`}
                                 >
-                                  <span>🏛️</span>
-                                  <span>
-                                    {canAffordWonder
-                                      ? `Erigir ${wonder.name} — ${wonder.coinCost} 🪙 + ${wonder.materialCost} 🧱`
-                                      : `Faltan recursos (${wonder.coinCost}🪙, ${wonder.materialCost}🧱)`}
-                                  </span>
+                                  🏛️ Erigir Maravilla — {wonder.coinCost}🪙 {wonder.materialCost}🧱
                                 </button>
                               )}
                             </div>
@@ -729,445 +727,480 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
               </div>
             )}
 
-            {/* Si no es asentamiento (huerto, cantera o tierra libre) */}
+            {/* ════════════════════════════════════════════════════════════
+                SECCIÓN DE HUERTO O CANTERA (Casilla de Recursos)
+                ════════════════════════════════════════════════════════════ */}
             {!isSettlement && (
-              <div className="bg-zinc-800/50 rounded-xl border border-zinc-700/40 p-3 space-y-3">
-                {/* Cabecera del recurso con su nivel actual */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{currentRole === 'crops' ? '🌾' : currentRole === 'resources' ? '🌲' : '🗺️'}</span>
-                    <div>
-                      <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                        {currentRole === 'crops' ? 'Huerto Agrícola' : currentRole === 'resources' ? 'Cantera de Materiales' : roleInfo.name}
-                        {(currentRole === 'crops' || currentRole === 'resources') && (
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-700 text-amber-300 font-bold border border-zinc-600">
+              <div className="space-y-3">
+                {/* Cabecera y Nivel de Producción */}
+                <div className="tactical-card p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-2xl">{currentRole === 'crops' ? '🌾' : '🌲'}</span>
+                      <div>
+                        <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                          {currentRole === 'crops' ? 'Huerto Agrícola' : 'Cantera de Piedra'}
+                          <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
                             Nivel {ownedData?.resourceTier || 1} / 3
                           </span>
-                        )}
-                      </h4>
-                      <p className="text-[10px] text-zinc-400">
-                        {currentRole === 'crops'
-                          ? (ownedData?.resourceTier === 3
-                              ? 'Complejo Hidropónico (+75 🌾 comida)'
-                              : ownedData?.resourceTier === 2
-                              ? 'Invernaderos y Riego (+35 🌾 comida)'
-                              : 'Huerto Tradicional (+15 🌾 comida)')
-                          : currentRole === 'resources'
-                          ? (ownedData?.resourceTier === 3
-                              ? 'Complejo Industrial Minero (+75 🧱 fijos extra)'
-                              : ownedData?.resourceTier === 2
-                              ? 'Mina Mecanizada (+35 🧱 fijos extra)'
-                              : 'Aserradero y Cantera (+20 🧱 fijos)')
-                          : roleInfo.desc}
-                      </p>
+                        </h4>
+                        <p className="text-[10.5px] text-slate-300 mt-0.5 font-mono">
+                          {currentRole === 'crops'
+                            ? (ownedData?.resourceTier === 3
+                                ? '+75 🌾 comida por turno'
+                                : ownedData?.resourceTier === 2
+                                ? '+35 🌾 comida por turno'
+                                : '+15 🌾 comida por turno')
+                            : (ownedData?.resourceTier === 3
+                                ? '+75 🧱 materiales fijos'
+                                : ownedData?.resourceTier === 2
+                                ? '+35 🧱 materiales fijos'
+                                : '+20 🧱 materiales fijos')}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Tarjeta de Mejora de Nivel para Huerto o Cantera (Nivel 1 -> 2 -> 3) */}
-                {(currentRole === 'crops' || currentRole === 'resources') && (() => {
-                  const check = empireStorageService.checkResourceUpgradeRequirements(tile.id);
-                  const rTier = ownedData?.resourceTier || 1;
-                  const isMax = rTier >= 3;
-                  const nextRTier = rTier + 1;
-                  const upgradeCost = check?.coinCost || (currentRole === 'crops'
-                    ? (nextRTier === 2 ? 25 : 60)
-                    : (nextRTier === 2 ? 30 : 75));
-                  const nextBenefit = currentRole === 'crops'
-                    ? (nextRTier === 2 ? '+35 🌾 (+20 extra)' : '+75 🌾 (+40 extra)')
-                    : (nextRTier === 2 ? '+35 🧱 fijos extra' : '+75 🧱 fijos extra');
-                  const nextTitle = currentRole === 'crops'
-                    ? (nextRTier === 2 ? 'Invernaderos y Riego' : 'Complejo Hidropónico')
-                    : (nextRTier === 2 ? 'Mina Mecanizada' : 'Complejo Industrial');
-                  
-                  const sameTypeCount = check?.sameTypeNeighbors ?? 0;
-                  const requiredCount = check?.requiredNeighbors ?? (nextRTier === 2 ? 2 : 8);
-                  const hasNeighbors = check?.hasRequiredNeighbors ?? false;
-                  const hasCoins = check?.hasEnoughCoins ?? (empire.coins >= upgradeCost);
-                  const canUpgrade = Boolean(check?.canUpgrade);
-                  const roleNamePlural = currentRole === 'crops' ? 'huertos' : 'bosques';
-                  const roleIcon = currentRole === 'crops' ? '🌾' : '🌲';
+                  {/* Bonificación de Clúster Contiguo (Gran Bosque o Complejo Agrícola) */}
+                  {(() => {
+                    const cluster = empireStorageService.getResourceClusterInfo(tile.id);
+                    const isCrops = currentRole === 'crops';
+                    const clusterTitle = isCrops ? 'Complejo Agrícola' : 'Gran Bosque';
 
-                  return (
-                    <div className="p-3 rounded-xl bg-zinc-900/90 border border-zinc-700/70 space-y-2.5 shadow-inner">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="font-bold text-zinc-200 flex items-center gap-1.5">
-                          <span>⬆️</span>
-                          <span>{isMax ? 'Nivel Máximo de Rendimiento' : `Mejora a Nivel ${nextRTier}: ${nextTitle}`}</span>
+                    return cluster.isLargeCluster ? (
+                      <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-500/50 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+                          <span className="font-bold text-emerald-300">{clusterTitle} Activo</span>
+                        </div>
+                        <span className="font-mono font-bold text-emerald-400 text-xs">
+                          +{cluster.bonusPct}% Producción
                         </span>
-                        {!isMax && (
-                          <span className="font-mono text-emerald-400 font-bold bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
-                            {nextBenefit}
-                          </span>
-                        )}
                       </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowClusterInfo(prev => !prev)}
+                        className="w-full py-1.5 px-2 rounded bg-[#0d131f] border border-slate-800 text-[11px] font-mono text-slate-400 hover:text-slate-200 flex items-center justify-between"
+                      >
+                        <span>{isCrops ? '🌾' : '🌲'} Clúster Contiguo ({cluster.clusterSize} / 6 unidas)</span>
+                        {showClusterInfo ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      </button>
+                    );
+                  })()}
 
-                      {/* Requisitos Espaciales y Económicos */}
-                      {!isMax && (
-                        <div className="space-y-1.5 bg-black/40 p-2.5 rounded-lg border border-zinc-800 text-[11px]">
-                          <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                            <span>📋 Requisitos para Nivel {nextRTier}:</span>
-                          </div>
+                  {/* Detalle del clúster si el usuario lo desplegó */}
+                  {showClusterInfo && (
+                    <p className="text-[10px] text-slate-400 bg-[#0a0e17] p-2.5 rounded border border-slate-800 leading-relaxed">
+                      Conecta 6 o más casillas del mismo tipo tocando lado con lado (sin diagonales) para activar el multiplicador continuo de producción territorial (+1% a +15%).
+                    </p>
+                  )}
 
-                          {/* Requisito de Monedas */}
-                          <div className="flex items-center justify-between">
-                            <span className="text-zinc-300 flex items-center gap-1.5">
-                              <span>🪙</span>
-                              <span>Coste de mejora:</span>
-                            </span>
-                            <div className="flex items-center gap-1.5 font-mono">
-                              <span className={hasCoins ? 'text-zinc-200' : 'text-red-400'}>
-                                {empire.coins} / {upgradeCost} 🪙
-                              </span>
-                              <span className={hasCoins ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
-                                {hasCoins ? '✓' : '✗'}
-                              </span>
-                            </div>
-                          </div>
+                  {/* MEJORA DE NIVEL DEL RECURSO */}
+                  {(() => {
+                    const check = empireStorageService.checkResourceUpgradeRequirements(tile.id);
+                    const rTier = ownedData?.resourceTier || 1;
+                    const isMax = rTier >= 3;
+                    const nextRTier = rTier + 1;
+                    const upgradeCost = check?.coinCost || (currentRole === 'crops'
+                      ? (nextRTier === 2 ? 25 : 60)
+                      : (nextRTier === 2 ? 30 : 75));
+                    const canUpgrade = Boolean(check?.canUpgrade);
 
-                          {/* Requisito Espacial: Nivel 2 (2 vecinos) o Nivel 3 (todo el 3x3) */}
-                          <div className="space-y-0.5 pt-1 border-t border-zinc-800/80">
-                            <div className="flex items-center justify-between">
-                              <span className="text-zinc-300 flex items-center gap-1.5">
-                                <span>{roleIcon}</span>
-                                <span>
-                                  {nextRTier === 2
-                                    ? `Vecinos contiguos (${roleNamePlural}):`
-                                    : `Centro de gran bosque/campo 3x3:`}
-                                </span>
-                              </span>
-                              <div className="flex items-center gap-1.5 font-mono">
-                                <span className={hasNeighbors ? 'text-zinc-200' : 'text-amber-400'}>
-                                  {sameTypeCount} / {requiredCount}
-                                </span>
-                                <span className={hasNeighbors ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
-                                  {hasNeighbors ? '✓' : '✗'}
-                                </span>
-                              </div>
-                            </div>
-                            <p className="text-[9.5px] text-zinc-500 pl-5">
-                              {nextRTier === 2
-                                ? `Requiere al menos 2 ${roleNamePlural} a su alrededor.`
-                                : `Las 8 casillas del 3x3 de alrededor deben ser ${roleNamePlural}.`}
-                            </p>
-                          </div>
+                    if (isMax) {
+                      return (
+                        <div className="py-2 text-center text-xs font-bold text-slate-300 bg-[#0c121e] rounded-lg border border-slate-800 font-mono">
+                          ⭐ Rendimiento Máximo Alcanzado (Nivel 3)
                         </div>
-                      )}
+                      );
+                    }
 
-                      {resourceError && (
-                        <div className="p-2 bg-red-500/15 border border-red-500/30 rounded-lg text-[10.5px] text-red-300 flex items-start gap-1.5">
-                          <span>⚠️</span>
-                          <span>{resourceError}</span>
-                        </div>
-                      )}
-
-                      {isMax ? (
-                        <div className="w-full py-2 text-center text-amber-300 font-bold text-xs bg-amber-500/10 rounded-lg border border-amber-500/30 font-mono flex items-center justify-center gap-1.5">
-                          <span>⭐</span>
-                          <span>Máxima Eficiencia Alcanzada (Nivel 3)</span>
-                        </div>
-                      ) : (
+                    return (
+                      <div className="space-y-2 pt-1">
                         <button
                           onClick={() => {
                             const res = empireStorageService.upgradeResourceTile(tile.id);
-                            if (!res.success) {
-                              setResourceError(res.error || 'Error al mejorar');
-                            } else {
+                            if (!res.success) setResourceError(res.error || 'Error al mejorar');
+                            else {
                               setResourceError(null);
                               empireSound.playUpgrade();
                             }
                           }}
                           disabled={!canUpgrade}
-                          className={`w-full py-2.5 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md ${
+                          className={`w-full py-2.5 px-3 text-xs tracking-wider uppercase font-black transition-all rounded-lg flex items-center justify-center gap-2 ${
                             canUpgrade
-                              ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white cursor-pointer shadow-amber-600/20 active:scale-[0.99]'
-                              : 'bg-zinc-800/90 text-zinc-500 cursor-not-allowed border border-zinc-700/60'
+                              ? 'tactical-btn-cta text-black'
+                              : 'tactical-btn text-slate-400 opacity-60 cursor-not-allowed'
                           }`}
                         >
-                          <span>⬆️</span>
+                          <ArrowUpRight className="w-4 h-4" />
                           <span>
                             {canUpgrade
                               ? `Mejorar a Nivel ${nextRTier} — ${upgradeCost} 🪙`
-                              : !hasNeighbors
-                              ? (nextRTier === 2
-                                  ? `Faltan vecinos contiguos (${sameTypeCount}/2)`
-                                  : `Requiere centro 3x3 completo (${sameTypeCount}/8)`)
-                              : `Faltan monedas (${empire.coins}/${upgradeCost} 🪙)`}
+                              : `Mejorar a Nivel ${nextRTier} (Requisitos pendientes)`}
                           </span>
                         </button>
-                      )}
-                    </div>
-                  );
-                })()}
 
-                {/* Reconvertir función de la casilla */}
-                <div className="pt-0.5">
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
-                    Reconvertir función de esta casilla:
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => empireStorageService.convertTileRole(tile.id, 'crops')}
-                      disabled={currentRole === 'crops'}
-                      className={`py-2 px-2.5 rounded-lg border text-center text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                        currentRole === 'crops'
-                          ? 'border-yellow-500 bg-yellow-500/20 text-yellow-300 ring-1 ring-yellow-500/30'
-                          : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-700/50 cursor-pointer'
-                      }`}
-                    >
-                      <span>🌾</span>
-                      <span>Huerto (Niv 1: +15)</span>
-                    </button>
-                    <button
-                      onClick={() => empireStorageService.convertTileRole(tile.id, 'resources')}
-                      disabled={currentRole === 'resources'}
-                      className={`py-2 px-2.5 rounded-lg border text-center text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                        currentRole === 'resources'
-                          ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30'
-                          : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-700/50 cursor-pointer'
-                      }`}
-                    >
-                      <span>🌲</span>
-                      <span>Cantera (Niv 1: +20 🧱)</span>
-                    </button>
-                  </div>
+                        <button
+                          onClick={() => setShowResourceUpgradeReqs(prev => !prev)}
+                          className="w-full py-1 px-2 text-[10.5px] font-mono text-slate-400 hover:text-slate-300 flex items-center justify-between"
+                        >
+                          <span>{canUpgrade ? '✓ Requisitos cumplidos' : '📋 Ver requisitos de mejora'}</span>
+                          {showResourceUpgradeReqs ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
+
+                        {showResourceUpgradeReqs && check && (
+                          <div className="p-2.5 bg-[#0a0e17] border border-slate-800 rounded-lg text-xs space-y-1.5 font-mono">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-400">Coste de mejora:</span>
+                              <span className={check.hasEnoughCoins ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
+                                {empire.coins} / {upgradeCost} 🪙 {check.hasEnoughCoins ? '✓' : '✗'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-400">
+                                {nextRTier === 2 ? 'Vecinos contiguos requeridos:' : 'Centro 3x3 completo:'}
+                              </span>
+                              <span className={check.hasRequiredNeighbors ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
+                                {check.sameTypeNeighbors} / {check.requiredNeighbors} {check.hasRequiredNeighbors ? '✓' : '✗'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
-                {!isSecondaryIslandTile && (
-                  <div className="pt-1.5 border-t border-zinc-700/50 space-y-1.5">
-                    {empire.nationalFood < 7 && (
-                      <p className="text-[10px] text-amber-400 font-medium">
-                        ⚠️ Déficit de comida (+{empire.nationalFood}/7 🌾): Necesitas al menos +7 de superávit para alimentar a una nueva población.
-                      </p>
-                    )}
+                {/* ACCIONES SECUNDARIAS: Reconvertir / Fundar Poblado (Colapsado por defecto) */}
+                <div className="tactical-card p-0 overflow-hidden border-slate-800">
+                  <button
+                    onClick={() => setShowSecondaryActions(prev => !prev)}
+                    className="w-full p-3 flex items-center justify-between text-xs font-bold text-slate-300 hover:bg-slate-800/40 transition-colors"
+                  >
+                    <span>⚙️ Reconvertir función o Fundar Asentamiento</span>
+                    {showSecondaryActions ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                  </button>
+
+                  {showSecondaryActions && (
+                    <div className="p-3 pt-0 border-t border-slate-800/80 space-y-2.5 mt-1">
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <button
+                          onClick={() => empireStorageService.convertTileRole(tile.id, 'crops')}
+                          disabled={currentRole === 'crops'}
+                          className={`p-2 rounded-lg text-xs font-bold transition-all border ${
+                            currentRole === 'crops'
+                              ? 'tactical-btn-active text-amber-300 border-amber-400'
+                              : 'tactical-btn text-slate-300'
+                          }`}
+                        >
+                          🌾 Huerto (+15🌾)
+                        </button>
+                        <button
+                          onClick={() => empireStorageService.convertTileRole(tile.id, 'resources')}
+                          disabled={currentRole === 'resources'}
+                          className={`p-2 rounded-lg text-xs font-bold transition-all border ${
+                            currentRole === 'resources'
+                              ? 'tactical-btn-active text-amber-300 border-amber-400'
+                              : 'tactical-btn text-slate-300'
+                          }`}
+                        >
+                          🌲 Cantera (+20🧱)
+                        </button>
+                      </div>
+
+                      {!isSecondaryIslandTile && (
+                        <div className="pt-2 border-t border-slate-800/80">
+                          <button
+                            onClick={handleConvertToSettlement}
+                            disabled={empire.coins < 20 || empire.nationalMaterials < 15 || empire.nationalFood < 7}
+                            className={`w-full py-2 px-3 text-xs tracking-wider uppercase font-black transition-all rounded-lg ${
+                              empire.coins >= 20 && empire.nationalMaterials >= 15 && empire.nationalFood >= 7
+                                ? 'tactical-btn-cta text-black'
+                                : 'tactical-btn text-slate-400 opacity-60 cursor-not-allowed'
+                            }`}
+                          >
+                            ⛺ Fundar Poblado aquí — 20🪙 + 15🧱 (+7🌾)
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* ESPECIALIZACIÓN INSULAR SI CORRESPONDE */}
+                {tile.isSmallIsland && tile.islandGroupId && (
+                  <div className="tactical-card p-0 overflow-hidden border-slate-800">
                     <button
-                      onClick={handleConvertToSettlement}
-                      disabled={empire.coins < 20 || empire.nationalMaterials < 15 || empire.nationalFood < 7}
-                      className={`w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-all ${
-                        empire.coins >= 20 && empire.nationalMaterials >= 15 && empire.nationalFood >= 7
-                          ? 'bg-indigo-600/80 hover:bg-indigo-500/80 text-white border border-indigo-500/50 cursor-pointer'
-                          : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
-                      }`}
+                      onClick={() => setShowIslandSpec(prev => !prev)}
+                      className="w-full p-3 flex items-center justify-between text-xs font-bold text-slate-300 hover:bg-slate-800/40 transition-colors"
                     >
-                      <span>⛺</span>
-                      <span>Fundar Poblado aquí — 20 🪙 + 15 🧱 (+7🌾)</span>
+                      <div className="flex items-center gap-1.5">
+                        <span>🏝️</span>
+                        <span>Especialización Insular: <strong className="text-amber-300 font-mono">{islandSpec || 'Sin asignar'}</strong></span>
+                      </div>
+                      {showIslandSpec ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                     </button>
+
+                    {showIslandSpec && (
+                      <div className="p-3 pt-0 border-t border-slate-800/80 space-y-2 mt-1">
+                        {islandError && (
+                          <div className="p-2 bg-red-950/40 border border-red-800/50 rounded text-[11px] text-red-300 mt-2">
+                            ⚠️ {islandError}
+                          </div>
+                        )}
+                        <div className="grid grid-cols-3 gap-1.5 mt-2">
+                          {[
+                            { key: 'tourist_resort' as IslandSpecialization, label: 'Resort 🏖️', desc: '+40 🪙/día' },
+                            { key: 'fiscal_paradise' as IslandSpecialization, label: 'Banco 🏦', desc: '+15% oro duelos' },
+                            { key: 'naval_hub' as IslandSpecialization, label: 'Hub Naval ⚓', desc: 'Barco bonificado' },
+                          ].map(spec => (
+                            <button
+                              key={spec.key}
+                              onClick={() => {
+                                const res = empireStorageService.setIslandSpecialization(tile.islandGroupId!, spec.key);
+                                if (!res.success) setIslandError(res.error || 'No se puede especializar');
+                                else setIslandError(null);
+                              }}
+                              className={`p-2 rounded-lg border text-center transition-all flex flex-col items-center justify-between min-h-[60px] ${
+                                islandSpec === spec.key
+                                  ? 'tactical-btn-active text-amber-300 border-amber-400'
+                                  : 'tactical-btn text-slate-400 hover:text-slate-200'
+                              }`}
+                            >
+                              <span className="text-[11px] font-bold block">{spec.label}</span>
+                              <span className="text-[9px] text-slate-400 block font-mono">{spec.desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
-
-            {/* Especialización de Isla Pequeña (GDD Fase 4 con restricciones de distancia 7x7 y cupos) */}
-            {tile.isSmallIsland && tile.islandGroupId && (
-              isSecondaryIslandTile ? (
-                <div className="bg-zinc-900/80 rounded-xl border border-emerald-500/30 p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-                      <span>🏝️</span>
-                      <span>Isla Especializada</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-mono">
-                      {islandSpec === 'naval_hub'
-                        ? '⚓ Hub Naval'
-                        : islandSpec === 'tourist_resort'
-                        ? '🏖️ Resort'
-                        : islandSpec === 'fiscal_paradise'
-                        ? '🏦 Banco'
-                        : 'Sin especializar'}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-zinc-400 leading-relaxed">
-                    Toda la isla comparte esta misma especialización activa en su capital. Esta casilla secundaria sirve de apoyo agrícola (🌾 Huerto) o de extracción (🌲 Cantera).
-                  </p>
-                </div>
-              ) : (
-                <div className="bg-zinc-900/80 rounded-xl border border-emerald-500/30 p-3 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-                      <span>🏝️</span>
-                      <span>Especialización Insular:</span>
-                    </div>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
-                      Microisla
-                    </span>
-                  </div>
-
-                  <p className="text-[10px] text-zinc-400">
-                    Cupo de {empireStorageService.getIslandSpecializationLimits().maxAllowed} por especialización (siguiente hito a los {empireStorageService.getIslandSpecializationLimits().nextPopRequired.toLocaleString()} hab.) y separación mínima de 7x7 con otras islas:
-                  </p>
-
-                  {islandError && (
-                    <div className="p-2 bg-amber-500/15 border border-amber-500/30 rounded-xl text-[10px] text-amber-300 font-medium">
-                      ⚠️ {islandError}
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-3 gap-1.5 pt-0.5">
-                    {[
-                      { key: 'tourist_resort' as IslandSpecialization, label: 'Resort 🏖️', desc: '+40 🪙/día pasivos' },
-                      { key: 'fiscal_paradise' as IslandSpecialization, label: 'Banco 🏦', desc: '+15% oro en duelos' },
-                      { key: 'naval_hub' as IslandSpecialization, label: 'Hub Naval ⚓', desc: 'Barco gratis + escala' },
-                    ].map(spec => {
-                      const isCurrent = islandSpec === spec.key;
-                      const limits = empireStorageService.getIslandSpecializationLimits();
-                      const count = limits.counts[spec.key] || 0;
-
-                      return (
-                        <button
-                          key={spec.key}
-                          onClick={() => {
-                            const res = empireStorageService.setIslandSpecialization(tile.islandGroupId!, spec.key);
-                            if (!res.success) {
-                              setIslandError(res.error || 'No se puede especializar');
-                            } else {
-                              setIslandError(null);
-                            }
-                          }}
-                          className={`p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-between min-h-[66px] ${
-                            isCurrent
-                              ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-400/40'
-                              : 'bg-zinc-800/60 border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
-                          }`}
-                        >
-                          <div>
-                            <span className="text-[11px] font-bold block">{spec.label}</span>
-                            <span className="text-[8px] text-zinc-400 block mt-0.5 leading-tight">{spec.desc}</span>
-                          </div>
-                          <span className={`text-[8px] font-mono px-1 py-0.5 rounded mt-1 ${
-                            isCurrent ? 'bg-emerald-400/20 text-emerald-300 font-bold' : 'text-zinc-500'
-                          }`}>
-                            {count} / {limits.maxAllowed}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )
-            )}
           </div>
         ) : (
-          <div className="space-y-3">
+          /* ══════════════════════════════════════════════════════════════════
+              CASILLA NO POSEÍDA: "¿QUÉ DESEAS CONSTRUIR AQUÍ?"
+              Tarjetas verticales, limpias, visuales y sin sobrecarga
+              ══════════════════════════════════════════════════════════════════ */
+          <div className="space-y-3.5">
+            {/* Cabecera del Territorio */}
+            <div className="tactical-card p-3 flex items-center justify-between shadow-md">
+              <div>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block font-mono">Nación / Soberanía</span>
+                <span className="text-sm font-black text-white">{tile.countryName || 'Tierra Libre'}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block font-mono">Coordenadas</span>
+                <span className="text-xs font-mono text-amber-300 font-bold">{tile.lat.toFixed(1)}°, {tile.lon.toFixed(1)}°</span>
+              </div>
+            </div>
+
             {isAdjacentToOwned ? (
-              <>
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-zinc-300">Coste de Anexión:</span>
-                  <div className="flex items-center gap-1 text-amber-400">
-                    <Coins className="w-4 h-4" />
-                    <span className="font-mono text-sm">{cost} monedas</span>
+              <div className="space-y-3">
+                {/* Barra de Coste y Saldo */}
+                <div className="tactical-card p-2.5 flex items-center justify-between bg-[#0d131f] border-slate-800">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                    <Coins className="w-4 h-4 text-amber-400" />
+                    <span className="font-mono">Coste de anexión:</span>
+                    <strong className="text-amber-300 font-mono text-sm">{cost} 🪙</strong>
+                  </div>
+                  <div className="text-xs font-mono text-slate-400">
+                    Tu saldo: <span className={hasCoins ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>{empire.coins} 🪙</span>
                   </div>
                 </div>
 
+                {/* Título de la Selección */}
                 <div>
-                  <label className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
-                    ¿Qué deseas construir aquí?
-                  </label>
-                  <div className={`grid ${isSecondaryIslandTile ? 'grid-cols-2' : 'grid-cols-3'} gap-1.5`}>
-                    {/* Opción 1: Poblado / Asentamiento (oculto si la isla ya tiene capital insular) */}
+                  <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-300 font-sans mb-2 flex items-center gap-1.5">
+                    <span>¿Qué deseas construir aquí?</span>
+                  </h4>
+
+                  {/* Tarjetas de Selección por Filas Verticales (Limpias, Espaciosas y con Jerarquía) */}
+                  <div className="space-y-2">
+                    {/* OPCIÓN 1: POBLADO (Si no es isla secundaria) */}
                     {!isSecondaryIslandTile && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedRole('settlement')}
-                        className={`p-2 rounded-lg border text-center transition-all ${
+                      <div
+                        onClick={() => handleSelectRole('settlement')}
+                        className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                           selectedRole === 'settlement'
-                            ? 'border-slate-400 bg-slate-500/25 text-white shadow-sm ring-1 ring-slate-400/30'
-                            : 'border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:border-zinc-600'
+                            ? 'bg-[#151f33] border-amber-400/90 shadow-[0_0_15px_rgba(245,158,11,0.2)] ring-1 ring-amber-400/50'
+                            : 'bg-[#0f1422] border-slate-800/80 hover:border-slate-700 hover:bg-[#131929]'
                         }`}
                       >
-                        <span className="text-base block mb-0.5">⛺</span>
-                        <span className="text-[10px] font-bold block">Poblado</span>
-                        <span className="text-[9px] text-zinc-400">+15 Pob (15 🧱)</span>
-                      </button>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 border ${
+                            selectedRole === 'settlement'
+                              ? 'bg-amber-500/20 border-amber-400/60'
+                              : 'bg-slate-800/50 border-slate-700/60'
+                          }`}>
+                            ⛺
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black text-white tracking-wide">Poblado</span>
+                              <span className="text-[10px] font-mono text-amber-300 bg-amber-500/15 px-1.5 py-0.2 rounded border border-amber-500/30">
+                                +15 Hab
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                              Establece un centro urbano para fundar y expandir ciudades
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 text-right">
+                          <span className="text-xs font-mono font-bold text-orange-300 block">
+                            +15 🧱
+                          </span>
+                          <span className="text-[9.5px] font-mono text-emerald-400 block">
+                            +7 🌾
+                          </span>
+                        </div>
+                      </div>
                     )}
 
-                    {/* Opción 2: Huerto */}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRole('crops')}
-                      className={`p-2 rounded-lg border text-center transition-all ${
+                    {/* OPCIÓN 2: HUERTO AGRÍCOLA */}
+                    <div
+                      onClick={() => handleSelectRole('crops')}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                         selectedRole === 'crops'
-                          ? 'border-yellow-500 bg-yellow-500/20 text-white shadow-sm ring-1 ring-yellow-500/30'
-                          : 'border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:border-zinc-600'
+                          ? 'bg-[#151f33] border-amber-400/90 shadow-[0_0_15px_rgba(245,158,11,0.2)] ring-1 ring-amber-400/50'
+                          : 'bg-[#0f1422] border-slate-800/80 hover:border-slate-700 hover:bg-[#131929]'
                       }`}
                     >
-                      <Wheat className="w-4 h-4 mx-auto mb-1 text-yellow-400" />
-                      <span className="text-[10px] font-bold block">Huerto</span>
-                      <span className="text-[9px] text-yellow-400 font-medium">+15 🌾 (0 🧱)</span>
-                    </button>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 border ${
+                          selectedRole === 'crops'
+                            ? 'bg-emerald-500/20 border-emerald-400/60'
+                            : 'bg-slate-800/50 border-slate-700/60'
+                        }`}>
+                          🌾
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-white tracking-wide">Huerto Agrícola</span>
+                            <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/15 px-1.5 py-0.2 rounded border border-emerald-500/30">
+                              +15 🌾 / turno
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                            Produce alimento para sustentar el crecimiento de tus ciudades
+                          </p>
+                        </div>
+                      </div>
 
-                    {/* Opción 3: Cantera */}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedRole('resources')}
-                      className={`p-2 rounded-lg border text-center transition-all ${
+                      <div className="shrink-0 text-right">
+                        <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/50">
+                          0 🧱 Gratis
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* OPCIÓN 3: CANTERA / BOSQUE */}
+                    <div
+                      onClick={() => handleSelectRole('resources')}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                         selectedRole === 'resources'
-                          ? 'border-emerald-500 bg-emerald-500/20 text-white shadow-sm ring-1 ring-emerald-500/30'
-                          : 'border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:border-zinc-600'
+                          ? 'bg-[#151f33] border-amber-400/90 shadow-[0_0_15px_rgba(245,158,11,0.2)] ring-1 ring-amber-400/50'
+                          : 'bg-[#0f1422] border-slate-800/80 hover:border-slate-700 hover:bg-[#131929]'
                       }`}
                     >
-                      <span className="text-base block mb-0.5">🌲</span>
-                      <span className="text-[10px] font-bold block">Cantera</span>
-                      <span className="text-[9px] text-emerald-400 font-medium">+20 🧱 fijos (0 🧱)</span>
-                    </button>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 border ${
+                          selectedRole === 'resources'
+                            ? 'bg-amber-500/20 border-amber-400/60'
+                            : 'bg-slate-800/50 border-slate-700/60'
+                        }`}>
+                          🌲
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-white tracking-wide">Cantera / Bosque</span>
+                            <span className="text-[10px] font-mono text-amber-300 bg-amber-500/15 px-1.5 py-0.2 rounded border border-amber-500/30">
+                              +20 🧱 fijos
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                            Extrae materiales indispensables para construir y mejorar
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/50">
+                          0 🧱 Gratis
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Input de nombre de ciudad cuando se elige Poblado */}
+                  {/* Campo de Nombre si se selecciona Poblado */}
                   {selectedRole === 'settlement' && (
-                    <div className="mt-2.5 p-2.5 bg-zinc-800/80 border border-zinc-700/60 rounded-xl space-y-1.5">
-                      <label className="text-[10px] font-bold text-zinc-300 block">
-                        Nombre del nuevo poblado:
+                    <div className="mt-2.5 p-3 bg-[#0d131f] border border-slate-800 rounded-xl space-y-2">
+                      <label className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider block font-mono">
+                        Nombre del nuevo asentamiento:
                       </label>
                       <input
                         type="text"
                         value={newCityName}
                         onChange={e => setNewCityName(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold"
-                        placeholder="Nombre de la ciudad"
+                        className="w-full bg-[#070a10] border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400 font-bold"
+                        placeholder="Nombre de la fundación"
                       />
-                      {empire.nationalMaterials < 15 && (
-                        <p className="text-[10px] text-amber-400 font-medium pt-0.5">
-                          ⚠️ Faltan materiales (tienes {empire.nationalMaterials}/15 🧱). Construye o mejora Canteras 🌲 para obtener materiales fijos.
+                      {!hasMaterialsForVillage && (
+                        <p className="text-[11px] text-red-400 font-medium">
+                          ⚠️ Faltan materiales ({empire.nationalMaterials}/15 🧱). Construye o mejora Canteras 🌲 para obtener materiales fijos.
                         </p>
                       )}
-                      {empire.nationalFood < 7 && (
-                        <p className="text-[10px] text-red-400 font-medium pt-0.5">
-                          ⚠️ Comida insuficiente (+{empire.nationalFood}/7 🌾). Necesitas al menos +7 de superávit de comida para alimentar a los nuevos colonos.
+                      {!hasFoodForVillage && (
+                        <p className="text-[11px] text-red-400 font-medium">
+                          ⚠️ Comida insuficiente (+{empire.nationalFood}/7 🌾). Necesitas al menos +7 de superávit de comida.
                         </p>
                       )}
                       {tile.isCoast && (
-                        <p className="text-[10px] text-blue-400/90 pt-0.5 leading-relaxed">
-                          🌊 <strong>Poblado Costero:</strong> Al mejorar este asentamiento a 🏙️ Ciudad, podrás construir en él un ⚓ Puerto comercial.
+                        <p className="text-[10.5px] text-sky-400/90 leading-tight">
+                          🌊 <strong>Poblado Costero:</strong> Al ascender a 🏙️ Ciudad podrás construir un ⚓ Puerto aquí.
                         </p>
                       )}
                     </div>
                   )}
                 </div>
 
+                {/* BOTÓN DEFINITIVO DE ANEXIÓN */}
                 <button
                   onClick={handleBuy}
                   disabled={!canAfford}
-                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg ${
+                  className={`w-full py-3 px-4 text-xs font-black tracking-wider uppercase transition-all rounded-xl flex items-center justify-center gap-2 shadow-xl ${
                     canAfford
-                      ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-emerald-600/30 cursor-pointer'
-                      : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
+                      ? 'tactical-btn-cta text-black'
+                      : 'tactical-btn text-slate-400 opacity-60 cursor-not-allowed'
                   }`}
                 >
-                  <Coins className="w-3.5 h-3.5" />
+                  <Coins className="w-4 h-4" />
                   <span>
                     {canAfford
                       ? `Anexar Casilla — ${cost} 🪙 ${selectedRole === 'settlement' ? '+ 15 🧱' : ''}`
-                      : (!hasCoins
-                          ? 'Monedas insuficientes'
-                          : (!hasMaterialsForVillage
-                              ? 'Materiales insuficientes (requiere 15 🧱)'
-                              : 'Comida insuficiente (requiere superávit +7 🌾)'))}
+                      : !hasCoins
+                      ? `Faltan monedas (${empire.coins}/${cost} 🪙)`
+                      : !hasMaterialsForVillage
+                      ? `Faltan materiales (${empire.nationalMaterials}/15 🧱)`
+                      : `Comida insuficiente (+${empire.nationalFood}/7 🌾)`}
                   </span>
                 </button>
-              </>
+              </div>
             ) : (
-              <div className="text-center py-4">
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Esta casilla está demasiado lejos de tus fronteras. Solo puedes anexionar casillas adyacentes a las que ya posees.
+              /* Casilla lejana */
+              <div className="text-center py-8 px-4 bg-[#0d131f] border border-slate-800 rounded-xl space-y-2.5">
+                <div className="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700 text-amber-400 mx-auto flex items-center justify-center text-lg shadow-inner">
+                  ⚠️
+                </div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-200 font-sans">
+                  Casilla fuera de alcance
+                </h4>
+                <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
+                  Esta casilla no tiene frontera directa con tu territorio actual. Anexiona casillas contiguas o fleta barcos desde un puerto marítimo ⚓ para llegar por mar.
                 </p>
               </div>
             )}
