@@ -46,10 +46,16 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
               ? '¡DESAFÍO PUBLICADO!'
               : isWinner
               ? '¡VICTORIA EN EL DUELO!'
-              : isTie
-              ? (duelState.playerScore === 0 ? '¡EMPATE A 0 (PENALIZACIÓN)!' : '¡EMPATE TÉCNICO!')
+              : duelState.isSurrender
+              ? 'DERROTA POR ABANDONO'
               : 'DERROTA'}
           </h2>
+
+          {duelState.isSurrender && (
+            <p className="text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 py-1.5 px-3 rounded-xl max-w-sm mx-auto font-medium">
+              Has salido de la partida antes de terminar. Se ha registrado como una derrota en tu perfil.
+            </p>
+          )}
 
           {isCreation ? (
             <p className="text-xs text-zinc-300 max-w-sm mx-auto leading-relaxed">

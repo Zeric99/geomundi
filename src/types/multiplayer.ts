@@ -115,5 +115,6 @@ export interface DuelState {
   roomConfig?: CustomRoomConfig;
   challengeId?: string;
   isChallengeCreation?: boolean;
+  isSurrender?: boolean;
 }
 

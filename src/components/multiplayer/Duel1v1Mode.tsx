@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Clock, Trophy, CheckCircle2, XCircle, Flame, ArrowRight, Zap, Target, Sparkles, Flag } from 'lucide-react';
+import { Swords, Clock, Trophy, CheckCircle2, XCircle, Flame, ArrowRight, Zap, Target, Sparkles, Flag, AlertTriangle } from 'lucide-react';
 import { Country, CountryMapStatus } from '../../types/country';
 import { DuelMode, DuelQuestion, DuelState, PlayerProfile, PlayerRoundResult } from '../../types/multiplayer';
 import { WorldMap } from '../map/WorldMap';
@@ -49,6 +49,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number>(isRanked ? 30 : 15);
   const [lastPinpointClick, setLastPinpointClick] = useState<[number, number] | null>(null);
+  const [showSurrenderConfirm, setShowSurrenderConfirm] = useState<boolean>(false);
 
   // Historial de pines 3D y notificación del último resultado para el jugador en Ranked
   const [pinHistory, setPinHistory] = useState<PinHistoryItem[]>([]);
@@ -384,6 +385,93 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
     onFinishDuel(state);
   };
 
+  // Prevenir abandono accidental por recarga o cierre de pestaña del navegador
+  useEffect(() => {
+    if (isChallengeCreation) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '¿Estás seguro de que quieres salir? Te contará como derrota.';
+      return e.returnValue;
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isChallengeCreation]);
+
+  // Confirmar rendición / abandono (cuenta como derrota)
+  const handleConfirmSurrender = () => {
+    setShowSurrenderConfirm(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    if (isChallengeCreation) {
+      onQuit();
+      return;
+    }
+
+    const effectiveRival = rivalProfile || {
+      id: 'rival_unknown',
+      name: 'Rival',
+      avatar: '🎓',
+      elo: 1200,
+      rank: multiplayerService.getRankInfo(1200),
+      wins: 0,
+      losses: 0,
+      streak: 0,
+      xp: 0,
+      level: 1
+    };
+
+    const playerTotalScore = playerResults.reduce((acc, r) => acc + r.points, 0);
+    const playerTotalTime = playerResults.reduce((acc, r) => acc + r.timeSpentMs, 0);
+    const rivalTotalScore = rivalResults.reduce((acc, r) => acc + r.points, 0);
+    const rivalTotalTime = rivalResults.reduce((acc, r) => acc + r.timeSpentMs, 0);
+
+    // El rival supera la puntuación para consolidar la derrota inequívoca
+    const finalRivalScore = Math.max(rivalTotalScore, playerTotalScore + 1);
+
+    const { updatedProfile, eloChange } = multiplayerService.processDuelResult(
+      playerTotalScore,
+      finalRivalScore,
+      playerTotalTime,
+      rivalTotalTime || 10000,
+      isRanked,
+      false,
+      effectiveRival.elo,
+      duelMode,
+      playerProfile
+    );
+
+    const surrenderEloChange = Math.min(-16, -Math.abs(eloChange));
+
+    const state: DuelState = {
+      id: `surrender_${Date.now()}`,
+      type: isRanked ? 'ranked' : 'friendly',
+      duelMode,
+      questions,
+      player: {
+        ...updatedProfile,
+        losses: (playerProfile.losses || 0) + 1,
+        streak: 0
+      },
+      rival: effectiveRival,
+      playerResults,
+      rivalResults,
+      playerScore: playerTotalScore,
+      rivalScore: finalRivalScore,
+      playerTimeTotalMs: playerTotalTime,
+      rivalTimeTotalMs: rivalTotalTime || 10000,
+      winner: 'rival',
+      eloChange: surrenderEloChange,
+      xpEarned: 25,
+      challengeId,
+      isChallengeCreation: false,
+      isSurrender: true
+    };
+
+    onFinishDuel(state);
+  };
+
   if (!currentQuestion) return null;
 
   // Estilos del temporizador según el tiempo restante
@@ -477,7 +565,7 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
 
           {/* Botón Abandonar */}
           <button
-            onClick={onQuit}
+            onClick={() => setShowSurrenderConfirm(true)}
             className="px-3.5 py-1.5 rounded-xl bg-zinc-800/90 hover:bg-zinc-700 text-zinc-300 hover:text-white font-bold text-xs border border-zinc-700 transition-all active:scale-95 shrink-0"
           >
             Abandonar
@@ -527,6 +615,61 @@ export const Duel1v1Mode: React.FC<Duel1v1ModeProps> = ({
           />
         )}
       </div>
+
+      {/* Modal de Confirmación de Abandono */}
+      <AnimatePresence>
+        {showSurrenderConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 select-none">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#18181b] border border-zinc-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-base sm:text-lg font-bold text-zinc-100 font-serif">
+                  {isChallengeCreation ? '¿Descartar desafío?' : '¿Estás seguro de que quieres salir?'}
+                </h3>
+                {isChallengeCreation ? (
+                  <p className="text-xs text-zinc-400">
+                    Si sales ahora, la grabación no se publicará en el tablón de la comunidad y se descartará el progreso.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="bg-rose-500/10 border border-rose-500/25 rounded-xl py-2 px-3 text-rose-300 font-bold text-xs">
+                      ⚠️ Te contará como derrota
+                    </div>
+                    <p className="text-xs text-zinc-400 leading-relaxed">
+                      Abandonar la partida en curso te restará puntos de Elo y se romperá tu racha de victorias.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSurrenderConfirm(false)}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs transition-colors"
+                >
+                  Seguir jugando
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmSurrender}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors shadow-lg shadow-rose-900/20"
+                >
+                  {isChallengeCreation ? 'Descartar' : 'Salir y rendirse'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

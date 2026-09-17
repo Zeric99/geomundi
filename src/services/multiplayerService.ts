@@ -527,12 +527,15 @@ export class MultiplayerService {
     challengerScore: number;
     challengerTimeMs: number;
     challengerResults: PlayerRoundResult[];
+    isSurrender?: boolean;
   }): Promise<{ winner: 'creator' | 'challenger' | 'tie'; eloChange: number }> {
-    const { challenge, challengerProfile, challengerScore, challengerTimeMs, challengerResults } = params;
+    const { challenge, challengerProfile, challengerScore, challengerTimeMs, challengerResults, isSurrender } = params;
 
-    // 1. Determinar ganador (desempate por tiempo, excepto si ambos sacan 0 puntos)
+    // 1. Determinar ganador (si hay abandono, el creador gana automáticamente)
     let winner: 'creator' | 'challenger' | 'tie' = 'tie';
-    if (challengerScore > challenge.score) {
+    if (isSurrender) {
+      winner = 'creator';
+    } else if (challengerScore > challenge.score) {
       winner = 'challenger';
     } else if (challengerScore < challenge.score) {
       winner = 'creator';
@@ -544,13 +547,16 @@ export class MultiplayerService {
 
     // 2. Calcular cambio de ELO
     const winnerForElo = winner === 'challenger' ? 'player' : winner === 'creator' ? 'rival' : 'tie';
-    const eloChange = this.calculateEloChange(
+    let eloChange = this.calculateEloChange(
       challengerProfile.elo,
       challenge.creatorElo,
       winnerForElo,
       challengerScore,
       challenge.score
     );
+    if (isSurrender) {
+      eloChange = -Math.max(16, Math.abs(eloChange));
+    }
 
     const absElo = Math.abs(eloChange);
 

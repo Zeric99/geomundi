@@ -520,7 +520,8 @@ export function App() {
           challengerProfile: playerProfile,
           challengerScore: duelState.playerScore,
           challengerTimeMs: duelState.playerTimeTotalMs,
-          challengerResults: duelState.playerResults
+          challengerResults: duelState.playerResults,
+          isSurrender: duelState.isSurrender
         });
       } catch (e) {
         console.error('Error resolviendo community challenge:', e);
