@@ -82,7 +82,7 @@ export const EmpireTopBar: React.FC<EmpireTopBarProps> = ({
           {/* 1. Dinero / Oro */}
           <div 
             className="flex items-center gap-1.5 cursor-help"
-            title="Tesoro Imperial (Monedas de Oro acumuladas)"
+            title="Tesoro Imperial. Los impuestos de tus ciudades se acumulan en el Baúl de Impuestos (abrible cada 24h tras 5 rankeds). Durante el día ganas monedas en Rankeds, el Desafío Diario y Misiones."
           >
             <Coins className="w-4 h-4 text-amber-400 shrink-0" />
             <span className="text-xs sm:text-sm font-black text-amber-300 font-mono tabular-nums">
@@ -166,7 +166,7 @@ export const EmpireTopBar: React.FC<EmpireTopBarProps> = ({
           {/* 5. Felicidad */}
           <div 
             className="flex items-center gap-1.5 cursor-help" 
-            title={`Felicidad Nacional: ${empire.happinessPct}% (Multiplicador de oro pasivo y tributos: x${(0.5 + empire.happinessPct / 100).toFixed(2)})`}
+            title={`Felicidad Nacional: ${empire.happinessPct}% (Aumenta la acumulación de impuestos en el Baúl Nacional y la bonificación cívica)`}
           >
             <Smile className="w-4 h-4 text-yellow-400 shrink-0" />
             <span className="text-xs font-bold text-yellow-300 font-mono tabular-nums">

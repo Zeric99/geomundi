@@ -246,26 +246,37 @@ export class EmpireStorageService {
       const expChanged = this.checkAndUpdateExpeditions();
       if (expChanged) changed = true;
 
-      // 2. Cada 10s: recaudación tributaria y actualización de felicidad (sin sumar materiales por segundo)
+      // 2. Cada 10s: cálculo de recaudación de impuestos que se acumulan en el Baúl de Impuestos (NO se añaden al monedero)
       if (this.tickerCycleCount % 10 === 0 && this.empire) {
         let baseTax = 0;
+        let dailyCap = 250; // Capacidad base del Baúl de Impuestos
+
         Object.values(this.empire.colonizedTiles).forEach(t => {
           if (t.role === 'settlement' || (t.settlementTier && t.settlementTier > 0)) {
             const tier = t.settlementTier || 1;
             const tierTaxes: Record<number, number> = { 1: 1, 2: 3, 3: 8, 4: 25 };
+            const tierCap: Record<number, number> = { 1: 30, 2: 60, 3: 120, 4: 250 };
             baseTax += tierTaxes[tier] || 1;
+            dailyCap += tierCap[tier] || 30;
           }
         });
 
-        // Ingresos de resorts turísticos
+        // Ingresos y capacidad de resorts turísticos
         const resortCount = Object.values(this.empire.islandSpecializations || {}).filter(s => s === 'tourist_resort').length;
         baseTax += resortCount * 40;
+        dailyCap += resortCount * 80;
 
         if (baseTax > 0) {
           const mult = 0.5 + (this.empire.happinessPct / 100);
-          const earned = Math.max(1, Math.round(baseTax * mult));
-          this.empire.coins += earned;
-          changed = true;
+          const earned = Math.max(1, Math.round((baseTax * mult) * 0.5));
+          const effectiveCap = Math.round(dailyCap * mult);
+          
+          // Se acumula exclusivamente en el Baúl de Impuestos (recaudable cada 24h tras 5 rankeds)
+          try {
+            import('./empireEconomyService').then(({ empireEconomyService }) => {
+              empireEconomyService.accumulateTaxes(earned, effectiveCap);
+            });
+          } catch {}
         }
 
         this.recalculateMetrics();

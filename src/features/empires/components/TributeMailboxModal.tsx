@@ -34,7 +34,7 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
   const bankCount = Object.values(emp.islandSpecializations || {}).filter(s => s === 'fiscal_paradise').length;
   const resortCount = Object.values(emp.islandSpecializations || {}).filter(s => s === 'tourist_resort').length;
   const navalHubCount = Object.values(emp.islandSpecializations || {}).filter(s => s === 'naval_hub').length;
-  const taxChestAmount = 150 + Math.round(150 * (bankCount * 0.15));
+  const taxChestAmount = empireEconomyService.getTaxChestAmount();
 
   useEffect(() => {
     const unsub = empireEconomyService.subscribe(newState => {
@@ -65,9 +65,10 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
   };
 
   const handleClaimTaxChest = () => {
+    const amount = empireEconomyService.getTaxChestAmount();
     if (empireEconomyService.claimTaxChest()) {
       empireSound.playCoinClink();
-      showFeedback('¡+150 🪙 del Baúl de Impuestos recaudadas!');
+      showFeedback(`¡+${amount} 🪙 del Baúl de Impuestos transferidas al Tesoro!`);
     }
   };
 
@@ -78,7 +79,7 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
 
   const totalCollectedToday = 
     (econState.dailyChallengeClaimed ? 650 : 0) +
-    (econState.taxChestClaimed ? 150 : 0) +
+    (econState.taxChestClaimed ? taxChestAmount : 0) +
     (econState.unclaimedWarLoot);
 
   return (
@@ -299,7 +300,7 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
             </div>
           </div>
 
-          {/* TARJETA 3: BAÚL DE IMPUESTOS (150 🪙) */}
+          {/* TARJETA 3: BAÚL DE IMPUESTOS (ACUMULACIÓN DIARIA) */}
           <div className="p-4 rounded-xl border border-emerald-500/40 bg-[#121c1a] space-y-3 shadow-lg">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -318,12 +319,12 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
                       Baúl de Impuestos
                     </h3>
                     <span className="text-xs font-mono text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.2 rounded border border-emerald-400/40">
-                      +{taxChestAmount} 🪙
+                      +{taxChestAmount} 🪙 acumuladas
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-300 mt-0.5">
-                    Se desbloquea al completar tus 5 partidas Rankeds del día
-                    {bankCount > 0 && ` · +${bankCount * 15}% por Bancos Insulares`}
+                    Impuestos generados por tus ciudades. Se abre cada 24h al completar tus 5 rankeds diarias.
+                    {bankCount > 0 && ` · +${bankCount * 15}% por Bancos`}
                   </p>
                 </div>
               </div>
@@ -331,7 +332,7 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
               {econState.taxChestClaimed ? (
                 <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-700/50 flex items-center gap-1.5 shrink-0">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  Recaudado
+                  Recaudado hoy
                 </span>
               ) : econState.rankedPlayedToday >= 5 ? (
                 <button
@@ -344,18 +345,20 @@ export const TributeMailboxModal: React.FC<TributeMailboxModalProps> = ({
               ) : (
                 <span className="text-xs font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 flex items-center gap-1.5 shrink-0">
                   <Lock className="w-3.5 h-3.5" />
-                  {5 - econState.rankedPlayedToday} restantes
+                  {5 - econState.rankedPlayedToday} rankeds rest.
                 </span>
               )}
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] font-mono">
               <span className={econState.rankedPlayedToday >= 5 ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
-                {econState.rankedPlayedToday >= 5 
-                  ? '¡Listo para recaudar!'
-                  : `Juega ${5 - econState.rankedPlayedToday} duelo(s) más para abrir`}
+                {econState.taxChestClaimed
+                  ? 'Recaudación diaria completada · Vuelve tras el reseteo de 24h'
+                  : econState.rankedPlayedToday >= 5 
+                  ? '¡5/5 rankeds jugadas! Listo para recaudar'
+                  : `Juega ${5 - econState.rankedPlayedToday} duelo(s) más hoy para abrir`}
               </span>
-              <span className="text-emerald-400 font-bold">{taxChestAmount} 🪙 {bankCount > 0 ? `(+${bankCount * 15}% Bancos)` : 'fijas'}</span>
+              <span className="text-emerald-400 font-bold">{taxChestAmount} 🪙 en cofre</span>
             </div>
           </div>
 

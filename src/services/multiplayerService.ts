@@ -342,8 +342,21 @@ export class MultiplayerService {
     playerScore: number,
     rivalScore: number
   ): number {
+    if (winner === 'tie') {
+      // Regla: Si empatan a 0 puntos, se penaliza a ambos como una derrota para evitar spam de 0 pts.
+      // Si empatan con puntos > 0, exactamente 0 puntos (0 ELO).
+      if (playerScore === 0 && rivalScore === 0) {
+        const expectedScore = 1 / (1 + Math.pow(10, (rivalElo - playerElo) / 400));
+        const actualScore = 0; // Se calcula como derrota
+        const kFactor = 32;
+        let change = Math.round(kFactor * (actualScore - expectedScore));
+        return Math.min(-8, change);
+      }
+      return 0;
+    }
+
     const expectedScore = 1 / (1 + Math.pow(10, (rivalElo - playerElo) / 400));
-    const actualScore = winner === 'player' ? 1 : winner === 'tie' ? 0.5 : 0;
+    const actualScore = winner === 'player' ? 1 : 0;
     const kFactor = 32;
     let change = Math.round(kFactor * (actualScore - expectedScore));
 
@@ -491,12 +504,14 @@ export class MultiplayerService {
   }): Promise<{ winner: 'creator' | 'challenger' | 'tie'; eloChange: number }> {
     const { challenge, challengerProfile, challengerScore, challengerTimeMs, challengerResults } = params;
 
-    // 1. Determinar ganador (desempate por tiempo)
+    // 1. Determinar ganador (desempate por tiempo, excepto si ambos sacan 0 puntos)
     let winner: 'creator' | 'challenger' | 'tie' = 'tie';
     if (challengerScore > challenge.score) {
       winner = 'challenger';
     } else if (challengerScore < challenge.score) {
       winner = 'creator';
+    } else if (challengerScore === 0 && challenge.score === 0) {
+      winner = 'tie';
     } else {
       winner = challengerTimeMs < challenge.totalTimeMs ? 'challenger' : (challengerTimeMs > challenge.totalTimeMs ? 'creator' : 'tie');
     }
@@ -542,8 +557,8 @@ export class MultiplayerService {
         playerTimeTotalMs: challengerTimeMs,
         rivalTimeTotalMs: challenge.totalTimeMs,
         winner: challengerWon ? 'player' : (isTie ? 'tie' : 'rival'),
-        eloChange: challengerWon ? absElo : (isTie ? 0 : -absElo),
-        xpEarned: challengerWon ? 150 : 50
+        eloChange: eloChange,
+        xpEarned: challengerWon ? 150 : (isTie && challengerScore === 0 ? 0 : 50)
       };
       this.saveDuelToHistory(duelForChallenger);
     } catch (e) {}
@@ -675,8 +690,9 @@ export class MultiplayerService {
       for (const row of data) {
         const creatorWon = row.winner === 'creator';
         const isTie = row.winner === 'tie';
+        const isZeroZeroTie = isTie && (row.score || 0) === 0 && (row.challenger_score || 0) === 0;
         const absElo = Math.abs(row.elo_change || 16);
-        const eloDelta = creatorWon ? absElo : (isTie ? 0 : -absElo);
+        const eloDelta = creatorWon ? absElo : (isTie ? (isZeroZeroTie ? -absElo : 0) : -absElo);
         netEloChange += eloDelta;
 
         if (creatorWon) winsDelta++;
@@ -994,6 +1010,8 @@ export class MultiplayerService {
       winner = 'player';
     } else if (rivalScore > playerScore) {
       winner = 'rival';
+    } else if (playerScore === 0 && rivalScore === 0) {
+      winner = 'tie';
     } else {
       if (playerTimeMs < rivalTimeMs) winner = 'player';
       else if (rivalTimeMs < playerTimeMs) winner = 'rival';
@@ -1005,7 +1023,7 @@ export class MultiplayerService {
     if (winner === 'player') {
       xpEarned += 150;
     } else if (winner === 'tie') {
-      xpEarned += 50;
+      xpEarned += (playerScore === 0 ? 0 : 50);
     }
 
     const currentElos = profile.elos || {

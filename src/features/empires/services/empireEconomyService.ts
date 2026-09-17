@@ -8,7 +8,9 @@ export interface DailyEconomyState {
   rankedPlayedToday: number;
   unclaimedWarLoot: number; // Monedas acumuladas de rankeds
   dailyChallengeClaimed: boolean; // Si ya cobró los 650 🪙 del desafío diario
-  taxChestClaimed: boolean; // Si ya cobró los 150 🪙 del baúl de impuestos
+  taxChestClaimed: boolean; // Si ya cobró el baúl de impuestos en las últimas 24h
+  accumulatedTaxCoins: number; // Monedas de impuestos acumuladas en el baúl a lo largo del día
+  lastTaxChestClaimTimestamp?: number; // Timestamp de la última apertura del baúl
   recentLootHistory: Array<{
     id: string;
     timestamp: number;
@@ -52,6 +54,9 @@ class EmpireEconomyService {
       if (raw) {
         const parsed = JSON.parse(raw) as DailyEconomyState;
         if (parsed.dateStr === today) {
+          if (parsed.accumulatedTaxCoins === undefined) {
+            parsed.accumulatedTaxCoins = 150;
+          }
           this.state = parsed;
           return;
         }
@@ -60,13 +65,14 @@ class EmpireEconomyService {
       console.warn('[EmpireEconomyService] Error cargando economía diaria:', e);
     }
 
-    // Nuevo día natural: reset de cupo diario y baúles
+    // Nuevo día natural: reset de cupo diario y reinicio del baúl de impuestos
     this.state = {
       dateStr: today,
       rankedPlayedToday: 0,
       unclaimedWarLoot: 0,
       dailyChallengeClaimed: false,
       taxChestClaimed: false,
+      accumulatedTaxCoins: 150, // Base mínima de partida diaria
       recentLootHistory: []
     };
     this.saveState();
@@ -189,23 +195,63 @@ class EmpireEconomyService {
   }
 
   /**
-   * Reclama el Baúl de Impuestos Nacional (150 monedas base + 15% por cada Banco Offshore)
-   * Condición GDD: Haber jugado las 5 partidas rankeds del día
+   * Acumula impuestos generados por las ciudades y la felicidad del imperio en el Baúl de Impuestos.
+   * No añade monedas directamente a la cartera del jugador: se guardan en el baúl diario.
+   */
+  public accumulateTaxes(earnedTax: number, maxCapacity: number = 500): void {
+    if (earnedTax <= 0) return;
+    const state = this.getState();
+    if (state.taxChestClaimed) return; // Si ya se cobró hoy, el baúl está sellado hasta el siguiente ciclo
+
+    const current = state.accumulatedTaxCoins || 150;
+    if (current < maxCapacity) {
+      const next = Math.min(maxCapacity, current + earnedTax);
+      if (next !== current) {
+        state.accumulatedTaxCoins = next;
+        this.notify();
+      }
+    }
+  }
+
+  /**
+   * Obtiene la cantidad total acumulada actualmente en el Baúl de Impuestos
+   * incluyendo la bonificación de Bancos Offshore si existen.
+   */
+  public getTaxChestAmount(): number {
+    const state = this.getState();
+    const base = state.accumulatedTaxCoins || 150;
+    const emp = empireStorageService.getEmpire();
+    const bankCount = Object.values(emp.islandSpecializations || {}).filter(s => s === 'fiscal_paradise').length;
+    if (bankCount > 0) {
+      return base + Math.round(base * (bankCount * 0.15));
+    }
+    return base;
+  }
+
+  /**
+   * Reclama el Baúl de Impuestos Nacional acumulado a lo largo del día
+   * Requisitos obligatorios:
+   * 1. Haber jugado las 5 partidas rankeds del día (rankedPlayedToday >= 5)
+   * 2. No haberlo cobrado en las últimas 24 horas (taxChestClaimed === false)
    */
   public claimTaxChest(): boolean {
     const state = this.getState();
     if (state.taxChestClaimed) return false;
     if (state.rankedPlayedToday < 5) return false;
 
-    const emp = empireStorageService.getEmpire();
-    const bankCount = Object.values(emp.islandSpecializations || {}).filter(s => s === 'fiscal_paradise').length;
-    let reward = 150;
-    if (bankCount > 0) {
-      reward += Math.round(reward * (bankCount * 0.15));
-    }
-
+    const reward = this.getTaxChestAmount();
     empireStorageService.addCoins(reward);
     state.taxChestClaimed = true;
+    state.lastTaxChestClaimTimestamp = Date.now();
+    
+    // Registrar en el historial de transacciones
+    state.recentLootHistory.unshift({
+      id: `tax_${Date.now()}`,
+      timestamp: Date.now(),
+      description: `Apertura del Baúl de Impuestos (5 Rankeds cumplidas)`,
+      amount: reward
+    });
+
     this.notify();
     return true;
   }
@@ -220,7 +266,7 @@ class EmpireEconomyService {
       total += 650;
     }
     if (!state.taxChestClaimed && state.rankedPlayedToday >= 5) {
-      total += 150;
+      total += this.getTaxChestAmount();
     }
     return total;
   }

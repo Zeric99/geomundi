@@ -47,7 +47,7 @@ export const DuelResultModal: React.FC<DuelResultModalProps> = ({
               : isWinner
               ? '¡VICTORIA EN EL DUELO!'
               : isTie
-              ? '¡EMPATE TÉCNICO!'
+              ? (duelState.playerScore === 0 ? '¡EMPATE A 0 (PENALIZACIÓN)!' : '¡EMPATE TÉCNICO!')
               : 'DERROTA'}
           </h2>
 
