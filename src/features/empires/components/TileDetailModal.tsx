@@ -198,7 +198,7 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
   }, [upgradeCheck, canUpgrade, empire.coins, empire.nationalMaterials, empire.nationalFood]);
 
   const isCoastTile = Boolean(tile.isCoast || baseTile?.isCoast || ownedData?.isCoast || isIsland);
-  const minTierForPort = isIsland ? 1 : 2; // En islas desde Aldea (Nivel 1), en costa continental desde Pueblo (Nivel 2)
+  const minTierForPort = isIsland ? 1 : 3; // En islas desde Aldea (Nivel 1), en costa continental requiere Ciudad (Nivel 3)
   const canBuildPort = isSettlement && tier >= minTierForPort && isCoastTile && !hasPort && empire.coins >= 50;
 
   // Lógica estricta de barcos vitalicios: 1 barco por ciudad, 2 si es Megaciudad (Nivel 4)
@@ -624,7 +624,7 @@ export const TileDetailModal: React.FC<TileDetailModalProps> = ({
                   <div className="px-3 py-2 bg-[#0c121e] border border-slate-800/80 rounded-lg flex items-center gap-2.5 text-slate-400">
                     <span className="text-base opacity-40">⚓</span>
                     <span className="text-[11px]">
-                      Puerto disponible al ascender a <strong className="text-slate-300">{isIsland ? 'Aldea (Nivel 1)' : 'Pueblo (Nivel 2)'}</strong>{isIsland ? ' o eligiendo Hub Naval ⚓' : ''}.
+                      Puerto disponible al ascender a <strong className="text-slate-300">{isIsland ? 'Aldea (Nivel 1)' : 'Ciudad (Nivel 3)'}</strong>{isIsland ? ' o eligiendo Hub Naval ⚓' : ''}.
                     </span>
                   </div>
                 ) : null}

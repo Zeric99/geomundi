@@ -1133,7 +1133,7 @@ export class EmpireStorageService {
       ((baseTile.lon > 1.0 && baseTile.lon < 5.0 && baseTile.lat > 38.0 && baseTile.lat < 40.5) || (baseTile.lon < -13.0 && baseTile.lat < 30.0))
     );
     const isIsland = Boolean(isBalearesOrCanarias || baseTile.isSmallIsland || tile.isSmallIsland || tile.islandGroupId || baseTile.islandGroupId);
-    const minTier = isIsland ? 1 : 2; // En islas desde Aldea (Nivel 1), en costa continental desde Pueblo (Nivel 2)
+    const minTier = isIsland ? 1 : 3; // En islas desde Aldea (Nivel 1), en costa continental requiere Ciudad (Nivel 3)
     if (((tile.settlementTier as number) || 1) < minTier) return false;
     if (!baseTile.isCoast && !isIsland) return false;
     if (tile.hasPort) return false; // Ya tiene puerto
