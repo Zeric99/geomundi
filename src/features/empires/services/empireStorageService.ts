@@ -1068,6 +1068,7 @@ export class EmpireStorageService {
     }
 
     this.recalculateMetrics();
+    this.saveEmpire();
     this.notify();
     return true;
   }
