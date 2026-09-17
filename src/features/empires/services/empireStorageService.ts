@@ -3,6 +3,7 @@ import { geoGridService } from './geoGridService';
 import { empireSound } from './empireSoundService';
 import { countriesService } from '../../../services/countriesService';
 import { supabase, isSupabaseConfigured } from '../../../lib/supabase';
+import { empireEconomyService } from './empireEconomyService';
 
 const EMPIRE_STORAGE_KEY = 'geostrike_user_empire_v1';
 
@@ -272,11 +273,7 @@ export class EmpireStorageService {
           const effectiveCap = Math.round(dailyCap * mult);
           
           // Se acumula exclusivamente en el Baúl de Impuestos (recaudable cada 24h tras 5 rankeds)
-          try {
-            import('./empireEconomyService').then(({ empireEconomyService }) => {
-              empireEconomyService.accumulateTaxes(earned, effectiveCap);
-            });
-          } catch {}
+          empireEconomyService.accumulateTaxes(earned, effectiveCap);
         }
 
         this.recalculateMetrics();
